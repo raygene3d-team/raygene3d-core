@@ -175,7 +175,7 @@ namespace RayGene3D
   //  memcpy(bytecode.data(), data, bytecode.size());
   //}
 
-  void CompileVLK(const std::string& source, const char* entry, const char* target, std::vector<char>& bytecode)
+  void CompileVLK(const std::string& source, const char* entry, const char* target, std::map<std::string, std::string> defines, std::vector<char>& bytecode)
   {
     glslang::InitializeProcess();
     
@@ -194,6 +194,11 @@ namespace RayGene3D
     if (strcmp(target, "chit") == 0) { language = glslang::EShSourceGlsl; stage = EShLangClosestHit; preamble.append("#define CHIT\n"); } else
     if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; stage = EShLangAnyHit; preamble.append("#define AHIT\n"); } else
     if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; stage = EShLangMiss; preamble.append("#define MISS\n"); }
+
+    for (const auto& define : defines)
+    {
+      preamble.append("#define " + define.first + " " + define.second + "\n");
+    }
 
     glslang::TShader shader(stage);
     shader.setEnvInput(language, stage, glslang::EShClientVulkan, 100);
@@ -317,42 +322,42 @@ namespace RayGene3D
       if (compilation & COMPILATION_VS)
       {
         vs_bytecode.clear();
-        CompileVLK(source, "vs_main", "vs_5_0", vs_bytecode);
+        CompileVLK(source, "vs_main", "vs_5_0", defines, vs_bytecode);
         BLAST_ASSERT(!vs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_HS)
       {
         hs_bytecode.clear();
-        CompileVLK(source, "hs_main", "hs_5_0", hs_bytecode);
+        CompileVLK(source, "hs_main", "hs_5_0", defines, hs_bytecode);
         BLAST_ASSERT(!hs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_DS)
       {
         ds_bytecode.clear();
-        CompileVLK(source, "ds_main", "ds_5_0", ds_bytecode);
+        CompileVLK(source, "ds_main", "ds_5_0", defines, ds_bytecode);
         BLAST_ASSERT(!ds_bytecode.empty());
       }
 
       if (compilation & COMPILATION_GS)
       {
         gs_bytecode.clear();
-        CompileVLK(source, "gs_main", "gs_5_0", gs_bytecode);
+        CompileVLK(source, "gs_main", "gs_5_0", defines, gs_bytecode);
         BLAST_ASSERT(!gs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_PS)
       {
         ps_bytecode.clear();
-        CompileVLK(source, "ps_main", "ps_5_0", ps_bytecode);
+        CompileVLK(source, "ps_main", "ps_5_0", defines, ps_bytecode);
         BLAST_ASSERT(!ps_bytecode.empty());
       }
 
       if (compilation & COMPILATION_CS)
       {
         cs_bytecode.clear();
-        CompileVLK(source, "cs_main", "cs_5_0", cs_bytecode);
+        CompileVLK(source, "cs_main", "cs_5_0", defines, cs_bytecode);
         BLAST_ASSERT(!cs_bytecode.empty());
       }
 
@@ -360,28 +365,28 @@ namespace RayGene3D
       if (compilation & COMPILATION_RGEN)
       {
         rgen_bytecode.clear();
-        CompileVLK(source, "main", "rgen", rgen_bytecode);
+        CompileVLK(source, "main", "rgen", defines, rgen_bytecode);
         BLAST_ASSERT(!rgen_bytecode.empty());
       }
 
       if (compilation & COMPILATION_MISS)
       {
         miss_bytecode.clear();
-        CompileVLK(source, "main", "miss", miss_bytecode);
+        CompileVLK(source, "main", "miss", defines, miss_bytecode);
         BLAST_ASSERT(!miss_bytecode.empty());
       }
 
       if (compilation & COMPILATION_CHIT)
       {
         chit_bytecode.clear();
-        CompileVLK(source, "main", "chit", chit_bytecode);
+        CompileVLK(source, "main", "chit", defines, chit_bytecode);
         BLAST_ASSERT(!chit_bytecode.empty());
       }
 
       if (compilation & COMPILATION_AHIT)
       {
         ahit_bytecode.clear();
-        CompileVLK(source, "main", "ahit", ahit_bytecode);
+        CompileVLK(source, "main", "ahit", defines, ahit_bytecode);
         BLAST_ASSERT(!ahit_bytecode.empty());
       }
     }

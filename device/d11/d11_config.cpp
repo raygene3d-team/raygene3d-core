@@ -102,13 +102,23 @@ namespace RayGene3D
 
 
 
-  void D11Compile(const std::string& source, const char* entry, const char* target, std::vector<char>& bytecode)
+  void D11Compile(const std::string& source, const char* entry, const char* target, std::map<std::string, std::string> defines, std::vector<char>& bytecode)
   {
     const uint32_t flags{ D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3 };
 
+    const auto limit = 32u;
+    D3D_SHADER_MACRO macros[limit] = { 0 };
+
+    auto count = 0;
+    for (const auto& define : defines)
+    {
+      macros[count++] = { define.first.c_str(), define.second.c_str() };
+      if (count == limit) break;
+    }
+
     ID3DBlob* errors = nullptr;
     ID3DBlob* shader = nullptr;
-    HRESULT hr = D3DCompile(source.c_str(), source.size(), nullptr, nullptr, nullptr, entry, target, flags, 0, &shader, &errors);
+    HRESULT hr = D3DCompile(source.c_str(), source.size(), nullptr, macros, nullptr, entry, target, flags, 0, &shader, &errors);
     if (errors)
     {
       BLAST_LOG("shader compilation output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
@@ -131,42 +141,42 @@ namespace RayGene3D
       if (compilation & COMPILATION_VS)
       {
         vs_bytecode.clear();
-        D11Compile(source, "vs_main", "vs_5_0", vs_bytecode);
+        D11Compile(source, "vs_main", "vs_5_0", defines, vs_bytecode);
         BLAST_ASSERT(!vs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_HS)
       {
         hs_bytecode.clear();
-        D11Compile(source, "hs_main", "hs_5_0", hs_bytecode);
+        D11Compile(source, "hs_main", "hs_5_0", defines, hs_bytecode);
         BLAST_ASSERT(!hs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_DS)
       {
         ds_bytecode.clear();
-        D11Compile(source, "ds_main", "ds_5_0", ds_bytecode);
+        D11Compile(source, "ds_main", "ds_5_0", defines, ds_bytecode);
         BLAST_ASSERT(!ds_bytecode.empty());
       }
 
       if (compilation & COMPILATION_GS)
       {
         gs_bytecode.clear();
-        D11Compile(source, "gs_main", "gs_5_0", gs_bytecode);
+        D11Compile(source, "gs_main", "gs_5_0", defines, gs_bytecode);
         BLAST_ASSERT(!gs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_PS)
       {
         ps_bytecode.clear();
-        D11Compile(source, "ps_main", "ps_5_0", ps_bytecode);
+        D11Compile(source, "ps_main", "ps_5_0", defines, ps_bytecode);
         BLAST_ASSERT(!ps_bytecode.empty());
       }
 
       if (compilation & COMPILATION_CS)
       {
         cs_bytecode.clear();
-        D11Compile(source, "cs_main", "cs_5_0", cs_bytecode);
+        D11Compile(source, "cs_main", "cs_5_0", defines, cs_bytecode);
         BLAST_ASSERT(!cs_bytecode.empty());
       }
 
