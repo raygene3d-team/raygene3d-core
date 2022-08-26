@@ -47,10 +47,9 @@ namespace RayGene3D
     bool debug{ false };
 
   protected:
+    std::string path;
     uint32_t extent_x{ 0 };
     uint32_t extent_y{ 0 };
-
-  protected:
     std::shared_ptr<Resource> screen;
 
   protected:
@@ -71,9 +70,11 @@ namespace RayGene3D
 
   public:
     void SetWindow(void* window) { this->window = window; }
-    void SetDispaly(void* display) { this->display = display; }
+    void SetDisplay(void* display) { this->display = display; }
 
   public:
+    void SetPath(const std::string& path) { this->path = path; }
+    const std::string& GetPath() const { return path; }
     void SetExtentX(uint32_t extent_x) { this->extent_x = extent_x; }
     uint32_t GetExtentX() const { return extent_x; }
     void SetExtentY(uint32_t extent_y) { this->extent_y = extent_y; }
