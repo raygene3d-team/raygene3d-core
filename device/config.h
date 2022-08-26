@@ -331,8 +331,8 @@ namespace RayGene3D
     const std::string& GetDefineItem(const std::string& key) const { return defines.at(key); }
     bool CheckDefineItem(const std::string& key) { return defines.find(key) != defines.end(); }
     void RemoveDefineItem(const std::string& key) { defines.erase(key); }
-    uint32_t CountDefineItem() { return uint32_t(defines.size()); }
-    void VisitDefineItem(DefineVisitor visitor) { for (const auto& define : defines) visitor(define.first, define.second); }
+    //uint32_t CountDefineItem() { return uint32_t(defines.size()); }
+    //void VisitDefineItem(DefineVisitor visitor) { for (const auto& define : defines) visitor(define.first, define.second); }
 
   public:
     void SetTopology(Topology topology) { this->topology = topology; }
