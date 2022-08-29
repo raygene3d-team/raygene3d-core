@@ -102,13 +102,70 @@ namespace RayGene3D
 
 
 
-  void D11Compile(const std::string& source, const char* entry, const char* target, std::vector<char>& bytecode)
+  void D11Compile(const std::string& source, const char* entry, const char* target, 
+    std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
   {
+    class D11Includer : public ID3DInclude
+    {
+    private:
+      std::string path;
+
+    public:
+      HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
+      {
+        const auto file_path = path + std::string(pFileName);
+
+        std::fstream fs;
+        fs.open(file_path, std::fstream::in);
+
+        std::stringstream ss;
+        ss << fs.rdbuf();
+        const std::string text = ss.str();
+
+        const auto size = text.size();
+        const auto data = new char[size];
+        BLAST_ASSERT(data);
+
+        memcpy(data, text.data(), size);
+
+        *ppData = data;
+        *pBytes = size;
+
+        return S_OK;
+      }
+
+      HRESULT Close(LPCVOID pData) override
+      {
+        if (pData)
+        {
+          delete[] pData;
+        }
+
+        return S_OK;
+      }
+
+    public:
+      D11Includer(const std::string& path) : ID3DInclude(), path(path) {}
+      virtual ~D11Includer() {}
+    };
+
+    D11Includer includer(path);
+
     const uint32_t flags{ D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3 };
+
+    const auto limit = 32u;
+    D3D_SHADER_MACRO macros[limit] = { 0 };
+
+    auto count = 0;
+    for (const auto& define : defines)
+    {
+      macros[count++] = { define.first.c_str(), define.second.c_str() };
+      if (count == limit) break;
+    }
 
     ID3DBlob* errors = nullptr;
     ID3DBlob* shader = nullptr;
-    HRESULT hr = D3DCompile(source.c_str(), source.size(), nullptr, nullptr, nullptr, entry, target, flags, 0, &shader, &errors);
+    HRESULT hr = D3DCompile(source.c_str(), source.size(), nullptr, macros, &includer, entry, target, flags, 0, &shader, &errors);
     if (errors)
     {
       BLAST_LOG("shader compilation output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
@@ -125,48 +182,49 @@ namespace RayGene3D
   void D11Config::Initialize()
   {
     auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    const auto path = device->GetPath();
 
     if (compilation != COMPILATION_UNKNOWN)
     {
       if (compilation & COMPILATION_VS)
       {
         vs_bytecode.clear();
-        D11Compile(source, "vs_main", "vs_5_0", vs_bytecode);
+        D11Compile(source, "vs_main", "vs_5_0", defines, path, vs_bytecode);
         BLAST_ASSERT(!vs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_HS)
       {
         hs_bytecode.clear();
-        D11Compile(source, "hs_main", "hs_5_0", hs_bytecode);
+        D11Compile(source, "hs_main", "hs_5_0", defines, path, hs_bytecode);
         BLAST_ASSERT(!hs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_DS)
       {
         ds_bytecode.clear();
-        D11Compile(source, "ds_main", "ds_5_0", ds_bytecode);
+        D11Compile(source, "ds_main", "ds_5_0", defines, path, ds_bytecode);
         BLAST_ASSERT(!ds_bytecode.empty());
       }
 
       if (compilation & COMPILATION_GS)
       {
         gs_bytecode.clear();
-        D11Compile(source, "gs_main", "gs_5_0", gs_bytecode);
+        D11Compile(source, "gs_main", "gs_5_0", defines, path, gs_bytecode);
         BLAST_ASSERT(!gs_bytecode.empty());
       }
 
       if (compilation & COMPILATION_PS)
       {
         ps_bytecode.clear();
-        D11Compile(source, "ps_main", "ps_5_0", ps_bytecode);
+        D11Compile(source, "ps_main", "ps_5_0", defines, path, ps_bytecode);
         BLAST_ASSERT(!ps_bytecode.empty());
       }
 
       if (compilation & COMPILATION_CS)
       {
         cs_bytecode.clear();
-        D11Compile(source, "cs_main", "cs_5_0", cs_bytecode);
+        D11Compile(source, "cs_main", "cs_5_0", defines, path, cs_bytecode);
         BLAST_ASSERT(!cs_bytecode.empty());
       }
 

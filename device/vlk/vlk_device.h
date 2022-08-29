@@ -80,7 +80,7 @@ namespace RayGene3D
 
     VkBuffer staging_buffer{ nullptr };
     VkDeviceMemory staging_memory{ nullptr };
-    VkDeviceSize staging_size{ 16 * 1024 * 1024 };
+    VkDeviceSize staging_size{ 32 * 1024 * 1024 };
 
   public:
     VkBuffer GetStagingBuffer() { return staging_buffer; }

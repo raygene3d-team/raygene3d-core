@@ -35,6 +35,8 @@ namespace RayGene3D
 {
   class Device;
 
+  typedef void(*DefineVisitor)(const std::string&, const std::string&);
+
   class Config : public Usable
   {
   protected:
@@ -72,6 +74,7 @@ namespace RayGene3D
   protected:
     std::string source;
     Compilation compilation;
+    std::map<std::string, std::string> defines;
 
   public:
     enum Topology
@@ -322,6 +325,14 @@ namespace RayGene3D
     const std::string& GetSource() const { return source; }
     void SetCompilation(Compilation compilation) { this->compilation = compilation; }
     Compilation GetCompilation() const { return compilation; }
+
+  public:
+    void SetDefineItem(const std::string& key, const std::string& value) { defines[key] = value; }
+    const std::string& GetDefineItem(const std::string& key) const { return defines.at(key); }
+    bool CheckDefineItem(const std::string& key) { return defines.find(key) != defines.end(); }
+    void RemoveDefineItem(const std::string& key) { defines.erase(key); }
+    //uint32_t CountDefineItem() { return uint32_t(defines.size()); }
+    //void VisitDefineItem(DefineVisitor visitor) { for (const auto& define : defines) visitor(define.first, define.second); }
 
   public:
     void SetTopology(Topology topology) { this->topology = topology; }
