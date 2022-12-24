@@ -116,9 +116,9 @@ namespace RayGene3D
       if (layout) { layout->Initialize(); }
     }
 
-    for (auto& shader : shaders)
+    for (auto& config : configs)
     {
-      if (shader) { shader->Initialize(); }
+      if (config) { config->Initialize(); }
     }
 
     for (auto& pass : passes)
@@ -200,13 +200,11 @@ namespace RayGene3D
     for (auto& pass : passes)
     {
       if (pass) { pass->Discard(); }
-
     }
 
-    for (auto& shader : shaders)
+    for (auto& config : configs)
     {
-      if (shader) { shader->Discard(); }
-
+      if (config) { config->Discard(); }
     }
 
     for (auto& layout : layouts)

@@ -55,7 +55,7 @@ namespace RayGene3D
   protected:
     std::list<std::shared_ptr<Resource>> resources;
     std::list<std::shared_ptr<Layout>> layouts;
-    std::list<std::shared_ptr<Config>> shaders;
+    std::list<std::shared_ptr<Config>> configs;
     std::list<std::shared_ptr<Pass>> passes;
 
   public:
@@ -88,7 +88,7 @@ namespace RayGene3D
     //virtual void DestroyResource(std::shared_ptr<Resource> resource) = 0;
     virtual std::shared_ptr<Layout> CreateLayout(const std::string& name) = 0;
     //virtual void DestroyOutput(std::shared_ptr<Output> output) = 0;
-    virtual std::shared_ptr<Config> CreateShader(const std::string& name) = 0;
+    virtual std::shared_ptr<Config> CreateConfig(const std::string& name) = 0;
     //virtual void DestroyPipeline(std::shared_ptr<Pipeline> asset) = 0;
     virtual std::shared_ptr<Pass> CreatePass(const std::string& name) = 0;
 

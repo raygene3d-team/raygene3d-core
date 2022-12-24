@@ -58,7 +58,7 @@ namespace RayGene3D
     std::shared_ptr<Resource> CreateResource(const std::string& name) override { return resources.emplace_back(new D11Resource(name, *this)); }
     std::shared_ptr<Resource> ShareResource(const std::string& name) override { for (auto& resource : resources) if (resource->GetName() == name) return resource; return nullptr; }
     std::shared_ptr<Layout> CreateLayout(const std::string& name) override { return layouts.emplace_back(new D11Layout(name, *this)); }
-    std::shared_ptr<Config> CreateShader(const std::string& name) override { return shaders.emplace_back(new D11Config(name, *this)); }
+    std::shared_ptr<Config> CreateConfig(const std::string& name) override { return configs.emplace_back(new D11Config(name, *this)); }
     std::shared_ptr<Pass> CreatePass(const std::string& name) override { return passes.emplace_back(new D11Pass(name, *this)); }
 
   public:

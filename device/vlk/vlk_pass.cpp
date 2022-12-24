@@ -278,22 +278,22 @@ namespace RayGene3D
         const auto& subpass = subpasses[j];
         auto& subpass_proxy = subpass_proxies[j];
 
-        auto shader = reinterpret_cast<VLKConfig*>(subpass.shader.get());
-        auto layout = reinterpret_cast<VLKLayout*>(subpass.layout.get());
+        const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
+        const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
         VkGraphicsPipelineCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         create_info.flags = 0;
-        create_info.stageCount = shader->GetStageCount();
-        create_info.pStages = shader->GetStageArray();
-        create_info.pVertexInputState = &shader->GetInputState();
-        create_info.pInputAssemblyState = &shader->GetAssemblyState();
-        create_info.pViewportState = &shader->GetViewportState();
-        create_info.pRasterizationState = &shader->GetRasterizationState();
-        create_info.pMultisampleState = &shader->GetMultisampleState();
-        create_info.pDepthStencilState = &shader->GetDepthstencilState();
-        create_info.pTessellationState = &shader->GetTessellationState();
-        create_info.pColorBlendState = &shader->GetColorblendState();
+        create_info.stageCount = config->GetStageCount();
+        create_info.pStages = config->GetStageArray();
+        create_info.pVertexInputState = &config->GetInputState();
+        create_info.pInputAssemblyState = &config->GetAssemblyState();
+        create_info.pViewportState = &config->GetViewportState();
+        create_info.pRasterizationState = &config->GetRasterizationState();
+        create_info.pMultisampleState = &config->GetMultisampleState();
+        create_info.pDepthStencilState = &config->GetDepthstencilState();
+        create_info.pTessellationState = &config->GetTessellationState();
+        create_info.pColorBlendState = &config->GetColorblendState();
         create_info.pDynamicState = nullptr;
         create_info.layout = layout->GetLayout();
         create_info.renderPass = renderpass;
@@ -312,13 +312,13 @@ namespace RayGene3D
         const auto& subpass = subpasses[j];
         auto& subpass_proxy = subpass_proxies[j];
 
-        auto shader = reinterpret_cast<VLKConfig*>(subpass.shader.get());
-        auto layout = reinterpret_cast<VLKLayout*>(subpass.layout.get());
+        const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
+        const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
         VkComputePipelineCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
         create_info.flags = 0;
-        create_info.stage = shader->GetStageArray()[0];
+        create_info.stage = config->GetStageArray()[0];
         create_info.layout = layout->GetLayout();
         create_info.basePipelineHandle = VK_NULL_HANDLE;
         create_info.basePipelineIndex = -1;
@@ -336,16 +336,16 @@ namespace RayGene3D
           const auto& subpass = subpasses[j];
           auto& subpass_proxy = subpass_proxies[j];
 
-          auto shader = reinterpret_cast<VLKConfig*>(subpass.shader.get());
-          auto layout = reinterpret_cast<VLKLayout*>(subpass.layout.get());
+          const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
+          const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
           VkRayTracingPipelineCreateInfoNV create_info = {};
           create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
           create_info.flags = 0;
-          create_info.stageCount = shader->GetStageCount();
-          create_info.pStages = shader->GetStageArray();
-          create_info.groupCount = shader->GetGroupCount();
-          create_info.pGroups = shader->GetGroupArray();
+          create_info.stageCount = config->GetStageCount();
+          create_info.pStages = config->GetStageArray();
+          create_info.groupCount = config->GetGroupCount();
+          create_info.pGroups = config->GetGroupArray();
           create_info.maxRecursionDepth = 1;
           create_info.layout = layout->GetLayout();
           create_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -357,15 +357,15 @@ namespace RayGene3D
           VkBufferCreateInfo buffer_info = {};
           buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
           buffer_info.flags = 0;
-          buffer_info.size = shader->GetGroupCount() * binding_align;
+          buffer_info.size = config->GetGroupCount() * binding_align;
           buffer_info.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
           buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
           buffer_info.queueFamilyIndexCount = 0;
           buffer_info.pQueueFamilyIndices = nullptr;
           BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device->GetDevice(), &buffer_info, nullptr, &subpass_proxy.bufferLayout));
 
-          auto* binding_data = new uint8_t[shader->GetGroupCount() * binding_align];
-          BLAST_ASSERT(VK_SUCCESS == vkGetRayTracingShaderGroupHandlesNV(device->GetDevice(), subpass_proxy.pipeline, 0, shader->GetGroupCount(), shader->GetGroupCount() * binding_align, binding_data));
+          auto* binding_data = new uint8_t[config->GetGroupCount() * binding_align];
+          BLAST_ASSERT(VK_SUCCESS == vkGetRayTracingShaderGroupHandlesNV(device->GetDevice(), subpass_proxy.pipeline, 0, config->GetGroupCount(), config->GetGroupCount() * binding_align, binding_data));
 
 
           VkMemoryRequirements requirements;
@@ -378,7 +378,7 @@ namespace RayGene3D
 
           uint8_t* mapped = nullptr;
           BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), subpass_proxy.memoryLayout, 0, VK_WHOLE_SIZE, 0, (void**)&mapped));
-          for (uint32_t i = 0; i < shader->GetGroupCount(); ++i)
+          for (uint32_t i = 0; i < config->GetGroupCount(); ++i)
           {
             memcpy(mapped + i * binding_align, binding_data + i * binding_size, binding_size);
 
@@ -426,19 +426,19 @@ namespace RayGene3D
         const auto& subpass = subpasses[j];
         auto& subpass_proxy = subpass_proxies[j];
 
-        auto shader = reinterpret_cast<VLKConfig*>(subpass.shader.get());
-        auto binding = reinterpret_cast<VLKLayout*>(subpass.layout.get());
+        const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
+        const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, subpass_proxy.pipeline);
 
-        const auto layout = binding->GetLayout();
-        const auto set_items = binding->GetSetItems();
-        const auto set_count = binding->GetSetCount();
+        const auto vk_layout = layout->GetLayout();
+        const auto set_items = layout->GetSetItems();
+        const auto set_count = layout->GetSetCount();
         const auto offset_items = subpass.sb_offsets.data();
         const auto offset_count = uint32_t(subpass.sb_offsets.size());
         if (set_count > 0)
         {
-          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, set_count, set_items, offset_count, offset_items);
+          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_layout, 0, set_count, set_items, offset_count, offset_items);
         }
 
 
@@ -477,7 +477,7 @@ namespace RayGene3D
           {
             ia_items[k] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
             ia_offsets[k] = ia_view->GetByteOffset();            
-            ia_formats[k] = shader->GetIndexer()
+            ia_formats[k] = config->GetIndexer()
               == Config::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
               : Config::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
               : VK_INDEX_TYPE_MAX_ENUM;
@@ -528,17 +528,17 @@ namespace RayGene3D
         const auto& subpass = subpasses[j];
         auto& subpass_proxy = subpass_proxies[j];
 
-        auto shader = reinterpret_cast<VLKConfig*>(subpass.shader.get());
-        auto binding = reinterpret_cast<VLKLayout*>(subpass.layout.get());
+        const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
+        const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, subpass_proxy.pipeline);
 
-        const auto layout = binding->GetLayout();
-        const auto set_items = binding->GetSetItems();
-        const auto set_count = binding->GetSetCount();
+        const auto vk_layout = layout->GetLayout();
+        const auto set_items = layout->GetSetItems();
+        const auto set_count = layout->GetSetCount();
         if (set_count > 0)
         {
-          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, set_count, set_items, 0, nullptr);
+          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_layout, 0, set_count, set_items, 0, nullptr);
         }
 
         const auto aa_limit = 32u;
@@ -579,16 +579,16 @@ namespace RayGene3D
           const auto& subpass = subpasses[j];
           auto& subpass_proxy = subpass_proxies[j];
 
-          auto shader = reinterpret_cast<VLKConfig*>(subpass.shader.get());
-          auto binding = reinterpret_cast<VLKLayout*>(subpass.layout.get());
+          const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
+          const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
           vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, subpass_proxy.pipeline);
-          const auto layout = binding->GetLayout();
-          const auto set_items = binding->GetSetItems();
-          const auto set_count = binding->GetSetCount();
+          const auto vk_layout = layout->GetLayout();
+          const auto set_items = layout->GetSetItems();
+          const auto set_count = layout->GetSetCount();
           if (set_count > 0)
           {
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, layout, 0, set_count, set_items, 0, nullptr);
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, vk_layout, 0, set_count, set_items, 0, nullptr);
           }
           const auto binding_size = device->GetRTXProperties().shaderGroupHandleSize;
           const auto binding_align = device->GetRTXProperties().shaderGroupBaseAlignment;

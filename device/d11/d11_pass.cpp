@@ -111,8 +111,8 @@ namespace RayGene3D
       {
         const auto& subpass = subpasses[j];
 
-        auto config = reinterpret_cast<D11Config*>(subpass.shader.get());
-        auto layout = reinterpret_cast<D11Layout*>(subpass.layout.get());
+        const auto config = reinterpret_cast<const D11Config*>(subpass.config.get());
+        const auto layout = reinterpret_cast<const D11Layout*>(subpass.layout.get());
 
         device->GetContext()->VSSetShader(config->GetVSShader(), nullptr, 0);
         device->GetContext()->HSSetShader(config->GetHSShader(), nullptr, 0);
@@ -229,8 +229,8 @@ namespace RayGene3D
       {
         const auto& subpass = subpasses[j];
 
-        auto config = reinterpret_cast<D11Config*>(subpass.shader.get());
-        auto layout = reinterpret_cast<D11Layout*>(subpass.layout.get());
+        const auto config = reinterpret_cast<const D11Config*>(subpass.config.get());
+        const auto layout = reinterpret_cast<const D11Layout*>(subpass.layout.get());
 
         device->GetContext()->CSSetShader(config->GetCSShader(), nullptr, 0);
 

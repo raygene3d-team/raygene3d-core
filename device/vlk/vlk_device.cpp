@@ -400,9 +400,9 @@ maxDescriptorSetAccelerationStructures: %d\n"
       if (layout) { layout->Initialize(); }
     }
 
-    for (auto& shader : shaders)
+    for (auto& config : configs)
     {
-      if (shader) { shader->Initialize(); }
+      if (config) { config->Initialize(); }
     }
 
     for (auto& pass : passes)
@@ -677,9 +677,9 @@ maxDescriptorSetAccelerationStructures: %d\n"
       if (pass) { /*BLAST_LOG("Discarding queue [%s]", name.c_str());*/ pass->Discard(); }
     }
 
-    for (auto& shader : shaders)
+    for (auto& config : configs)
     {
-      if (shader) { /*BLAST_LOG("Discarding shader [%s]", name.c_str());*/ shader->Discard(); }
+      if (config) { /*BLAST_LOG("Discarding shader [%s]", name.c_str());*/ config->Discard(); }
     }
 
     for (auto& layout : layouts)

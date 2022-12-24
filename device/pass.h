@@ -71,7 +71,7 @@ namespace RayGene3D
   protected:
     struct Subpass
     {
-      std::shared_ptr<Config> shader;
+      std::shared_ptr<Config> config;
       std::shared_ptr<Layout> layout;
 
       std::vector<std::shared_ptr<View>> va_views;
@@ -123,7 +123,7 @@ namespace RayGene3D
     void SetSubpassCount(uint32_t count) { subpasses.resize(count); }
     uint32_t GetSubpassCount() const { return uint32_t(subpasses.size()); }
 
-    void SetSubpassShader(uint32_t subpass, const std::shared_ptr<Config>& shader) { subpasses.at(subpass).shader = shader; }
+    void SetSubpassConfig(uint32_t subpass, const std::shared_ptr<Config>& config) { subpasses.at(subpass).config = config; }
     void SetSubpassLayout(uint32_t subpass, const std::shared_ptr<Layout>& layout) { subpasses.at(subpass).layout = layout; }
 
     void UpdateSubpassVAViews(uint32_t subpass, std::pair<const std::shared_ptr<View>*, uint32_t>  va_views) { 
