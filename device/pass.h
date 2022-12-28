@@ -50,22 +50,41 @@ namespace RayGene3D
       TYPE_RAYTRACING = 3,
     };
 
-    struct Graphic
+    //struct Graphic
+    //{
+    //  uint32_t idx_count{ 0 };
+    //  uint32_t ins_count{ 0 };
+    //  uint32_t idx_offset{ 0 };
+    //  uint32_t vtx_offset{ 0 };
+    //  uint32_t ins_offset{ 0 };
+    //  uint32_t padding[3]{ uint32_t(-1), uint32_t(-1), uint32_t(-1) };
+    //};
+
+    //struct Compute
+    //{
+    //  uint32_t grid_x{ 0 };
+    //  uint32_t grid_y{ 0 };
+    //  uint32_t grid_z{ 0 };
+    //  uint32_t padding{ uint32_t(-1) };
+    //};
+
+    struct Argument
     {
       uint32_t idx_count{ 0 };
       uint32_t ins_count{ 0 };
       uint32_t idx_offset{ 0 };
       uint32_t vtx_offset{ 0 };
       uint32_t ins_offset{ 0 };
-      uint32_t padding[3]{ uint32_t(-1), uint32_t(-1), uint32_t(-1) };
-    };
-
-    struct Compute
-    {
       uint32_t grid_x{ 0 };
       uint32_t grid_y{ 0 };
       uint32_t grid_z{ 0 };
-      uint32_t padding{ uint32_t(-1) };
+    };
+
+    struct Command
+    {
+      std::shared_ptr<View> view;
+      Argument argument;
+      std::vector<uint32_t> offsets;
     };
 
   protected:
@@ -74,14 +93,10 @@ namespace RayGene3D
       std::shared_ptr<Config> config;
       std::shared_ptr<Layout> layout;
 
+      std::vector<Command> commands;
+
       std::vector<std::shared_ptr<View>> va_views;
       std::vector<std::shared_ptr<View>> ia_views;
-      std::vector<std::shared_ptr<View>> aa_views;
-
-      std::vector<Graphic> graphic_tasks;
-      std::vector<Compute> compute_tasks;
-
-      std::vector<uint32_t> sb_offsets;
     };
 
     Type type{ TYPE_UNKNOWN };
@@ -126,23 +141,16 @@ namespace RayGene3D
     void SetSubpassConfig(uint32_t subpass, const std::shared_ptr<Config>& config) { subpasses.at(subpass).config = config; }
     void SetSubpassLayout(uint32_t subpass, const std::shared_ptr<Layout>& layout) { subpasses.at(subpass).layout = layout; }
 
-    void UpdateSubpassVAViews(uint32_t subpass, std::pair<const std::shared_ptr<View>*, uint32_t>  va_views) { 
-      subpasses.at(subpass).va_views.assign(va_views.first, va_views.first + va_views.second);
+    void UpdateSubpassCommands(uint32_t subpass, std::pair<const Command*, uint32_t> commands) {
+      subpasses.at(subpass).commands.assign(commands.first, commands.first + commands.second);
     }
-    void UpdateSubpassIAViews(uint32_t subpass, std::pair<const std::shared_ptr<View>*, uint32_t>  ia_views) {
-      subpasses.at(subpass).ia_views.assign(ia_views.first, ia_views.first + ia_views.second);
+
+  public:
+    void UpdateSubpassVAViews(uint32_t subpass, std::pair<const std::shared_ptr<View>*, uint32_t> va_views) {
+      subpasses.at(subpass).va_views.assign(va_views.first, va_views.first + va_views.second); 
     }
-    void UpdateSubpassAAViews(uint32_t subpass, std::pair<const std::shared_ptr<View>*, uint32_t>  aa_views) {
-      subpasses.at(subpass).aa_views.assign(aa_views.first, aa_views.first + aa_views.second);
-    }
-    void UpdateSubpassSBOffsets(uint32_t subpass, std::pair<const uint32_t*, uint32_t>  sb_offsets) {
-      subpasses.at(subpass).sb_offsets.assign(sb_offsets.first, sb_offsets.first + sb_offsets.second);
-    }
-    void UpdateSubpassGraphicTasks(uint32_t subpass, std::pair<const Graphic*, uint32_t>  graphic_tasks) {
-      subpasses.at(subpass).graphic_tasks.assign(graphic_tasks.first, graphic_tasks.first + graphic_tasks.second);
-    }
-    void UpdateSubpassComputeTasks(uint32_t subpass, std::pair<const Compute*, uint32_t>  compute_tasks) {
-      subpasses.at(subpass).compute_tasks.assign(compute_tasks.first, compute_tasks.first + compute_tasks.second);
+    void UpdateSubpassIAViews(uint32_t subpass, std::pair<const std::shared_ptr<View>*, uint32_t> ia_views) { 
+      subpasses.at(subpass).ia_views.assign(ia_views.first, ia_views.first + ia_views.second); 
     }
   public:
     Device& GetDevice() { return device; }

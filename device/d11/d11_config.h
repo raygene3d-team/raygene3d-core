@@ -84,7 +84,7 @@ namespace RayGene3D
     ID3D11RasterizerState* GetRasterState() const { return raster_state; }
     ID3D11DepthStencilState* GetDepthState() const { return depth_state; }
     ID3D11BlendState* GetBlendState() const { return blend_state; }
-    D3D11_VIEWPORT const* GetViewportItems() const { return vp_items.data(); }
+    const D3D11_VIEWPORT* GetViewportItems() const { return vp_items.data(); }
     uint32_t GetViewportCount() const { return uint32_t(vp_items.size()); }
 
   public:

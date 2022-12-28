@@ -392,10 +392,7 @@ namespace RayGene3D
         }
       }
     }
-
   }
-
-
 
   void VLKPass::Use()
   {
@@ -426,6 +423,8 @@ namespace RayGene3D
         const auto& subpass = subpasses[j];
         auto& subpass_proxy = subpass_proxies[j];
 
+        if (subpass.commands.empty()) continue;
+
         const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
         const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
@@ -434,13 +433,12 @@ namespace RayGene3D
         const auto vk_layout = layout->GetLayout();
         const auto set_items = layout->GetSetItems();
         const auto set_count = layout->GetSetCount();
-        const auto offset_items = subpass.sb_offsets.data();
-        const auto offset_count = uint32_t(subpass.sb_offsets.size());
         if (set_count > 0)
         {
-          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_layout, 0, set_count, set_items, offset_count, offset_items);
+          const auto offset_array = subpass.commands[0].offsets.data();
+          const auto offset_count = subpass.commands[0].offsets.size();
+          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_layout, 0, set_count, set_items, offset_count, offset_array);
         }
-
 
         const auto va_limit = 16u;
         std::array<uint32_t, va_limit> va_strides;
@@ -462,7 +460,6 @@ namespace RayGene3D
         {
           vkCmdBindVertexBuffers(command_buffer, 0, va_count, va_items.data(), va_offsets.data());
         }
-
 
         const auto ia_limit = 1u;
         std::array<VkIndexType, ia_limit> ia_formats;
@@ -489,31 +486,21 @@ namespace RayGene3D
           vkCmdBindIndexBuffer(command_buffer, ia_items[0], ia_offsets[0], ia_formats[0]);
         }
 
-        const auto aa_limit = 32u;
-        std::array<uint32_t, aa_limit> aa_strides;
-        std::array<VkDeviceSize, aa_limit> aa_offsets;
-        std::array<VkBuffer, aa_limit> aa_items;
-
-        const auto aa_count = std::min(aa_limit, uint32_t(subpass.aa_views.size()));
-        for (uint32_t k = 0; k < aa_count; ++k)
+        for (const auto& command : subpass.commands)
         {
-          const auto& aa_view = subpass.aa_views[k];
-          if (aa_view)
+          if (!command.offsets.empty())
           {
-            aa_items[k] = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
-            aa_strides[k] = aa_view->GetByteCount();
-            aa_offsets[k] = aa_view->GetByteOffset();
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_layout, 0, set_count, set_items, command.offsets.size(), command.offsets.data());
           }
-        }
 
-        for (uint32_t k = 0; k < aa_count; ++k)
-        {
-          vkCmdDrawIndexedIndirect(command_buffer, aa_items[k], aa_offsets[k], 1, aa_strides[k]);
-        }
-
-        for (const auto& graphic_task : subpass.graphic_tasks)
-        {
-          vkCmdDrawIndexed(command_buffer, graphic_task.idx_count, graphic_task.ins_count, graphic_task.idx_offset, graphic_task.vtx_offset, graphic_task.ins_offset);
+          if (command.view)
+          {
+            vkCmdDrawIndexedIndirect(command_buffer, (reinterpret_cast<VLKResource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetByteOffset() + 0 * 4, 1, 0);
+          }
+          else
+          {
+            vkCmdDrawIndexed(command_buffer, command.argument.idx_count, command.argument.ins_count, command.argument.idx_offset, command.argument.vtx_offset, 0);
+          }
         }
       }
 
@@ -528,6 +515,8 @@ namespace RayGene3D
         const auto& subpass = subpasses[j];
         auto& subpass_proxy = subpass_proxies[j];
 
+        if (subpass.commands.empty()) continue;
+
         const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
         const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
@@ -538,33 +527,26 @@ namespace RayGene3D
         const auto set_count = layout->GetSetCount();
         if (set_count > 0)
         {
-          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_layout, 0, set_count, set_items, 0, nullptr);
+          const auto offset_array = subpass.commands[0].offsets.data();
+          const auto offset_count = subpass.commands[0].offsets.size();
+          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_layout, 0, set_count, set_items, offset_count, offset_array);
         }
 
-        const auto aa_limit = 32u;
-        std::array<uint32_t, aa_limit> aa_strides;
-        std::array<VkDeviceSize, aa_limit> aa_offsets;
-        std::array<VkBuffer, aa_limit> aa_items;
-
-        const auto aa_count = std::min(aa_limit, uint32_t(subpass.aa_views.size()));
-        for (uint32_t k = 0; k < aa_count; ++k)
+        for (const auto& command : subpass.commands)
         {
-          const auto& aa_view = subpass.aa_views[k];
-          if (aa_view)
+          if (!command.offsets.empty())
           {
-            aa_items[k] = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
-            aa_strides[k] = aa_view->GetByteCount();
-            aa_offsets[k] = aa_view->GetByteOffset();
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_layout, 0, set_count, set_items, command.offsets.size(), command.offsets.data());
           }
-        }
-        for (uint32_t k = 0; k < aa_count; ++k)
-        {
-          vkCmdDispatchIndirect(command_buffer, aa_items[k], aa_offsets[k]);
-        }
 
-        for (const auto& compute_task : subpass.compute_tasks)
-        {
-          vkCmdDispatch(command_buffer, compute_task.grid_x, compute_task.grid_y, compute_task.grid_z);
+          if (command.view)
+          {
+            vkCmdDispatchIndirect(command_buffer, (reinterpret_cast<VLKResource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetByteOffset() + 5 * 4);
+          }
+          else
+          {
+            vkCmdDispatch(command_buffer, command.argument.grid_x, command.argument.grid_y, command.argument.grid_z);
+          }
         }
       }
     }

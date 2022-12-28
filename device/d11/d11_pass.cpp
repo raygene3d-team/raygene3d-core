@@ -40,7 +40,6 @@ namespace RayGene3D
   {
   }
 
-
   void D11Pass::Use()
   {
     if (!enabled) return;
@@ -135,44 +134,24 @@ namespace RayGene3D
 
         device->GetContext()->RSSetViewports(config->GetViewportCount(), config->GetViewportItems());
 
-        const auto sb_limit = 16u;
-        std::array<uint32_t, sb_limit> offsets;
-        std::array<uint32_t, sb_limit> ranges;
-        for (uint32_t i = 0; i < std::min(uint32_t(subpass.sb_offsets.size()), sb_limit); ++i)
-        {
-          offsets[i] = subpass.sb_offsets[i] / 16;
-          ranges[i] = 256 / 16;
-        }
-
-
         device->GetContext()->VSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
         device->GetContext()->VSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(layout->GetUBCount(), layout->GetSBCount(), layout->GetSBItems(),
-          offsets.data(), ranges.data());
         device->GetContext()->VSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
 
         device->GetContext()->HSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
         device->GetContext()->HSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(layout->GetUBCount(), layout->GetSBCount(), layout->GetSBItems(),
-          offsets.data(), ranges.data());
         device->GetContext()->HSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
 
         device->GetContext()->DSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
         device->GetContext()->DSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(layout->GetUBCount(), layout->GetSBCount(), layout->GetSBItems(),
-          offsets.data(), ranges.data());
         device->GetContext()->DSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
 
         device->GetContext()->GSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
         device->GetContext()->GSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(layout->GetUBCount(), layout->GetSBCount(), layout->GetSBItems(),
-          offsets.data(), ranges.data());
         device->GetContext()->GSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
 
         device->GetContext()->PSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
         device->GetContext()->PSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(layout->GetUBCount(), layout->GetSBCount(), layout->GetSBItems(),
-          offsets.data(), ranges.data());
         device->GetContext()->PSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
 
 
@@ -211,14 +190,38 @@ namespace RayGene3D
         }
         device->GetContext()->IASetIndexBuffer(ia_items[0], ia_formats[0], ia_offsets[0]);
 
-        for (const auto& aa_view : subpass.aa_views)
+        for (const auto& command : subpass.commands)
         {
-          device->GetContext()->DrawIndexedInstancedIndirect((reinterpret_cast<D11Resource*>(&aa_view->GetResource()))->GetBuffer(), aa_view->GetByteOffset());
-        }
+          if (!command.offsets.empty())
+          {
+            const auto offset_limit = 16u;
+            const auto offset_count = std::min(offset_limit, uint32_t(command.offsets.size()));
+            std::array<uint32_t, offset_limit> offset_array;
+            for (uint32_t i = 0; i < offset_count; ++i) { offset_array[i] = command.offsets[i] / 16; }
+            std::array<uint32_t, offset_limit> offset_range;
+            for (uint32_t i = 0; i < offset_count; ++i) { offset_range[i] = 256 / 16; }
+            
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(layout->GetUBCount(),
+              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(layout->GetUBCount(),
+              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(layout->GetUBCount(),
+              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(layout->GetUBCount(),
+              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(layout->GetUBCount(),
+              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
+          }
 
-        for (const auto& graphic_task : subpass.graphic_tasks)
-        {
-          device->GetContext()->DrawIndexedInstanced(graphic_task.idx_count, graphic_task.ins_count, graphic_task.idx_offset, graphic_task.vtx_offset, graphic_task.ins_offset);
+          if (command.view)
+          {
+            device->GetContext()->DrawIndexedInstancedIndirect((reinterpret_cast<D11Resource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetByteOffset() + 0 * 4);
+          }
+          else
+          {
+            device->GetContext()->DrawIndexedInstanced(command.argument.idx_count, command.argument.ins_count, 
+              command.argument.idx_offset, command.argument.vtx_offset, command.argument.ins_offset);
+          }
         }
       }
     }
@@ -236,30 +239,34 @@ namespace RayGene3D
 
         uint32_t wr_initials[8] = { 0 };
         device->GetContext()->CSSetUnorderedAccessViews(0, layout->GetWRCount(), layout->GetWRItems(), wr_initials);
-
-        const auto sb_limit = 16u;
-        std::array<uint32_t, sb_limit> offsets;
-        std::array<uint32_t, sb_limit> ranges;
-        for (uint32_t i = 0; i < std::min(uint32_t(subpass.sb_offsets.size()), sb_limit); ++i)
-        {
-          offsets[i] = subpass.sb_offsets[i] / 16;
-          ranges[i] = 65536 / 16;
-        }
-
         device->GetContext()->CSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
         device->GetContext()->CSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->CSSetConstantBuffers1(layout->GetUBCount(), layout->GetSBCount(), layout->GetSBItems(),
-          offsets.data(), ranges.data());
         device->GetContext()->CSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
 
-        for (const auto& aa_view : subpass.aa_views)
+        for (const auto& command : subpass.commands)
         {
-          device->GetContext()->DispatchIndirect((reinterpret_cast<D11Resource*>(&aa_view->GetResource()))->GetBuffer(), aa_view->GetByteOffset());
-        }
+          if (!command.offsets.empty())
+          {
+            const auto offset_limit = 16u;
+            const auto offset_count = std::min(offset_limit, uint32_t(command.offsets.size()));
 
-        for (const auto& compute_task : subpass.compute_tasks)
-        {
-          device->GetContext()->Dispatch(compute_task.grid_x, compute_task.grid_y, compute_task.grid_z);
+            std::array<uint32_t, offset_limit> offset_array;
+            for (uint32_t i = 0; i < offset_count; ++i) { offset_array[i] = command.offsets[i] / 16; }
+            std::array<uint32_t, offset_limit> offset_range;
+            for (uint32_t i = 0; i < offset_count; ++i) { offset_range[i] = 256 / 16; }
+
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->CSSetConstantBuffers1(layout->GetUBCount(),
+              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
+          }
+
+          if (command.view)
+          {
+            device->GetContext()->DispatchIndirect((reinterpret_cast<D11Resource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetByteOffset() + 5 * 4);
+          }
+          else
+          {
+            device->GetContext()->Dispatch(command.argument.grid_x, command.argument.grid_y, command.argument.grid_z);
+          }
         }
       }
     }
