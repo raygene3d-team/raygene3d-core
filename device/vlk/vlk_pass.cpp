@@ -238,13 +238,17 @@ namespace RayGene3D
 
 
       {
+        auto layers = uint32_t(1);
+
         std::vector<VkImageView> rt_attachment_views(rt_views.size());
         for (size_t i = 0; i < rt_views.size(); ++i)
         {
           const auto& rt_view = rt_views[i];
           rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
-          extent_x = std::max(extent_x, rt_view->GetResource().GetExtentX());
-          extent_y = std::max(extent_y, rt_view->GetResource().GetExtentY());
+          extent_x = std::max(extent_x, rt_view->GetResource().GetExtentX() >> rt_view->GetMipmapOffset());
+          extent_y = std::max(extent_y, rt_view->GetResource().GetExtentY() >> rt_view->GetMipmapOffset());
+          const auto layer_count = rt_view->GetLayerCount();
+          layers = std::max(layer_count == -1 ? 1 : layer_count, layers);
         }
 
         std::vector<VkImageView> ds_attachment_views(ds_views.size());
@@ -252,8 +256,10 @@ namespace RayGene3D
         {
           const auto& ds_view = ds_views[i];
           ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
-          extent_x = std::max(extent_x, ds_view->GetResource().GetExtentX());
-          extent_y = std::max(extent_y, ds_view->GetResource().GetExtentY());
+          extent_x = std::max(extent_x, ds_view->GetResource().GetExtentX() >> ds_view->GetMipmapOffset());
+          extent_y = std::max(extent_y, ds_view->GetResource().GetExtentY() >> ds_view->GetMipmapOffset());
+          const auto layer_count = ds_view->GetLayerCount();
+          layers = std::max(layer_count == -1 ? 1 : layer_count, layers);
         }
 
         attachment_views.clear();
@@ -268,7 +274,7 @@ namespace RayGene3D
         create_info.pAttachments = attachment_views.data();
         create_info.width = extent_x;
         create_info.height = extent_y;
-        create_info.layers = 1;
+        create_info.layers = layers;
         BLAST_ASSERT(VK_SUCCESS == vkCreateFramebuffer(device->GetDevice(), &create_info, nullptr, &framebuffer));
       }
 
