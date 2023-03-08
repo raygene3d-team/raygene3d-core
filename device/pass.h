@@ -124,11 +124,11 @@ namespace RayGene3D
     void SetEnabled(bool enabled) { this->enabled = enabled; }
     bool GetEnabled() const { return enabled; }
 
-    void SetExtendX(uint32_t x) { extent_x = x; }
-    uint32_t GetExtendX() { return extent_x; }
+    void SetExtentX(uint32_t x) { extent_x = x; }
+    uint32_t GetExtentX() { return extent_x; }
 
-    void SetExtendY(uint32_t y) { extent_y = y; }
-    uint32_t GetExtendY() { return extent_y; }
+    void SetExtentY(uint32_t y) { extent_y = y; }
+    uint32_t GetExtentY() { return extent_y; }
 
     void UpdateRTViews(std::pair<const std::shared_ptr<View>*, uint32_t> rt_views) { 
       this->rt_views.assign(rt_views.first, rt_views.first + rt_views.second);
