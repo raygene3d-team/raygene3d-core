@@ -245,10 +245,7 @@ namespace RayGene3D
         {
           const auto& rt_view = rt_views[i];
           rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
-          extent_x = std::max(extent_x, rt_view->GetResource().GetExtentX() >> rt_view->GetMipmapOffset());
-          extent_y = std::max(extent_y, rt_view->GetResource().GetExtentY() >> rt_view->GetMipmapOffset());
-          const auto layer_count = rt_view->GetLayerCount();
-          layers = std::max(layer_count == -1 ? 1 : layer_count, layers);
+          layers = std::max(rt_view->GetLayerCount() == -1 ? 1 : rt_view->GetLayerCount(), layers);
         }
 
         std::vector<VkImageView> ds_attachment_views(ds_views.size());
@@ -256,10 +253,7 @@ namespace RayGene3D
         {
           const auto& ds_view = ds_views[i];
           ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
-          extent_x = std::max(extent_x, ds_view->GetResource().GetExtentX() >> ds_view->GetMipmapOffset());
-          extent_y = std::max(extent_y, ds_view->GetResource().GetExtentY() >> ds_view->GetMipmapOffset());
-          const auto layer_count = ds_view->GetLayerCount();
-          layers = std::max(layer_count == -1 ? 1 : layer_count, layers);
+          layers = std::max(ds_view->GetLayerCount() == -1 ? 1 : ds_view->GetLayerCount(), layers);
         }
 
         attachment_views.clear();
