@@ -101,6 +101,9 @@ namespace RayGene3D
 
     Type type{ TYPE_UNKNOWN };
 
+    uint32_t extent_x{ 0 };
+    uint32_t extent_y{ 0 };
+
     std::vector<std::shared_ptr<View>> rt_views;
     std::vector<std::shared_ptr<View>> ds_views;
     std::vector<RTValue> rt_values;
@@ -120,6 +123,12 @@ namespace RayGene3D
 
     void SetEnabled(bool enabled) { this->enabled = enabled; }
     bool GetEnabled() const { return enabled; }
+
+    void SetExtentX(uint32_t x) { extent_x = x; }
+    uint32_t GetExtentX() { return extent_x; }
+
+    void SetExtentY(uint32_t y) { extent_y = y; }
+    uint32_t GetExtentY() { return extent_y; }
 
     void UpdateRTViews(std::pair<const std::shared_ptr<View>*, uint32_t> rt_views) { 
       this->rt_views.assign(rt_views.first, rt_views.first + rt_views.second);

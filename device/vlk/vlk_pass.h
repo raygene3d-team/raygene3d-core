@@ -57,8 +57,6 @@ namespace RayGene3D
     };
     std::vector<SubpassProxy> subpass_proxies;
 
-    uint32_t extent_x{ 0 };
-    uint32_t extent_y{ 0 };
     std::vector<VkImageView> attachment_views;
     std::vector<VkClearValue> attachment_values;
     VkFramebuffer framebuffer{ nullptr };
