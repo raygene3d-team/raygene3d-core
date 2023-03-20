@@ -288,6 +288,10 @@ namespace RayGene3D
   protected:
     std::string name;
 
+  protected:
+    uint32_t limit{ 1u };
+    uint32_t count{ 0u };
+
   public:
     virtual void Initialize() = 0;
     virtual void Use() = 0;
@@ -295,6 +299,10 @@ namespace RayGene3D
 
   public:
     const std::string& GetName() const { return name; }
+
+  public:
+    uint32_t GetLimit() const { return limit; }
+    uint32_t GetCount() const { return count; }
 
   public:
     Usable(const std::string& name) : name(name) {};
