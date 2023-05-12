@@ -2,7 +2,7 @@ find_package(Vulkan REQUIRED)
 
 set(NAME raygene3d)
  
-set(BASE_DIR ${CMAKE_SOURCE_DIR}/${NAME}-base)
+set(BASE_DIR ${CMAKE_SOURCE_DIR}/${NAME}-core)
 #set(ext_path ${CMAKE_SOURCE_DIR}/ext)
 
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -85,37 +85,37 @@ ENDIF(WIN32)
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE})
 
-add_library(${NAME}-base STATIC ${SOURCE})
+add_library(${NAME}-core STATIC ${SOURCE})
 
-target_link_libraries(${NAME}-base PRIVATE
+target_link_libraries(${NAME}-core PRIVATE
 	Vulkan::Vulkan
 )
 	
-target_include_directories(${NAME}-base PUBLIC
+target_include_directories(${NAME}-core PUBLIC
 	${CMAKE_SOURCE_DIR}/3rdparty
 )
 
 IF(WIN32)
-target_link_libraries(raygene3d-base PRIVATE
+target_link_libraries(raygene3d-core PRIVATE
 	debug ${GLSLANG_LIB_PATH}/glslangd.lib optimized ${GLSLANG_LIB_PATH}/glslang.lib
 	debug ${GLSLANG_LIB_PATH}/HLSLd.lib optimized ${GLSLANG_LIB_PATH}/HLSL.lib
 	debug ${GLSLANG_LIB_PATH}/OGLCompilerd.lib optimized ${GLSLANG_LIB_PATH}/OGLCompiler.lib
 	debug ${GLSLANG_LIB_PATH}/OSDependentd.lib optimized ${GLSLANG_LIB_PATH}/OSDependent.lib
 )
 
-target_link_libraries(raygene3d-base PRIVATE
+target_link_libraries(raygene3d-core PRIVATE
 	debug ${SPIRV_LIB_PATH}/SPIRVd.lib optimized ${SPIRV_LIB_PATH}/SPIRV.lib
 	debug ${SPIRV_LIB_PATH}/SPVRemapperd.lib optimized ${SPIRV_LIB_PATH}/SPVRemapper.lib
 	debug ${SPIRV_LIB_PATH}/SPIRVd.lib optimized ${SPIRV_LIB_PATH}/SPIRV.lib
 )
 
-target_link_libraries(raygene3d-base PRIVATE
+target_link_libraries(raygene3d-core PRIVATE
 	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Toolsd.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools.lib
 	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-optd.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-opt.lib
 	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-reduced.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-reduce.lib
 )
 ELSE(WIN32)
-target_link_libraries(${NAME}-base PRIVATE
+target_link_libraries(${NAME}-core PRIVATE
 	optimized ${GLSLANG_LIB_PATH}/libMachineIndependent.a
 	optimized ${GLSLANG_LIB_PATH}/libGenericCodeGen.a
 	optimized ${GLSLANG_LIB_PATH}/libglslang.a
@@ -124,18 +124,18 @@ target_link_libraries(${NAME}-base PRIVATE
 	optimized ${GLSLANG_LIB_PATH}/libOSDependent.a
 )
 
-target_link_libraries(${NAME}-base PRIVATE
+target_link_libraries(${NAME}-core PRIVATE
 	optimized ${SPIRV_LIB_PATH}/libSPIRV.a
 	optimized ${SPIRV_LIB_PATH}/libSPVRemapper.a
 	optimized ${SPIRV_LIB_PATH}/libSPIRV.a
 )
 
-target_link_libraries(${NAME}-base PRIVATE
+target_link_libraries(${NAME}-core PRIVATE
 	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools.a
 	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools-opt.a
 	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools-reduce.a
 )
-target_link_libraries(${NAME}-base PRIVATE
+target_link_libraries(${NAME}-core PRIVATE
 	optimized -ldl
 	optimized -lpthread
 )
