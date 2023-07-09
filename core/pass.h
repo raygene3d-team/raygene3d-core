@@ -28,7 +28,6 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "base.h"
 #include "config.h"
 #include "layout.h"
 

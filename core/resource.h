@@ -28,7 +28,6 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "base.h"
 #include "view.h"
 
 namespace RayGene3D

@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 #pragma once
-#include "device.h"
+#include "core/device.h"
 
 namespace RayGene3D
 {
@@ -35,18 +35,18 @@ namespace RayGene3D
   {
   public:
 
-    enum Acceleration
+    enum DeviceType
     {
-      ACCELERATION_UNKNOWN = 0,
-      ACCELERATION_D11 = 1,
-      ACCELERATION_VLK = 2,
+      DEVICE_UNKNOWN = 0,
+      DEVICE_D11 = 1,
+      DEVICE_VLK = 2,
     };
 
   protected:
-    Acceleration acceleration;
+    DeviceType type;
 
   protected:
-    std::shared_ptr<Device> device;
+    std::unique_ptr<Device> device;
 
   protected:
     std::list<std::weak_ptr<View>> views;
@@ -57,7 +57,7 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    const std::shared_ptr<Device>& GetDevice() { return device; }
+    const std::unique_ptr<Device>& GetDevice() { return device; }
 
   public:
     void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
@@ -65,7 +65,7 @@ namespace RayGene3D
     void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
 
   public:
-    Core(Acceleration acceleration);
+    Core(DeviceType type);
     virtual ~Core();
   };
 }

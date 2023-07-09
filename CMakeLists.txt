@@ -4,8 +4,6 @@ set(NAME raygene3d)
 
 set(CORE_DIR ${CMAKE_SOURCE_DIR}/${NAME}-core/core)
 set(CORE_SOURCE
-	${CORE_DIR}/base.h
-	${CORE_DIR}/base.cpp
 	${CORE_DIR}/config.h
 	${CORE_DIR}/config.cpp
 	${CORE_DIR}/device.h
@@ -57,7 +55,7 @@ set(SOURCE core.h core.cpp
 	${CORE_VLK_SOURCE}
 )
 ELSE(WIN32)
-set(SOURCE core.h core.cpp
+set(SOURCE base.h base.cpp core.h core.cpp
 	${CORE_SOURCE}
 	${CORE_VLK_SOURCE}
 )
