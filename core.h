@@ -62,7 +62,7 @@ namespace RayGene3D
   public:
     void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
     void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
+    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
 
   public:
     Core(DeviceType type);

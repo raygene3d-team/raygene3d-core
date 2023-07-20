@@ -85,7 +85,7 @@ namespace RayGene3D
 
   public:
     virtual std::shared_ptr<Resource> CreateResource(const std::string& name) = 0;
-    virtual std::shared_ptr<Resource> ShareResource(const std::string& name) = 0; // To be removed
+    //virtual std::shared_ptr<Resource> ShareResource(const std::string& name) = 0; // To be removed
     //virtual void DestroyResource(std::shared_ptr<Resource> resource) = 0;
     virtual std::shared_ptr<Layout> CreateLayout(const std::string& name) = 0;
     //virtual void DestroyOutput(std::shared_ptr<Output> output) = 0;

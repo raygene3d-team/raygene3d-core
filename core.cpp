@@ -28,10 +28,10 @@ THE SOFTWARE.
 
 #include "core.h"
 
-#include "vlk/vlk_device.h"
+#include "core/vlk/vlk_device.h"
 
 #ifdef _WIN32
-#include "d11/d11_device.h"
+#include "core/d11/d11_device.h"
 #endif
 
 namespace RayGene3D
@@ -51,21 +51,21 @@ namespace RayGene3D
     device->Discard();
   }
 
-  Core::Core(Acceleration acceleration)
-    : Usable("raygene3d-util")
-    , acceleration(acceleration)
+  Core::Core(DeviceType type)
+    : Usable("raygene3d-core")
+    , type(type)
   {
-    switch (acceleration)
+    switch (type)
     {
-    case ACCELERATION_VLK:
-      device = std::shared_ptr<Device>(new VLKDevice("vlk_device"));
+    case DEVICE_VLK:
+      device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
       break;
 
-    case ACCELERATION_D11:
+    case DEVICE_D11:
 #ifdef _WIN32
-      device = std::shared_ptr<Device>(new D11Device("d11_device"));
+      device = std::unique_ptr<Device>(new D11Device("d11_device"));
 #else
-      device = std::shared_ptr<Device>(new VLKDevice("vlk_device"));
+      device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
 #endif
       break;
     }
