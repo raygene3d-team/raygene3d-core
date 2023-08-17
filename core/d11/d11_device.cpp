@@ -406,6 +406,116 @@ namespace RayGene3D
   //{
   //}
 
+    const std::shared_ptr<Resource>& D11Device::CreateResource(const std::string& name, const Resource::BufferDesc& desc,
+      Resource::Hint hint, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops)
+    {
+      const auto& resource = resources.emplace_back(new D11Resource(name, *this));
+      resource->SetBufferDesc(desc);
+      resource->SetHint(hint);
+      resource->SetInteropCount(interops.second);
+      for (uint32_t i = 0; i < interops.second; ++i)
+      {
+        resource->SetInteropItem(i, interops.first[i]);
+      }
+      resource->Initialize();
+      return resource;
+    }
+
+    const std::shared_ptr<Resource>& D11Device::CreateResource(const std::string& name, const Resource::Tex1DDesc& desc,
+      Resource::Hint hint, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops)
+    {
+      const auto& resource = resources.emplace_back(new D11Resource(name, *this));
+      resource->SetTex1DDesc(desc);
+      resource->SetHint(hint);
+      resource->SetInteropCount(interops.second);
+      for (uint32_t i = 0; i < interops.second; ++i)
+      {
+        resource->SetInteropItem(i, interops.first[i]);
+      }
+      resource->Initialize();
+      return resource;
+    }
+
+    const std::shared_ptr<Resource>& D11Device::CreateResource(const std::string& name, const Resource::Tex2DDesc& desc,
+      Resource::Hint hint, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops)
+    {
+      const auto& resource = resources.emplace_back(new D11Resource(name, *this));
+      resource->SetTex2DDesc(desc);
+      resource->SetHint(hint);
+      resource->SetInteropCount(interops.second);
+      for (uint32_t i = 0; i < interops.second; ++i)
+      {
+        resource->SetInteropItem(i, interops.first[i]);
+      }
+      resource->Initialize();
+      return resource;
+    }
+
+    const std::shared_ptr<Resource>& D11Device::CreateResource(const std::string& name, const Resource::Tex3DDesc& desc,
+      Resource::Hint hint, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops)
+    {
+      const auto& resource = resources.emplace_back(new D11Resource(name, *this));
+      resource->SetTex3DDesc(desc);
+      resource->SetHint(hint);
+      resource->SetInteropCount(interops.second);
+      for (uint32_t i = 0; i < interops.second; ++i)
+      {
+        resource->SetInteropItem(i, interops.first[i]);
+      }
+      resource->Initialize();
+      return resource;
+    }
+
+    const std::shared_ptr<Layout>& D11Device::CreateLayout(const std::string& name,
+      std::pair<const std::shared_ptr<View>*, uint32_t> ub_views, std::pair<const std::shared_ptr<View>*, uint32_t> sb_views,
+      std::pair<const std::shared_ptr<View>*, uint32_t> ri_views, std::pair<const std::shared_ptr<View>*, uint32_t> wi_views,
+      std::pair<const std::shared_ptr<View>*, uint32_t> rb_views, std::pair<const std::shared_ptr<View>*, uint32_t> wb_views,
+      std::pair<const Layout::Sampler*, uint32_t> samplers, std::pair<const Layout::RTXEntity*, uint32_t> rtx_entities)
+    {
+      const auto& layout = layouts.emplace_back(new D11Layout(name, *this));
+      layout->UpdateUBViews(ub_views);
+      layout->UpdateSBViews(sb_views);
+      layout->UpdateRIViews(ri_views);
+      layout->UpdateWIViews(wi_views);
+      layout->UpdateRBViews(rb_views);
+      layout->UpdateWBViews(wb_views);
+      layout->UpdateSamplers(samplers);
+      layout->UpdateRTXEntities(rtx_entities);
+      layout->Initialize();
+      return layout;
+    }
+
+    const std::shared_ptr<Config>& D11Device::CreateConfig(const std::string& name,
+      const std::string& source, Config::Compilation compilation, std::pair<const std::pair<const std::string&, const std::string&>*, uint32_t> defines,
+      const Config::IAState& ia_state, const Config::RCState& rc_state, const Config::DSState& ds_state, const Config::OMState& om_state)
+    {
+      const auto& config = configs.emplace_back(new D11Config(name, *this));
+      config->SetSource(source);
+      config->SetCompilation(compilation);
+      for (uint32_t i = 0; i < defines.second; ++i)
+      {
+        const auto [key, value] = defines.first[i];
+        config->SetDefineItem(key, value);
+      }
+      config->SetIAState(ia_state);
+      config->SetRCState(rc_state);
+      config->SetDSState(ds_state);
+      config->SetOMState(om_state);
+      config->Initialize();
+      return config;
+    }
+
+    const std::shared_ptr<Pass>& D11Device::CreatePass(const std::string& name, std::pair<const Pass::Subpass*, uint32_t> subpasses,
+      std::pair<const Pass::RTAttachment*, uint32_t> rt_attachments, std::pair<const Pass::DSAttachment*, uint32_t> ds_attachments)
+    {
+      const auto& pass = passes.emplace_back(new D11Pass(name, *this));
+      pass->UpdateSubpasses(subpasses);
+      pass->UpdateRTAttachments(rt_attachments);
+      pass->UpdateDSAttachments(ds_attachments);
+      pass->Initialize();
+      return pass;
+    }
+
   D11Device::D11Device(const std::string& name) 
     : Device(name)
   {

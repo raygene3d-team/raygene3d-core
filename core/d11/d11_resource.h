@@ -66,7 +66,11 @@ namespace RayGene3D
     ID3D11Texture3D* GetTexture3D() const { return reinterpret_cast<ID3D11Texture3D*>(resource); }
 
   public:
-    std::shared_ptr<View> CreateView(const std::string& name) override { return views.emplace_back(new D11View(name, *this)); }
+    const std::shared_ptr<View>& CreateView(const std::string& name) override { return views.emplace_back(new D11View(name, *this)); }
+    const std::shared_ptr<View>& CreateView(const std::string& name,
+      Usage usage, View::Range bytes = {}) override;
+    const std::shared_ptr<View>& CreateView(const std::string& name,
+      Usage usage, View::Bind bind, View::Range layers = {}, View::Range mipmaps = {}) override;
 
   public:
     void Initialize() override;

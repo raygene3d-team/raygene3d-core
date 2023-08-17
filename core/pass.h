@@ -86,7 +86,7 @@ namespace RayGene3D
       std::vector<uint32_t> offsets;
     };
 
-  protected:
+  public:
     struct Subpass
     {
       std::shared_ptr<Config> config;
@@ -99,6 +99,23 @@ namespace RayGene3D
     };
 
     Type type{ TYPE_UNKNOWN };
+
+  public:
+    struct RTAttachment
+    {
+      std::shared_ptr<View> view;
+      RTValue value;
+    };
+
+  public:
+    struct DSAttachment
+    {
+      std::shared_ptr<View> view;
+      DSValue value;
+    };
+
+    std::vector<RTAttachment> rt_attachments;
+    std::vector<DSAttachment> ds_attachments;
 
     std::vector<std::shared_ptr<View>> rt_views;
     std::vector<std::shared_ptr<View>> ds_views;
@@ -120,19 +137,31 @@ namespace RayGene3D
     void SetEnabled(bool enabled) { this->enabled = enabled; }
     bool GetEnabled() const { return enabled; }
 
+  public:
+    void UpdateRTAttachments(std::pair<const RTAttachment*, uint32_t> attachments) {
+      this->rt_attachments.assign(attachments.first, attachments.first + attachments.second);
+    }
+    void UpdateDSAttachments(std::pair<const DSAttachment*, uint32_t> attachments) {
+      this->ds_attachments.assign(attachments.first, attachments.first + attachments.second);
+    }
+  public:
     void UpdateRTViews(std::pair<const std::shared_ptr<View>*, uint32_t> rt_views) { 
       this->rt_views.assign(rt_views.first, rt_views.first + rt_views.second);
     }
     void UpdateDSViews(std::pair<const std::shared_ptr<View>*, uint32_t> ds_views) {
-     this-> ds_views.assign(ds_views.first, ds_views.first + ds_views.second); 
+      this-> ds_views.assign(ds_views.first, ds_views.first + ds_views.second); 
     }
     void UpdateRTValues(std::pair<const RTValue*, uint32_t> rt_values) { 
-     this->rt_values.assign(rt_values.first, rt_values.first + rt_values.second);
+      this->rt_values.assign(rt_values.first, rt_values.first + rt_values.second);
     }
     void UpdateDSValues(std::pair<const DSValue*, uint32_t> ds_values) { 
       this->ds_values.assign(ds_values.first, ds_values.first + ds_values.second);
     }
 
+  public:
+    void UpdateSubpasses(std::pair<const Subpass*, uint32_t> subpasses) {
+      this->subpasses.assign(subpasses.first, subpasses.first + subpasses.second);
+    }
   public:
     void SetSubpassCount(uint32_t count) { subpasses.resize(count); }
     uint32_t GetSubpassCount() const { return uint32_t(subpasses.size()); }

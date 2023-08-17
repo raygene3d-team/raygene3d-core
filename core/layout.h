@@ -82,18 +82,7 @@ namespace RayGene3D
       float bias_lod{ 0.0f };
     };
 
-  protected:
-    std::vector<Sampler> samplers;
-
-  protected:
-    std::vector<std::shared_ptr<View>> ub_views; //uniform buffers
-    std::vector<std::shared_ptr<View>> sb_views; //shifted buffers
-
-    std::vector<std::shared_ptr<View>> ri_views; //read-only images
-    std::vector<std::shared_ptr<View>> wi_views; //read-write images
-    std::vector<std::shared_ptr<View>> rb_views; //read-only buffers
-    std::vector<std::shared_ptr<View>> wb_views; //read-write buffers
-
+  public:
     struct RTXEntity
     {
       float transform[12];
@@ -106,6 +95,21 @@ namespace RayGene3D
       uint32_t ia_offset;
       uint32_t ia_count;
     };
+
+  protected:
+    std::vector<Sampler> samplers;
+
+  protected:
+    std::vector<std::shared_ptr<View>> ub_views; //uniform buffers
+    std::vector<std::shared_ptr<View>> sb_views; //shifted buffers
+
+  protected:
+    std::vector<std::shared_ptr<View>> ri_views; //read-only images
+    std::vector<std::shared_ptr<View>> wi_views; //read-write images
+    std::vector<std::shared_ptr<View>> rb_views; //read-only buffers
+    std::vector<std::shared_ptr<View>> wb_views; //read-write buffers
+
+  protected:
     std::vector<RTXEntity> rtx_entities;
     
   public:
@@ -123,6 +127,10 @@ namespace RayGene3D
     void UpdateWIViews(std::pair<const std::shared_ptr<View>*, uint32_t> wi_views) { this->wi_views.assign(wi_views.first, wi_views.first + wi_views.second); }
     void UpdateRBViews(std::pair<const std::shared_ptr<View>*, uint32_t> rb_views) { this->rb_views.assign(rb_views.first, rb_views.first + rb_views.second); }
     void UpdateWBViews(std::pair<const std::shared_ptr<View>*, uint32_t> wb_views) { this->wb_views.assign(wb_views.first, wb_views.first + wb_views.second); }
+
+  public:
+    void UpdateRTXEntities(std::pair<const RTXEntity*, uint32_t> rtx_entities) { this->rtx_entities.assign(rtx_entities.first, rtx_entities.first + rtx_entities.second); }
+
 
   public:
     void SetRTXEntityCount(uint32_t count) 

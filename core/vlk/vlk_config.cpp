@@ -646,16 +646,17 @@ namespace RayGene3D
     auto desc_max = 0u;
     std::map<uint32_t, VkVertexInputBindingDescription> desc_map;
 
-    input_attributes.resize(attributes.size());
+    input_attributes.resize(ia_state.attributes.size());
     for (uint32_t i = 0; i < uint32_t(input_attributes.size()); ++i)
     {
       input_attributes[i].location = i;
-      input_attributes[i].binding = attributes[i].slot;
-      input_attributes[i].format = get_format(attributes[i].format);
-      input_attributes[i].offset = attributes[i].offset;
+      input_attributes[i].binding = ia_state.attributes[i].slot;
+      input_attributes[i].format = get_format(ia_state.attributes[i].format);
+      input_attributes[i].offset = ia_state.attributes[i].offset;
 
-      desc_map[attributes[i].slot] = { attributes[i].slot, attributes[i].stride, attributes[i].instance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX };
-      desc_max = std::max(desc_max, attributes[i].slot);
+      const auto& attribute = ia_state.attributes[i];
+      desc_map[attribute.slot] = { attribute.slot, attribute.stride, attribute.instance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX };
+      desc_max = std::max(desc_max, attribute.slot);
     }
 
     input_bindings.resize(desc_max + 1, VkVertexInputBindingDescription{ 0, 0, VK_VERTEX_INPUT_RATE_VERTEX });
@@ -671,45 +672,46 @@ namespace RayGene3D
     input_state.pVertexAttributeDescriptions = input_attributes.data();
 
     // input assembly
-    const auto get_topology = [this](Topology topology)
+    const auto get_topology = [](Topology topology)
     {
       switch (topology)
       {
-      default: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-      case TOPOLOGY_POINTLIST: return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-      case TOPOLOGY_LINELIST: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-      case TOPOLOGY_LINESTRIP: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-      case TOPOLOGY_TRIANGLELIST: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-      case TOPOLOGY_TRIANGLESTRIP: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-      case TOPOLOGY_LINELIST_ADJ: return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
-      case TOPOLOGY_LINESTRIP_ADJ: return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
-      case TOPOLOGY_TRIANGLELIST_ADJ: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
+      default:                          return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+      case TOPOLOGY_POINTLIST:          return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+      case TOPOLOGY_LINELIST:           return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+      case TOPOLOGY_LINESTRIP:          return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+      case TOPOLOGY_TRIANGLELIST:       return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+      case TOPOLOGY_TRIANGLESTRIP:      return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+      case TOPOLOGY_LINELIST_ADJ:       return VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY;
+      case TOPOLOGY_LINESTRIP_ADJ:      return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+      case TOPOLOGY_TRIANGLELIST_ADJ:   return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY;
       case TOPOLOGY_TRIANGLESTRIP_ADJ:  return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY;
       //case TOPOLOGY_PATCH_LIST: return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
       }
     };
 
     assembly_state.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    assembly_state.topology = get_topology(topology);
+    assembly_state.topology = get_topology(ia_state.topology);
     assembly_state.primitiveRestartEnable = VK_FALSE;
 
     // viewport state
-    raster_viewports.resize(viewports.size());
+    raster_viewports.resize(rc_state.viewports.size());
     for (uint32_t i = 0; i < uint32_t(raster_viewports.size()); ++i)
     {
-      raster_viewports[i].x = viewports[i].origin_x;
-      raster_viewports[i].y = viewports[i].origin_y;
-      raster_viewports[i].width = viewports[i].extent_x;
-      raster_viewports[i].height = viewports[i].extent_y;
-      raster_viewports[i].minDepth = viewports[i].min_z;
-      raster_viewports[i].maxDepth = viewports[i].max_z;
+      const auto& viewport = rc_state.viewports[i];
+      raster_viewports[i].x = viewport.origin_x;
+      raster_viewports[i].y = viewport.origin_y;
+      raster_viewports[i].width = viewport.extent_x;
+      raster_viewports[i].height = viewport.extent_y;
+      raster_viewports[i].minDepth = viewport.min_z;
+      raster_viewports[i].maxDepth = viewport.max_z;
     }
 
     raster_scissors.resize(1);
-    for (uint32_t i = 0; i < uint32_t(viewports.size()); ++i)
+    for (uint32_t i = 0; i < uint32_t(rc_state.viewports.size()); ++i)
     {
-      raster_scissors[i].offset = { (int32_t)viewports[i].origin_x, (int32_t)viewports[i].origin_y };
-      raster_scissors[i].extent = { (uint32_t)viewports[i].extent_x, (uint32_t)viewports[i].extent_y };
+      raster_scissors[i].offset = { (int32_t)rc_state.viewports[i].origin_x, (int32_t)rc_state.viewports[i].origin_y };
+      raster_scissors[i].extent = { (uint32_t)rc_state.viewports[i].extent_x, (uint32_t)rc_state.viewports[i].extent_y };
     }
 
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -719,7 +721,7 @@ namespace RayGene3D
     viewport_state.pScissors = raster_scissors.data();
 
     // rasterization state
-    const auto get_fill = [this](Fill fill)
+    const auto get_fill = [](Fill fill)
     {
       switch (fill)
       {
@@ -730,23 +732,23 @@ namespace RayGene3D
       }
     };
 
-    const auto get_cull_mode = [](Cull cull_mode)
+    const auto get_cull = [](Cull cull)
     {
-      switch (cull_mode)
+      switch (cull)
       {
-      default: return VK_CULL_MODE_NONE;
-      case CULL_NONE: return VK_CULL_MODE_NONE;
-      case CULL_FRONT: return VK_CULL_MODE_FRONT_BIT;
-      case CULL_BACK: return VK_CULL_MODE_BACK_BIT;
+      default:          return VK_CULL_MODE_NONE;
+      case CULL_NONE:   return VK_CULL_MODE_NONE;
+      case CULL_FRONT:  return VK_CULL_MODE_FRONT_BIT;
+      case CULL_BACK:   return VK_CULL_MODE_BACK_BIT;
       }
     };
 
     rasterization_state.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterization_state.depthClampEnable = VK_FALSE;
     rasterization_state.rasterizerDiscardEnable = VK_FALSE;
-    rasterization_state.polygonMode = get_fill(fill_mode);
-    rasterization_state.lineWidth = line_width;
-    rasterization_state.cullMode = get_cull_mode(cull_mode);
+    rasterization_state.polygonMode = get_fill(rc_state.fill_mode);
+    rasterization_state.lineWidth = rc_state.line_width;
+    rasterization_state.cullMode = get_cull(rc_state.cull_mode);
     rasterization_state.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rasterization_state.depthBiasEnable = VK_FALSE;
     rasterization_state.depthBiasConstantFactor = 0.0f;
@@ -759,7 +761,7 @@ namespace RayGene3D
     multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisample_state.minSampleShading = 1.0f;
     multisample_state.pSampleMask = nullptr;
-    multisample_state.alphaToCoverageEnable = atc_enabled ? VK_TRUE : VK_FALSE;
+    multisample_state.alphaToCoverageEnable = om_state.atc_enabled ? VK_TRUE : VK_FALSE;
     multisample_state.alphaToOneEnable = VK_FALSE;
 
     // color blend
@@ -796,17 +798,17 @@ namespace RayGene3D
     };
 
 
-    colorblend_attachments.resize(target_blends.size());
-    for (size_t i = 0; i < target_blends.size(); ++i)
+    colorblend_attachments.resize(om_state.target_blends.size());
+    for (size_t i = 0; i < om_state.target_blends.size(); ++i)
     {
       colorblend_attachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-      colorblend_attachments[i].blendEnable = target_blends[i].blend_enabled ? VK_TRUE : VK_FALSE;
-      colorblend_attachments[i].srcColorBlendFactor = get_argument(target_blends[i].src_color);
-      colorblend_attachments[i].dstColorBlendFactor = get_argument(target_blends[i].dst_color);
-      colorblend_attachments[i].colorBlendOp = get_operation(target_blends[i].blend_color);
-      colorblend_attachments[i].srcAlphaBlendFactor = get_argument(target_blends[i].src_alpha);
-      colorblend_attachments[i].dstAlphaBlendFactor = get_argument(target_blends[i].dst_alpha);
-      colorblend_attachments[i].alphaBlendOp = get_operation(target_blends[i].blend_alpha);
+      colorblend_attachments[i].blendEnable = om_state.target_blends[i].blend_enabled ? VK_TRUE : VK_FALSE;
+      colorblend_attachments[i].srcColorBlendFactor = get_argument(om_state.target_blends[i].src_color);
+      colorblend_attachments[i].dstColorBlendFactor = get_argument(om_state.target_blends[i].dst_color);
+      colorblend_attachments[i].colorBlendOp = get_operation(om_state.target_blends[i].blend_color);
+      colorblend_attachments[i].srcAlphaBlendFactor = get_argument(om_state.target_blends[i].src_alpha);
+      colorblend_attachments[i].dstAlphaBlendFactor = get_argument(om_state.target_blends[i].dst_alpha);
+      colorblend_attachments[i].alphaBlendOp = get_operation(om_state.target_blends[i].blend_alpha);
     }
 
     colorblend_state.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -840,7 +842,7 @@ namespace RayGene3D
     {
       switch (action)
       {
-      default: return VK_STENCIL_OP_KEEP;
+      default:                return VK_STENCIL_OP_KEEP;
       case ACTION_UNKNOWN:    return VK_STENCIL_OP_KEEP;
       case ACTION_KEEP:       return VK_STENCIL_OP_KEEP;
       case ACTION_ZERO:       return VK_STENCIL_OP_ZERO;
@@ -905,36 +907,36 @@ namespace RayGene3D
     };
 
     VkStencilOpState front_op_state;
-    front_op_state.failOp = get_action(fface_stencil.stencil_fail);
-    front_op_state.passOp = get_action(fface_stencil.stencil_pass);
-    front_op_state.depthFailOp = get_action(fface_stencil.depth_fail);
-    front_op_state.compareOp = get_comparison(fface_stencil.comparison);
-    front_op_state.compareMask = stencil_rmask;
-    front_op_state.writeMask = stencil_wmask;
-    front_op_state.reference = stencil_reference;
+    front_op_state.failOp = get_action(ds_state.stencil_fface_mode.stencil_fail);
+    front_op_state.passOp = get_action(ds_state.stencil_fface_mode.stencil_pass);
+    front_op_state.depthFailOp = get_action(ds_state.stencil_fface_mode.depth_fail);
+    front_op_state.compareOp = get_comparison(ds_state.stencil_fface_mode.comparison);
+    front_op_state.compareMask = ds_state.stencil_rmask;
+    front_op_state.writeMask = ds_state.stencil_wmask;
+    front_op_state.reference = ds_state.stencil_reference;
 
     VkStencilOpState back_op_state;
-    back_op_state.failOp = get_action(bface_stencil.stencil_fail);
-    back_op_state.passOp = get_action(bface_stencil.stencil_pass);
-    back_op_state.depthFailOp = get_action(bface_stencil.depth_fail);
-    back_op_state.compareOp = get_comparison(bface_stencil.comparison);
-    back_op_state.compareMask = stencil_rmask;
-    back_op_state.writeMask = stencil_wmask;
-    back_op_state.reference = stencil_reference;
+    back_op_state.failOp = get_action(ds_state.stencil_bface_mode.stencil_fail);
+    back_op_state.passOp = get_action(ds_state.stencil_bface_mode.stencil_pass);
+    back_op_state.depthFailOp = get_action(ds_state.stencil_bface_mode.depth_fail);
+    back_op_state.compareOp = get_comparison(ds_state.stencil_bface_mode.comparison);
+    back_op_state.compareMask = ds_state.stencil_rmask;
+    back_op_state.writeMask = ds_state.stencil_wmask;
+    back_op_state.reference = ds_state.stencil_reference;
 
     depthstencil_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depthstencil_state.depthTestEnable = depth_enabled ? VK_TRUE : VK_FALSE;
-    depthstencil_state.depthWriteEnable = depth_write ? VK_TRUE : VK_FALSE;
-    depthstencil_state.depthCompareOp = get_comparison(depth_comparison);
+    depthstencil_state.depthTestEnable = ds_state.depth_enabled ? VK_TRUE : VK_FALSE;
+    depthstencil_state.depthWriteEnable = ds_state.depth_write ? VK_TRUE : VK_FALSE;
+    depthstencil_state.depthCompareOp = get_comparison(ds_state.depth_comparison);
     depthstencil_state.depthBoundsTestEnable = VK_FALSE;
-    depthstencil_state.stencilTestEnable = stencil_enabled ? VK_TRUE : VK_FALSE;
+    depthstencil_state.stencilTestEnable = ds_state.stencil_enabled ? VK_TRUE : VK_FALSE;
     depthstencil_state.front = front_op_state;
     depthstencil_state.back = back_op_state;
     depthstencil_state.minDepthBounds = 0.0f;
     depthstencil_state.maxDepthBounds = 0.0f;
 
     tessellation_state.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
-    tessellation_state.patchControlPoints = get_control_points(topology);
+    tessellation_state.patchControlPoints = get_control_points(ia_state.topology);
     }
 
   }

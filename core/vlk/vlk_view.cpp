@@ -50,10 +50,10 @@ namespace RayGene3D
 
       if (resource->GetType() == Resource::TYPE_IMAGE2D)
       {
-        if (bind == BIND_SHADER_RESOURCE)
+        if (usage == USAGE_SHADER_RESOURCE)
         {
-          if(usage == USAGE_CUBEMAP_LAYER) return VK_IMAGE_VIEW_TYPE_CUBE;
-          if(usage == USAGE_CUBEMAP_ARRAY) return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+          if(bind == BIND_CUBEMAP_LAYER) return VK_IMAGE_VIEW_TYPE_CUBE;
+          if(bind == BIND_CUBEMAP_ARRAY) return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
         }
         return resource->GetHint() & Resource::HINT_LAYERED_IMAGE ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
       }
@@ -152,12 +152,12 @@ namespace RayGene3D
       const auto* resource = reinterpret_cast<VLKResource*>(&this->GetResource());
       const auto format = resource->GetFormat();
 
-      switch (bind)
+      switch (usage)
       {
-      case BIND_UNORDERED_ACCESS: return format == FORMAT_D32_FLOAT || format == FORMAT_D16_UNORM ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-      case BIND_SHADER_RESOURCE: return format == FORMAT_D32_FLOAT || format == FORMAT_D16_UNORM ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-      case BIND_RENDER_TARGET: return VK_IMAGE_ASPECT_COLOR_BIT;
-      case BIND_DEPTH_STENCIL: return VK_IMAGE_ASPECT_DEPTH_BIT;
+      case USAGE_UNORDERED_ACCESS: return format == FORMAT_D32_FLOAT || format == FORMAT_D16_UNORM ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+      case USAGE_SHADER_RESOURCE: return format == FORMAT_D32_FLOAT || format == FORMAT_D16_UNORM ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+      case USAGE_RENDER_TARGET: return VK_IMAGE_ASPECT_COLOR_BIT;
+      case USAGE_DEPTH_STENCIL: return VK_IMAGE_ASPECT_DEPTH_BIT;
       }
       return VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
     };
@@ -173,10 +173,10 @@ namespace RayGene3D
       create_info.viewType = get_type();
       create_info.format = get_format();
       create_info.subresourceRange.aspectMask = get_aspect();
-      create_info.subresourceRange.baseMipLevel = mipmap_offset;
-      create_info.subresourceRange.levelCount = mipmap_count == -1 ? resource->GetMipmaps() : mipmap_count;
-      create_info.subresourceRange.baseArrayLayer = layer_offset;
-      create_info.subresourceRange.layerCount = layer_count == -1 ? resource->GetLayers() : layer_count;
+      create_info.subresourceRange.baseMipLevel = mipmap_range.offset;
+      create_info.subresourceRange.levelCount = mipmap_range.count == -1 ? resource->GetMipmaps() : mipmap_range.count;
+      create_info.subresourceRange.baseArrayLayer = layer_range.offset;
+      create_info.subresourceRange.layerCount = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
 
       //if (create_info.format == VK_FORMAT_D32_SFLOAT && bind != BIND_DEPTH_STENCIL)
       //{

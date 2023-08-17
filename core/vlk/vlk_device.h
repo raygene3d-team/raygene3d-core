@@ -89,11 +89,31 @@ namespace RayGene3D
 
 
   public:
-    std::shared_ptr<Resource> CreateResource(const std::string& name) override { return resources.emplace_back(new VLKResource(name, *this)); }
-    //std::shared_ptr<Resource> ShareResource(const std::string& name) override { for (auto& resource : resources) if (resource->GetName() == name) return resource; return nullptr; }
-    std::shared_ptr<Layout> CreateLayout(const std::string& name) override { return layouts.emplace_back(new VLKLayout(name, *this)); }
-    std::shared_ptr<Config> CreateConfig(const std::string& name) override { return configs.emplace_back(new VLKConfig(name, *this)); }
-    std::shared_ptr<Pass> CreatePass(const std::string& name) override { return passes.emplace_back(new VLKPass(name, *this)); }
+    const std::shared_ptr<Resource>& CreateResource(const std::string& name) override { return resources.emplace_back(new VLKResource(name, *this)); }
+    const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::BufferDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+    const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex1DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+    const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex2DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+    const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex3DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+
+    const std::shared_ptr<Layout>& CreateLayout(const std::string& name) override { return layouts.emplace_back(new VLKLayout(name, *this)); }
+    const std::shared_ptr<Layout>& CreateLayout(const std::string& name,
+      std::pair<const std::shared_ptr<View>*, uint32_t> ub_views, std::pair<const std::shared_ptr<View>*, uint32_t> sb_views,
+      std::pair<const std::shared_ptr<View>*, uint32_t> ri_views, std::pair<const std::shared_ptr<View>*, uint32_t> wi_views,
+      std::pair<const std::shared_ptr<View>*, uint32_t> rb_views, std::pair<const std::shared_ptr<View>*, uint32_t> wb_views,
+      std::pair<const Layout::Sampler*, uint32_t> samplers, std::pair<const Layout::RTXEntity*, uint32_t> rtx_entities) override;
+
+    const std::shared_ptr<Config>& CreateConfig(const std::string& name) override { return configs.emplace_back(new VLKConfig(name, *this)); }
+    const std::shared_ptr<Config>& CreateConfig(const std::string& name,
+      const std::string& source, Config::Compilation compilation, std::pair<const std::pair<const std::string&, const std::string&>*, uint32_t> defines,
+      const Config::IAState& ia_state, const Config::RCState& rc_state, const Config::DSState& ds_state, const Config::OMState& om_state) override;
+
+    const std::shared_ptr<Pass>& CreatePass(const std::string& name) override { return passes.emplace_back(new VLKPass(name, *this)); }
+    const std::shared_ptr<Pass>& CreatePass(const std::string& name, std::pair<const Pass::Subpass*, uint32_t> subpasses,
+      std::pair<const Pass::RTAttachment*, uint32_t> rt_attachments, std::pair<const Pass::DSAttachment*, uint32_t> ds_attachments) override;
 
   public:
     const VkPhysicalDeviceProperties& GetProperties() const { return properties; }

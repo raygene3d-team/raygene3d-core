@@ -67,9 +67,9 @@ namespace RayGene3D
       misc = hint & HINT_CUBEMAP_IMAGE ? misc | D3D11_RESOURCE_MISC_TEXTURECUBE : misc;
       for (const auto& view : views)
       {
-        misc = (this->type == TYPE_BUFFER && view->GetBind() == View::BIND_SHADER_RESOURCE) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
-        misc = (this->type == TYPE_BUFFER && view->GetBind() == View::BIND_UNORDERED_ACCESS) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
-        misc = (this->type == TYPE_BUFFER && view->GetBind() == View::BIND_COMMAND_INDIRECT) ? misc | D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS : misc;
+        misc = (type == TYPE_BUFFER && (usage & USAGE_SHADER_RESOURCE)) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
+        misc = (type == TYPE_BUFFER && (usage & USAGE_UNORDERED_ACCESS)) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
+        misc = (type == TYPE_BUFFER && (usage & USAGE_COMMAND_INDIRECT)) ? misc | D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS : misc;
       }
       return misc;
     };
@@ -79,14 +79,14 @@ namespace RayGene3D
       uint32_t bind = 0;
       for (const auto& view : views)
       {
-        bind = view->GetBind() & View::BIND_SHADER_RESOURCE ? bind | D3D11_BIND_SHADER_RESOURCE : bind;
-        bind = view->GetBind() & View::BIND_RENDER_TARGET ? bind | D3D11_BIND_RENDER_TARGET : bind;
-        bind = view->GetBind() & View::BIND_DEPTH_STENCIL ? bind | D3D11_BIND_DEPTH_STENCIL : bind;
-        bind = view->GetBind() & View::BIND_UNORDERED_ACCESS ? bind | D3D11_BIND_UNORDERED_ACCESS : bind;
-        bind = view->GetBind() & View::BIND_VERTEX_ARRAY ? bind | D3D11_BIND_VERTEX_BUFFER : bind;
-        bind = view->GetBind() & View::BIND_INDEX_ARRAY ? bind | D3D11_BIND_INDEX_BUFFER : bind;
-        bind = view->GetBind() & View::BIND_CONSTANT_DATA ? bind | D3D11_BIND_CONSTANT_BUFFER : bind;
-        bind = view->GetBind() & View::BIND_COMMAND_INDIRECT ? bind | D3D11_BIND_VIDEO_ENCODER : bind; // Hack to create command buffer
+        bind = usage & USAGE_SHADER_RESOURCE ? bind | D3D11_BIND_SHADER_RESOURCE : bind;
+        bind = usage & USAGE_RENDER_TARGET ? bind | D3D11_BIND_RENDER_TARGET : bind;
+        bind = usage & USAGE_DEPTH_STENCIL ? bind | D3D11_BIND_DEPTH_STENCIL : bind;
+        bind = usage & USAGE_UNORDERED_ACCESS ? bind | D3D11_BIND_UNORDERED_ACCESS : bind;
+        bind = usage & USAGE_VERTEX_ARRAY ? bind | D3D11_BIND_VERTEX_BUFFER : bind;
+        bind = usage & USAGE_INDEX_ARRAY ? bind | D3D11_BIND_INDEX_BUFFER : bind;
+        bind = usage & USAGE_CONSTANT_DATA ? bind | D3D11_BIND_CONSTANT_BUFFER : bind;
+        bind = usage & USAGE_COMMAND_INDIRECT ? bind | D3D11_BIND_VIDEO_ENCODER : bind; // Hack to create command buffer
       }
       return bind;
     };
@@ -489,6 +489,27 @@ namespace RayGene3D
     }
 
     device->GetContext()->Unmap(this->resource, 0);
+  }
+
+  const std::shared_ptr<View>& D11Resource::CreateView(const std::string& name,
+    Usage usage, View::Range bytes)
+  {
+    const auto& view = views.emplace_back(new D11View(name, *this));
+    view->SetUsage(usage);
+    view->SetByteRange(bytes);
+    view->Initialize();
+    return view;
+  }
+  const std::shared_ptr<View>& D11Resource::CreateView(const std::string& name,
+    Usage usage, View::Bind bind, View::Range layers, View::Range mipmaps)
+  {
+    const auto& view = views.emplace_back(new D11View(name, *this));
+    view->SetUsage(usage);
+    view->SetBind(bind);
+    view->SetLayerRange(layers);
+    view->SetMipmapRange(mipmaps);
+    view->Initialize();
+    return view;
   }
 
 

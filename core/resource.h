@@ -64,12 +64,59 @@ namespace RayGene3D
   protected:
     std::vector<std::pair<const void*, uint32_t>> interops;
 
+  public:
+    struct BufferDesc
+    {
+      uint32_t stride{ 0 };
+      uint32_t count{ 0 };
+      Usage usage{ USAGE_UNKNOWN };
+    };
+
+    struct Tex1DDesc
+    {
+      Format format{ FORMAT_UNKNOWN };
+      uint32_t extent_x{ 1 };
+      uint32_t layers{ 1 };
+      uint32_t mipmaps{ 1 };
+      Usage usage{ USAGE_UNKNOWN };
+    };
+
+    struct Tex2DDesc
+    {
+      Format format{ FORMAT_UNKNOWN };
+      uint32_t extent_x{ 1 };
+      uint32_t extent_y{ 1 };
+      uint32_t layers{ 1 };
+      uint32_t mipmaps{ 1 };
+      Usage usage{ USAGE_UNKNOWN };
+    };
+
+    struct Tex3DDesc
+    {
+      Format format{ FORMAT_UNKNOWN };
+      uint32_t extent_x{ 1 };
+      uint32_t extent_y{ 1 };
+      uint32_t extent_z{ 1 };
+      uint32_t mipmaps{ 1 };
+      Usage usage{ USAGE_UNKNOWN };
+    };
+
+    union Desc
+    {
+      BufferDesc buffer_desc;
+      Tex1DDesc tex1d_desc;
+      Tex2DDesc tex2d_desc;
+      Tex3DDesc tex3d_desc;
+    };
+    
+  protected:
+    Desc desc{ 0 };
+
   protected:
     uint32_t stride{ 0 };
     uint32_t count{ 0 };
 
   protected:
-    Format format{ FORMAT_UNKNOWN };
     uint32_t extent_x{ 1 };
     uint32_t extent_y{ 1 };
     uint32_t extent_z{ 1 };
@@ -80,8 +127,26 @@ namespace RayGene3D
     Type type{ TYPE_UNKNOWN };
     Hint hint{ HINT_UNKNOWN };
 
+  protected:
+    Format format{ FORMAT_UNKNOWN };
+    Usage usage{ USAGE_UNKNOWN };
+
   public:
     Device& GetDevice() { return device; }
+
+  public:
+    void SetBufferDesc(const BufferDesc desc) { this->desc.buffer_desc = desc; }
+    const BufferDesc& GetBufferDesc() const { return desc.buffer_desc; }
+    void SetTex1DDesc(const Tex1DDesc desc) { this->desc.tex1d_desc = desc; }
+    const Tex1DDesc& GetTex1DDesc() const { return desc.tex1d_desc; }
+    void SetTex2DDesc(const Tex2DDesc desc) { this->desc.tex2d_desc = desc; }
+    const Tex2DDesc& GetTex2DDesc() const { return desc.tex2d_desc; }
+    void SetTex3DDesc(const Tex3DDesc desc) { this->desc.tex3d_desc = desc; }
+    const Tex3DDesc& GetTex3DDesc() const { return desc.tex3d_desc; }
+
+  public:
+    void SetFormat(Format format) { this->format = format; }
+    Format GetFormat() const { return format; }
 
   public:
     void SetStride(uint32_t stride) { this->stride = stride; }
@@ -104,10 +169,12 @@ namespace RayGene3D
   public:
     void SetType(Type type) { this->type = type; }
     Type GetType() const { return type; }
-    void SetFormat(Format format) { this->format = format; }
-    Format GetFormat() const { return format; }
     void SetHint(Hint hint) { this->hint = hint; }
     Hint GetHint() const { return hint; }
+
+  public:
+    void SetUsage(Usage usage) { this->usage = usage; }
+    Usage GetUsage() const { return usage; }
 
   public:
     virtual void Commit(uint32_t index) = 0;
@@ -127,8 +194,13 @@ namespace RayGene3D
   //  std::list<std::shared_ptr<View>>& AccessViews() { return views; }
 
   public:
-    virtual std::shared_ptr<View> CreateView(const std::string& name) = 0;
-    //virtual void DestroyView(std::shared_ptr<View> resource) = 0;
+    virtual const std::shared_ptr<View>& CreateView(const std::string& name) = 0;
+    virtual const std::shared_ptr<View>& CreateView(const std::string& name,
+      Usage usage, View::Range bytes = {}) = 0;
+    virtual const std::shared_ptr<View>& CreateView(const std::string& name,
+      Usage usage, View::Bind bind, View::Range layers = {}, View::Range mipmaps = {}) = 0;
+    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view); }
+    void DestroyView(const std::shared_ptr<View>& view) { views.remove(view); };
 
   public:
     void SetInteropCount(uint32_t count) { interops.resize(count); }

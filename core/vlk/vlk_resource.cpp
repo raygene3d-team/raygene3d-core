@@ -49,17 +49,17 @@ namespace RayGene3D
     {
       const auto get_bind = [this]()
       {
-        uint32_t usage = 0;
+        uint32_t bind = 0;
         for (const auto& view : views)
         {
-          usage = view->GetBind() == View::BIND_SHADER_RESOURCE ? usage | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : usage;
-          usage = view->GetBind() == View::BIND_UNORDERED_ACCESS ? usage | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : usage;
-          usage = view->GetBind() == View::BIND_VERTEX_ARRAY ? usage | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) : usage;
-          usage = view->GetBind() == View::BIND_INDEX_ARRAY ? usage | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) : usage;
-          usage = view->GetBind() == View::BIND_CONSTANT_DATA ? usage | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) : usage;
-          usage = view->GetBind() == View::BIND_COMMAND_INDIRECT ? usage | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) : usage;
+          bind = usage & USAGE_SHADER_RESOURCE ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
+          bind = usage & USAGE_UNORDERED_ACCESS ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
+          bind = usage & USAGE_VERTEX_ARRAY ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) : bind;
+          bind = usage & USAGE_INDEX_ARRAY ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) : bind;
+          bind = usage & USAGE_CONSTANT_DATA ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) : bind;
+          bind = usage & USAGE_COMMAND_INDIRECT ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) : bind;
         }
-        return usage;
+        return bind;
       };
 
       auto create_info = VkBufferCreateInfo{};
@@ -240,17 +240,17 @@ namespace RayGene3D
     case TYPE_IMAGE2D:
     case TYPE_IMAGE3D:
     {
-      const auto get_usage = [this]()
+      const auto get_bind = [this]()
       {
-        uint32_t usage = 0;
+        uint32_t bind = 0;
         for (const auto& view : views)
         {
-          usage = view->GetBind() == View::BIND_SHADER_RESOURCE ? usage | (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT) : usage;
-          usage = view->GetBind() == View::BIND_UNORDERED_ACCESS ? usage | (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT) : usage;
-          usage = view->GetBind() == View::BIND_RENDER_TARGET ? usage | (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) : usage;
-          usage = view->GetBind() == View::BIND_DEPTH_STENCIL ? usage | (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) : usage;
+          bind = usage & USAGE_SHADER_RESOURCE ? bind | (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT) : bind;
+          bind = usage & USAGE_UNORDERED_ACCESS ? bind | (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_STORAGE_BIT) : bind;
+          bind = usage & USAGE_RENDER_TARGET ? bind | (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) : bind;
+          bind = usage & USAGE_DEPTH_STENCIL ? bind | (VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) : bind;
         }
-        return usage;
+        return bind;
       };
 
       const auto get_flags = [this]()
@@ -356,7 +356,7 @@ namespace RayGene3D
       create_info.arrayLayers = layers;
       create_info.samples = VK_SAMPLE_COUNT_1_BIT;
       create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-      create_info.usage = get_usage();
+      create_info.usage = get_bind();
       create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
       create_info.queueFamilyIndexCount = 0;
       create_info.pQueueFamilyIndices = nullptr;
@@ -600,6 +600,26 @@ namespace RayGene3D
   {
   }
 
+  const std::shared_ptr<View>& VLKResource::CreateView(const std::string& name,
+    Usage usage, View::Range bytes)
+  {
+    const auto& view = views.emplace_back(new VLKView(name, *this));
+    view->SetUsage(usage);
+    view->SetByteRange(bytes);
+    view->Initialize();
+    return view;
+  }
+  const std::shared_ptr<View>& VLKResource::CreateView(const std::string& name,
+    Usage usage, View::Bind bind, View::Range layers, View::Range mipmaps)
+  {
+    const auto& view = views.emplace_back(new VLKView(name, *this));
+    view->SetUsage(usage);
+    view->SetBind(bind);
+    view->SetLayerRange(layers);
+    view->SetMipmapRange(mipmaps);
+    view->Initialize();
+    return view;
+  }
 
   VLKResource::VLKResource(const std::string& name, Device& device) 
     : Resource(name, device)

@@ -130,7 +130,6 @@ namespace RayGene3D
       INDEXER_32_BIT = 3,
     };
 
-  public:
     struct Attribute
     {
       uint32_t slot{ 0 };
@@ -140,12 +139,16 @@ namespace RayGene3D
       bool instance{ true };
     };
 
+    struct IAState
+    {
+      Topology topology{ TOPOLOGY_UNKNOWN };
+      Indexer indexer{ INDEXER_UNKNOWN };
+      std::vector<Attribute> attributes;
+    };
+
   protected:
-    Topology topology{ TOPOLOGY_UNKNOWN };
-    //uint32_t points { 1 };
-    Indexer indexer{ INDEXER_UNKNOWN };
-    std::vector<Attribute> attributes;
-    //std::vector<uint32_t> strides;
+    IAState ia_state;
+
 
   public:
     enum Fill
@@ -164,16 +167,41 @@ namespace RayGene3D
       CULL_BACK = 3,
     };
 
+    struct Viewport
+    {
+      float origin_x;
+      float origin_y;
+      float extent_x;
+      float extent_y;
+      float min_z;
+      float max_z;
+    };
+
+    struct Scissor
+    {
+      int32_t origin_x;
+      int32_t origin_y;
+      uint32_t extent_x;
+      uint32_t extent_y;
+    };
+
+    struct RCState
+    {
+      Fill fill_mode{ FILL_SOLID };
+      Cull cull_mode{ CULL_BACK };
+      int32_t depth_bias{ 0 };
+      float bias_clamp{ 0.0f };
+      float bias_slope{ 0.0f };
+      bool clip_enabled{ true };
+      bool scissor_enabled{ false };
+      bool multisample_enabled{ false };
+      float line_width{ 1.0f };
+      std::vector<Viewport> viewports;
+      std::vector<Scissor> scissors;
+    };
+
   protected:
-    Fill fill_mode{ FILL_SOLID };
-    Cull cull_mode{ CULL_BACK };
-    int32_t depth_bias{ 0 };
-    float bias_clamp{ 0.0f };
-    float bias_slope{ 0.0f };
-    bool clip_enabled{ true };
-    bool scissor_enabled{ false };
-    bool multisample_enabled{ false };
-    float line_width{ 1.0f };
+    RCState rc_state;
 
   public:
     enum Comparison
@@ -202,7 +230,7 @@ namespace RayGene3D
       ACTION_DECR = 8
     };
 
-    struct Stencil
+    struct Mode
     {
       Comparison comparison{ COMPARISON_ALWAYS };
       Action depth_fail{ ACTION_KEEP };
@@ -210,18 +238,24 @@ namespace RayGene3D
       Action stencil_pass{ ACTION_KEEP };
     };
 
+  public:
+    struct DSState
+    {
+      bool depth_enabled{ true };
+      bool depth_write{ true };
+      Comparison depth_comparison{ COMPARISON_LESS };
+
+      bool stencil_enabled{ false };
+      uint8_t stencil_rmask{ 0xFF };
+      uint8_t stencil_wmask{ 0xFF };
+      uint32_t stencil_reference{ 0 };
+      Mode stencil_fface_mode;
+      Mode stencil_bface_mode;
+    };
+
   protected:
-    bool depth_enabled{ true };
-    bool depth_write{ true };
-    Comparison depth_comparison{ COMPARISON_LESS };
-
-    bool stencil_enabled{ false };
-    uint8_t stencil_rmask{ 0xFF };
-    uint8_t stencil_wmask{ 0xFF };
-    Stencil fface_stencil;
-    Stencil bface_stencil;
-    uint32_t stencil_reference{ 0 };
-
+    DSState ds_state;
+    
   public:
     enum Argument
     {
@@ -263,61 +297,44 @@ namespace RayGene3D
       uint8_t write_mask{ 0xF };
     };
 
-  protected:
-    bool atc_enabled{ false };
-    std::vector<Blend> target_blends;
-    float blend_factor[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
-    uint32_t sample_mask{ 0xFFFFFFFF };
-
-
   public:
-    struct Viewport
+    struct OMState
     {
-      float origin_x;
-      float origin_y;
-      float extent_x;
-      float extent_y;
-      float min_z;
-      float max_z;
+      bool atc_enabled{ false };
+      float blend_factor[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
+      uint32_t sample_mask{ 0xFFFFFFFF };
+      bool separated_blend{ false };
+      std::vector<Blend> target_blends;
     };
 
-    struct Scissor
-    {
-      int32_t origin_x;
-      int32_t origin_y;
-      uint32_t extent_x;
-      uint32_t extent_y;
-    };
-
-  protected:
-    std::vector<Viewport> viewports;
-    std::vector<Scissor> scissors;
+    protected:
+      OMState om_state;
 
   public:
     Device& GetDevice() { return device; }
 
-  public:
-    void SetVSBytecode(const std::vector<char>& source) { vs_bytecode = source; }
-    const std::vector<char>& GetVSBytecode() const { return vs_bytecode; }
-    void SetHSBytecode(const std::vector<char>& source) { hs_bytecode = source; }
-    const std::vector<char>& GetHSBytecode() const { return hs_bytecode; }
-    void SetDSBytecode(const std::vector<char>& source) { ds_bytecode = source; }
-    const std::vector<char>& GetDSBytecode() const { return ds_bytecode; }
-    void SetGSBytecode(const std::vector<char>& source) { gs_bytecode = source; }
-    const std::vector<char>& GetGSBytecode() const { return gs_bytecode; }
-    void SetPSBytecode(const std::vector<char>& source) { ps_bytecode = source; }
-    const std::vector<char>& GetPSBytecode() const { return ps_bytecode; }
-    void SetCSBytecode(const std::vector<char>& source) { cs_bytecode = source; }
-    const std::vector<char>& GetCSBytecode() const { return cs_bytecode; }
-
-    void SetRGenBytecode(const std::vector<char>& source) { rgen_bytecode = source; }
-    const std::vector<char>& GetRGenBytecode() const { return rgen_bytecode; }
-    void SetCHitBytecode(const std::vector<char>& source) { chit_bytecode = source; }
-    const std::vector<char>& GetCHitBytecode() const { return chit_bytecode; }
-    void SetAHitBytecode(const std::vector<char>& source) { ahit_bytecode = source; }
-    const std::vector<char>& GetAHitBytecode() const { return ahit_bytecode; }
-    void SetMissBytecode(const std::vector<char>& source) { miss_bytecode = source; }
-    const std::vector<char>& GetMissBytecode() const { return miss_bytecode; }
+  //public:
+  //  void SetVSBytecode(const std::vector<char>& source) { vs_bytecode = source; }
+  //  const std::vector<char>& GetVSBytecode() const { return vs_bytecode; }
+  //  void SetHSBytecode(const std::vector<char>& source) { hs_bytecode = source; }
+  //  const std::vector<char>& GetHSBytecode() const { return hs_bytecode; }
+  //  void SetDSBytecode(const std::vector<char>& source) { ds_bytecode = source; }
+  //  const std::vector<char>& GetDSBytecode() const { return ds_bytecode; }
+  //  void SetGSBytecode(const std::vector<char>& source) { gs_bytecode = source; }
+  //  const std::vector<char>& GetGSBytecode() const { return gs_bytecode; }
+  //  void SetPSBytecode(const std::vector<char>& source) { ps_bytecode = source; }
+  //  const std::vector<char>& GetPSBytecode() const { return ps_bytecode; }
+  //  void SetCSBytecode(const std::vector<char>& source) { cs_bytecode = source; }
+  //  const std::vector<char>& GetCSBytecode() const { return cs_bytecode; }
+  //
+  //  void SetRGenBytecode(const std::vector<char>& source) { rgen_bytecode = source; }
+  //  const std::vector<char>& GetRGenBytecode() const { return rgen_bytecode; }
+  //  void SetCHitBytecode(const std::vector<char>& source) { chit_bytecode = source; }
+  //  const std::vector<char>& GetCHitBytecode() const { return chit_bytecode; }
+  //  void SetAHitBytecode(const std::vector<char>& source) { ahit_bytecode = source; }
+  //  const std::vector<char>& GetAHitBytecode() const { return ahit_bytecode; }
+  //  void SetMissBytecode(const std::vector<char>& source) { miss_bytecode = source; }
+  //  const std::vector<char>& GetMissBytecode() const { return miss_bytecode; }
 
   public:
     void SetSource(const std::string& source) { this->source = source; }
@@ -334,36 +351,49 @@ namespace RayGene3D
     //void VisitDefineItem(DefineVisitor visitor) { for (const auto& define : defines) visitor(define.first, define.second); }
 
   public:
-    void SetTopology(Topology topology) { this->topology = topology; }
-    Topology GetTopology() const { return topology; }
-    void SetIndexer(Indexer indexer) { this->indexer = indexer; }
-    Indexer GetIndexer() const { return indexer; }
-    void UpdateAttributes(std::pair<const Attribute*, uint32_t> attributes) { this->attributes.assign(attributes.first, attributes.first + attributes.second); }
+    void SetIAState(const IAState& state) { ia_state = state; }
+    const IAState& GetIAState() const { return ia_state; }
+  public: //obsolete methods
+    void SetTopology(Topology topology) { this->ia_state.topology = topology; }
+    Topology GetTopology() const { return ia_state.topology; }
+    void SetIndexer(Indexer indexer) { this->ia_state.indexer = indexer; }
+    Indexer GetIndexer() const { return ia_state.indexer; }
+    void UpdateAttributes(std::pair<const Attribute*, uint32_t> attributes) { this->ia_state.attributes.assign(attributes.first, attributes.first + attributes.second); }
+    
+  public:
+    void SetRCState(const RCState& state) { rc_state = state; }
+    const RCState& GetRCState() const { return rc_state; }
+  public: //obsolete methods
+    void SetFillMode(Fill fill_mode) { this->rc_state.fill_mode = fill_mode; }
+    Fill GetFillMode() const { return this->rc_state.fill_mode; }
+    void SetCullMode(Cull cull_mode) { this->rc_state.cull_mode = cull_mode; }
+    Cull GetCullMode() const { return this->rc_state.cull_mode; }
+    void SetClipEnabled(bool clip_enabled) { this->rc_state.clip_enabled = clip_enabled; }
+    bool GetClipEnabled() const { return this->rc_state.clip_enabled; }
+    void UpdateViewports(std::pair<const Viewport*, uint32_t> viewports) { this->rc_state.viewports.assign(viewports.first, viewports.first + viewports.second); }
+    void UpdateScissors(std::pair<const Scissor*, uint32_t> scissors) { this->rc_state.scissors.assign(scissors.first, scissors.first + scissors.second); }
 
   public:
-    void SetFillMode(Fill fill_mode) { this->fill_mode = fill_mode; }
-    Fill GetFillMode() const { return this->fill_mode; }
-    void SetCullMode(Cull cull_mode) { this->cull_mode = cull_mode; }
-    Cull GetCullMode() const { return this->cull_mode; }
-    void SetClipEnabled(bool clip_enabled) { this->clip_enabled = clip_enabled; }
-    bool GetClipEnabled() const { return this->clip_enabled; }
+    void SetDSState(const DSState& state) { ds_state = state; }
+    const DSState& GetDSState() const { return ds_state; }
+  public: //obsolete methods
+    void SetDepthEnabled(bool depth_enabled) { this->ds_state.depth_enabled = depth_enabled; }
+    bool GetDepthEnabled() const { return this->ds_state.depth_enabled; }
+    void SetDepthWrite(bool depth_write) { this->ds_state.depth_write = depth_write; }
+    bool GetDepthWrite() const { return this->ds_state.depth_write; }
+    void SetDepthComparison(Comparison depth_comparison) { this->ds_state.depth_comparison = depth_comparison; }
+    Comparison GetDepthComparison() const { return this->ds_state.depth_comparison; }
 
   public:
-    void SetDepthEnabled(bool depth_enabled) { this->depth_enabled = depth_enabled; }
-    bool GetDepthEnabled() const { return this->depth_enabled; }
-    void SetDepthWrite(bool depth_write) { this->depth_write = depth_write; }
-    bool GetDepthWrite() const { return this->depth_write; }
-    void SetDepthComparison(Comparison depth_comparison) { this->depth_comparison = depth_comparison; }
-    Comparison GetDepthComparison() const { return this->depth_comparison; }
+    void SetOMState(const OMState& state) { om_state = state; }
+    const OMState& GetOMState() const { return om_state; }
+  public: //obsolete methods
+    void SetATCEnabled(bool atc_enabled) { this->om_state.atc_enabled = atc_enabled; }
+    bool GetATCEnabled() const { return this->om_state.atc_enabled; }
+    void UpdateBlends(std::pair<const Blend*, uint32_t> blends) { this->om_state.target_blends.assign(blends.first, blends.first + blends.second); }
 
   public:
-    void SetATCEnabled(bool atc_enabled) { this->atc_enabled = atc_enabled; }
-    bool GetATCEnabled() const { return this->atc_enabled; }
-    void UpdateBlends(std::pair<const Blend*, uint32_t> blends) { this->target_blends.assign(blends.first, blends.first + blends.second); }
 
-  public:
-    void UpdateViewports(std::pair<const Viewport*, uint32_t> viewports) { this->viewports.assign(viewports.first, viewports.first + viewports.second); }
-    void UpdateScissors(std::pair<const Scissor*, uint32_t> scissors) { this->scissors.assign(scissors.first, scissors.first + scissors.second); }
 
   public:
     void Initialize() override = 0;

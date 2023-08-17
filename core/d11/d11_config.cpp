@@ -306,26 +306,26 @@ namespace RayGene3D
         }
       };
 
-      if (topology != TOPOLOGY_UNKNOWN)
+      if (ia_state.topology != TOPOLOGY_UNKNOWN)
       {
-        if (!attributes.empty())
+        if (!ia_state.attributes.empty())
         {
           auto stride_max = 0u;
           std::map<uint32_t, uint32_t> stride_map;
 
-          std::vector<D3D11_INPUT_ELEMENT_DESC> element_descs(attributes.size(), { 0 });
-          for (size_t i = 0; i < attributes.size(); ++i)
+          std::vector<D3D11_INPUT_ELEMENT_DESC> element_descs(ia_state.attributes.size(), { 0 });
+          for (size_t i = 0; i < ia_state.attributes.size(); ++i)
           {
             element_descs[i].SemanticName = "register";
             element_descs[i].SemanticIndex = uint32_t(i);
-            element_descs[i].Format = get_format(attributes[i].format);
-            element_descs[i].InputSlot = attributes[i].slot;
-            element_descs[i].AlignedByteOffset = attributes[i].offset;
-            element_descs[i].InputSlotClass = attributes[i].instance ? D3D11_INPUT_PER_INSTANCE_DATA : D3D11_INPUT_PER_VERTEX_DATA;
+            element_descs[i].Format = get_format(ia_state.attributes[i].format);
+            element_descs[i].InputSlot = ia_state.attributes[i].slot;
+            element_descs[i].AlignedByteOffset = ia_state.attributes[i].offset;
+            element_descs[i].InputSlotClass = ia_state.attributes[i].instance ? D3D11_INPUT_PER_INSTANCE_DATA : D3D11_INPUT_PER_VERTEX_DATA;
             element_descs[i].InstanceDataStepRate = 0;
 
-            stride_map[attributes[i].slot] = attributes[i].stride;
-            stride_max = std::max(stride_max, attributes[i].slot);
+            stride_map[ia_state.attributes[i].slot] = ia_state.attributes[i].stride;
+            stride_max = std::max(stride_max, ia_state.attributes[i].slot);
           }
 
 
@@ -338,7 +338,7 @@ namespace RayGene3D
           BLAST_ASSERT(S_OK == device->GetDevice()->CreateInputLayout(element_descs.data(), uint32_t(element_descs.size()), vs_bytecode.data(), vs_bytecode.size(), &input_layout));
         }
 
-        const auto get_fill = [this](Fill fill)
+        const auto get_fill = [](Fill fill)
         {
           switch (fill)
           {
@@ -362,15 +362,15 @@ namespace RayGene3D
         };
 
         D3D11_RASTERIZER_DESC raster_desc;
-        raster_desc.FillMode = get_fill(fill_mode);
-        raster_desc.CullMode = get_cull(cull_mode);
+        raster_desc.FillMode = get_fill(rc_state.fill_mode);
+        raster_desc.CullMode = get_cull(rc_state.cull_mode);
         raster_desc.FrontCounterClockwise = false;
-        raster_desc.DepthBias = this->depth_bias;
-        raster_desc.DepthBiasClamp = this->bias_clamp;
-        raster_desc.SlopeScaledDepthBias = this->bias_slope;
-        raster_desc.DepthClipEnable = this->clip_enabled;
-        raster_desc.ScissorEnable = this->scissor_enabled;
-        raster_desc.MultisampleEnable = this->multisample_enabled;
+        raster_desc.DepthBias = this->rc_state.depth_bias;
+        raster_desc.DepthBiasClamp = this->rc_state.bias_clamp;
+        raster_desc.SlopeScaledDepthBias = this->rc_state.bias_slope;
+        raster_desc.DepthClipEnable = this->rc_state.clip_enabled;
+        raster_desc.ScissorEnable = this->rc_state.scissor_enabled;
+        raster_desc.MultisampleEnable = this->rc_state.multisample_enabled;
         raster_desc.AntialiasedLineEnable = false;
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateRasterizerState(&raster_desc, &raster_state));
 
@@ -409,20 +409,20 @@ namespace RayGene3D
         };
 
         D3D11_DEPTH_STENCIL_DESC depth_desc;
-        depth_desc.DepthEnable = depth_enabled;
-        depth_desc.DepthWriteMask = depth_write ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
-        depth_desc.DepthFunc = get_comparison(depth_comparison);
-        depth_desc.StencilEnable = stencil_enabled;
-        depth_desc.StencilReadMask = stencil_rmask;
-        depth_desc.StencilWriteMask = stencil_wmask;
-        depth_desc.FrontFace.StencilFunc = get_comparison(fface_stencil.comparison);
-        depth_desc.FrontFace.StencilDepthFailOp = get_action(fface_stencil.depth_fail);
-        depth_desc.FrontFace.StencilFailOp = get_action(fface_stencil.stencil_fail);
-        depth_desc.FrontFace.StencilPassOp = get_action(fface_stencil.stencil_pass);
-        depth_desc.BackFace.StencilFunc = get_comparison(bface_stencil.comparison);
-        depth_desc.BackFace.StencilDepthFailOp = get_action(bface_stencil.depth_fail);
-        depth_desc.BackFace.StencilFailOp = get_action(bface_stencil.stencil_fail);
-        depth_desc.BackFace.StencilPassOp = get_action(bface_stencil.stencil_pass);
+        depth_desc.DepthEnable = ds_state.depth_enabled;
+        depth_desc.DepthWriteMask = ds_state.depth_write ? D3D11_DEPTH_WRITE_MASK_ALL : D3D11_DEPTH_WRITE_MASK_ZERO;
+        depth_desc.DepthFunc = get_comparison(ds_state.depth_comparison);
+        depth_desc.StencilEnable = ds_state.stencil_enabled;
+        depth_desc.StencilReadMask = ds_state.stencil_rmask;
+        depth_desc.StencilWriteMask = ds_state.stencil_wmask;
+        depth_desc.FrontFace.StencilFunc = get_comparison(ds_state.stencil_fface_mode.comparison);
+        depth_desc.FrontFace.StencilDepthFailOp = get_action(ds_state.stencil_fface_mode.depth_fail);
+        depth_desc.FrontFace.StencilFailOp = get_action(ds_state.stencil_fface_mode.stencil_fail);
+        depth_desc.FrontFace.StencilPassOp = get_action(ds_state.stencil_fface_mode.stencil_pass);
+        depth_desc.BackFace.StencilFunc = get_comparison(ds_state.stencil_bface_mode.comparison);
+        depth_desc.BackFace.StencilDepthFailOp = get_action(ds_state.stencil_bface_mode.depth_fail);
+        depth_desc.BackFace.StencilFailOp = get_action(ds_state.stencil_bface_mode.stencil_fail);
+        depth_desc.BackFace.StencilPassOp = get_action(ds_state.stencil_bface_mode.stencil_pass);
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateDepthStencilState(&depth_desc, &depth_state));
 
 
@@ -464,48 +464,49 @@ namespace RayGene3D
         };
 
         D3D11_BLEND_DESC blend_desc;
-        blend_desc.AlphaToCoverageEnable = atc_enabled;
+        blend_desc.AlphaToCoverageEnable = om_state.atc_enabled;
         blend_desc.IndependentBlendEnable = false; //TODO: Implement true only
-        for (uint32_t i = 0; i < std::min(uint32_t(target_blends.size()), 8u); ++i)
+        for (uint32_t i = 0; i < std::min(uint32_t(om_state.target_blends.size()), 8u); ++i)
         {
-          blend_desc.RenderTarget[i].BlendEnable = target_blends[i].blend_enabled;
-          blend_desc.RenderTarget[i].SrcBlend = get_argument(target_blends[i].src_color);
-          blend_desc.RenderTarget[i].DestBlend = get_argument(target_blends[i].dst_color);
-          blend_desc.RenderTarget[i].BlendOp = get_operation(target_blends[i].blend_color);
-          blend_desc.RenderTarget[i].SrcBlendAlpha = get_argument(target_blends[i].src_alpha);
-          blend_desc.RenderTarget[i].DestBlendAlpha = get_argument(target_blends[i].dst_alpha);
-          blend_desc.RenderTarget[i].BlendOpAlpha = get_operation(target_blends[i].blend_alpha);
-          blend_desc.RenderTarget[i].RenderTargetWriteMask = target_blends[i].write_mask;
+          blend_desc.RenderTarget[i].BlendEnable = om_state.target_blends[i].blend_enabled;
+          blend_desc.RenderTarget[i].SrcBlend = get_argument(om_state.target_blends[i].src_color);
+          blend_desc.RenderTarget[i].DestBlend = get_argument(om_state.target_blends[i].dst_color);
+          blend_desc.RenderTarget[i].BlendOp = get_operation(om_state.target_blends[i].blend_color);
+          blend_desc.RenderTarget[i].SrcBlendAlpha = get_argument(om_state.target_blends[i].src_alpha);
+          blend_desc.RenderTarget[i].DestBlendAlpha = get_argument(om_state.target_blends[i].dst_alpha);
+          blend_desc.RenderTarget[i].BlendOpAlpha = get_operation(om_state.target_blends[i].blend_alpha);
+          blend_desc.RenderTarget[i].RenderTargetWriteMask = om_state.target_blends[i].write_mask;
         }
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateBlendState(&blend_desc, &blend_state));
       }
 
-      const auto get_topology = [this](Topology topology)
+      const auto get_topology = [](Topology topology)
       {
         switch (topology)
         {
-        default: return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
-        case TOPOLOGY_POINTLIST: return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
-        case TOPOLOGY_LINELIST: return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
-        case TOPOLOGY_LINESTRIP: return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
-        case TOPOLOGY_TRIANGLELIST: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        case TOPOLOGY_TRIANGLESTRIP: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
-        case TOPOLOGY_LINELIST_ADJ: return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
-        case TOPOLOGY_LINESTRIP_ADJ: return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
-        case TOPOLOGY_TRIANGLELIST_ADJ: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
+        default:                          return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+        case TOPOLOGY_POINTLIST:          return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+        case TOPOLOGY_LINELIST:           return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+        case TOPOLOGY_LINESTRIP:          return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+        case TOPOLOGY_TRIANGLELIST:       return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        case TOPOLOGY_TRIANGLESTRIP:      return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+        case TOPOLOGY_LINELIST_ADJ:       return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+        case TOPOLOGY_LINESTRIP_ADJ:      return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+        case TOPOLOGY_TRIANGLELIST_ADJ:   return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
         case TOPOLOGY_TRIANGLESTRIP_ADJ:  return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
         }
       };
 
-      primitive_topology = get_topology(topology);
+      primitive_topology = get_topology(ia_state.topology);
 
-      const auto vp_count = uint32_t(viewports.size());
+      const auto vp_count = uint32_t(rc_state.viewports.size());
       vp_items.resize(std::min(vp_count, uint32_t(D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
       for (uint32_t i = 0; i < uint32_t(vp_items.size()); ++i)
       {
         if (i < vp_count)
         {
-          vp_items[i] = { viewports[i].origin_x, viewports[i].origin_y, viewports[i].extent_x, viewports[i].extent_y, viewports[i].min_z, viewports[i].max_z };
+          const auto& viewport = rc_state.viewports[i];
+          vp_items[i] = { viewport.origin_x, viewport.origin_y, viewport.extent_x, viewport.extent_y, viewport.min_z, viewport.max_z };
         }
       }
     }

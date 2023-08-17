@@ -126,9 +126,9 @@ namespace RayGene3D
       }
     };
 
-    switch (bind)
+    switch (usage)
     {
-    case BIND_SHADER_RESOURCE:
+    case USAGE_SHADER_RESOURCE:
     {
       D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
       switch (resource->GetType())
@@ -140,8 +140,8 @@ namespace RayGene3D
 
         srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
         srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-        srv_desc.Buffer.FirstElement = byte_offset / desc.StructureByteStride;
-        srv_desc.Buffer.NumElements = byte_count == -1 ? desc.ByteWidth / desc.StructureByteStride : byte_count / desc.StructureByteStride;
+        srv_desc.Buffer.FirstElement = byte_range.offset / desc.StructureByteStride;
+        srv_desc.Buffer.NumElements = byte_range.count == -1 ? desc.ByteWidth / desc.StructureByteStride : byte_range.count / desc.StructureByteStride;
         break;
       }
       case Resource::TYPE_IMAGE1D:
@@ -150,17 +150,17 @@ namespace RayGene3D
         {
           srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1DARRAY;
           srv_desc.Format = get_format(resource->GetFormat());
-          srv_desc.Texture1DArray.MostDetailedMip = mipmap_offset;
-          srv_desc.Texture1DArray.MipLevels = mipmap_count == -1 ? resource->GetMipmaps() : mipmap_count;
-          srv_desc.Texture1DArray.FirstArraySlice = layer_offset;
-          srv_desc.Texture1DArray.ArraySize = layer_count == -1 ? resource->GetLayers() : layer_count;
+          srv_desc.Texture1DArray.MostDetailedMip = mipmap_range.offset;
+          srv_desc.Texture1DArray.MipLevels = mipmap_range.count == -1 ? resource->GetMipmaps() : mipmap_range.count;
+          srv_desc.Texture1DArray.FirstArraySlice = layer_range.offset;
+          srv_desc.Texture1DArray.ArraySize = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
         }
         else
         {
           srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE1D;
           srv_desc.Format = get_format(resource->GetFormat());
-          srv_desc.Texture1D.MostDetailedMip = mipmap_offset;
-          srv_desc.Texture1D.MipLevels = mipmap_count == -1 ? resource->GetMipmaps() : mipmap_count;
+          srv_desc.Texture1D.MostDetailedMip = mipmap_range.offset;
+          srv_desc.Texture1D.MipLevels = mipmap_range.count == -1 ? resource->GetMipmaps() : mipmap_range.count;
         }
         break;
       }
@@ -168,38 +168,38 @@ namespace RayGene3D
       {
         if (resource->GetHint() & Resource::HINT_LAYERED_IMAGE)
         {
-          if (usage == USAGE_CUBEMAP_ARRAY)
+          if (bind == BIND_CUBEMAP_ARRAY)
           {
             srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBEARRAY;
             srv_desc.Format = get_format(resource->GetFormat());
-            srv_desc.TextureCubeArray.MostDetailedMip = mipmap_offset;
-            srv_desc.TextureCubeArray.MipLevels = mipmap_count == -1 ? resource->GetMipmaps() : mipmap_count;
-            srv_desc.TextureCubeArray.First2DArrayFace = layer_offset;
-            srv_desc.TextureCubeArray.NumCubes = layer_count == -1 ? resource->GetLayers() : layer_count;
+            srv_desc.TextureCubeArray.MostDetailedMip = mipmap_range.offset;
+            srv_desc.TextureCubeArray.MipLevels = mipmap_range.count == -1 ? resource->GetMipmaps() : mipmap_range.count;
+            srv_desc.TextureCubeArray.First2DArrayFace = layer_range.offset;
+            srv_desc.TextureCubeArray.NumCubes = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
           }
-          else if (usage == USAGE_CUBEMAP_LAYER)
+          else if (bind == BIND_CUBEMAP_LAYER)
           {
             srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
             srv_desc.Format = get_format(resource->GetFormat());
-            srv_desc.TextureCube.MostDetailedMip = mipmap_offset;
-            srv_desc.TextureCube.MipLevels = mipmap_count == -1 ? resource->GetMipmaps() : mipmap_count;
+            srv_desc.TextureCube.MostDetailedMip = mipmap_range.offset;
+            srv_desc.TextureCube.MipLevels = mipmap_range.count == -1 ? resource->GetMipmaps() : mipmap_range.count;
           }
           else
           {
             srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
             srv_desc.Format = get_format(resource->GetFormat());
-            srv_desc.Texture2DArray.MostDetailedMip = mipmap_offset;
-            srv_desc.Texture2DArray.MipLevels = mipmap_count == -1 ? resource->GetMipmaps() : mipmap_count;
-            srv_desc.Texture2DArray.FirstArraySlice = layer_offset;
-            srv_desc.Texture2DArray.ArraySize = layer_count == -1 ? resource->GetLayers() : layer_count;
+            srv_desc.Texture2DArray.MostDetailedMip = mipmap_range.offset;
+            srv_desc.Texture2DArray.MipLevels = mipmap_range.count == -1 ? resource->GetMipmaps() : mipmap_range.count;
+            srv_desc.Texture2DArray.FirstArraySlice = layer_range.offset;
+            srv_desc.Texture2DArray.ArraySize = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
           }
         }
         else
         {
           srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
           srv_desc.Format = get_format(resource->GetFormat());
-          srv_desc.Texture2D.MostDetailedMip = mipmap_offset;
-          srv_desc.Texture2D.MipLevels = mipmap_count == -1 ? resource->GetMipmaps() : mipmap_count;
+          srv_desc.Texture2D.MostDetailedMip = mipmap_range.offset;
+          srv_desc.Texture2D.MipLevels = mipmap_range.count == -1 ? resource->GetMipmaps() : mipmap_range.count;
         }
         break;
       }
@@ -207,8 +207,8 @@ namespace RayGene3D
       {
         srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
         srv_desc.Format = get_format(resource->GetFormat());
-        srv_desc.Texture3D.MostDetailedMip = mipmap_offset;
-        srv_desc.Texture3D.MipLevels = mipmap_count == -1 ? resource->GetMipmaps() : mipmap_count;
+        srv_desc.Texture3D.MostDetailedMip = mipmap_range.offset;
+        srv_desc.Texture3D.MipLevels = mipmap_range.count == -1 ? resource->GetMipmaps() : mipmap_range.count;
         break;
       }
       }
@@ -223,7 +223,7 @@ namespace RayGene3D
       break;
     }
 
-    case BIND_RENDER_TARGET:
+    case USAGE_RENDER_TARGET:
     {
       D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
       switch (resource->GetType())
@@ -235,8 +235,8 @@ namespace RayGene3D
 
         rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_BUFFER;
         rtv_desc.Format = DXGI_FORMAT_UNKNOWN;
-        rtv_desc.Buffer.FirstElement = byte_offset / desc.StructureByteStride;
-        rtv_desc.Buffer.NumElements = byte_count == -1 ? desc.ByteWidth / desc.StructureByteStride : byte_count / desc.StructureByteStride;
+        rtv_desc.Buffer.FirstElement = byte_range.offset / desc.StructureByteStride;
+        rtv_desc.Buffer.NumElements = byte_range.count == -1 ? desc.ByteWidth / desc.StructureByteStride : byte_range.count / desc.StructureByteStride;
         break;
       }
       case Resource::TYPE_IMAGE1D:
@@ -245,15 +245,15 @@ namespace RayGene3D
         {
           rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1DARRAY;
           rtv_desc.Format = get_format(resource->GetFormat());
-          rtv_desc.Texture1DArray.MipSlice = mipmap_offset;
-          rtv_desc.Texture1DArray.FirstArraySlice = layer_offset;
-          rtv_desc.Texture1DArray.ArraySize = layer_count == -1 ? resource->GetLayers() : layer_count;
+          rtv_desc.Texture1DArray.MipSlice = mipmap_range.offset;
+          rtv_desc.Texture1DArray.FirstArraySlice = layer_range.offset;
+          rtv_desc.Texture1DArray.ArraySize = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
         }
         else
         {
           rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE1D;
           rtv_desc.Format = get_format(resource->GetFormat());
-          rtv_desc.Texture1D.MipSlice = mipmap_offset;
+          rtv_desc.Texture1D.MipSlice = mipmap_range.offset;
         }
         break;
       }
@@ -263,15 +263,15 @@ namespace RayGene3D
         {
           rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2DARRAY;
           rtv_desc.Format = get_format(resource->GetFormat());
-          rtv_desc.Texture2DArray.MipSlice = mipmap_offset;
-          rtv_desc.Texture2DArray.FirstArraySlice = layer_offset;
-          rtv_desc.Texture2DArray.ArraySize = layer_count == -1 ? resource->GetLayers() : layer_count;
+          rtv_desc.Texture2DArray.MipSlice = mipmap_range.offset;
+          rtv_desc.Texture2DArray.FirstArraySlice = layer_range.offset;
+          rtv_desc.Texture2DArray.ArraySize = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
         }
         else
         {
           rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
           rtv_desc.Format = get_format(resource->GetFormat());
-          rtv_desc.Texture2D.MipSlice = mipmap_offset;
+          rtv_desc.Texture2D.MipSlice = mipmap_range.offset;
         }
         break;
       }
@@ -279,9 +279,9 @@ namespace RayGene3D
       {
         rtv_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
         rtv_desc.Format = get_format(resource->GetFormat());
-        rtv_desc.Texture3D.MipSlice = mipmap_offset;
-        rtv_desc.Texture3D.FirstWSlice = layer_offset;
-        rtv_desc.Texture3D.WSize = layer_count == -1 ? resource->GetLayers() : layer_count;
+        rtv_desc.Texture3D.MipSlice = mipmap_range.offset;
+        rtv_desc.Texture3D.FirstWSlice = layer_range.offset;
+        rtv_desc.Texture3D.WSize = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
         break;
       }
       }
@@ -296,7 +296,7 @@ namespace RayGene3D
       break;
     }
 
-    case BIND_DEPTH_STENCIL:
+    case USAGE_DEPTH_STENCIL:
     {
       D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
       switch (resource->GetType())
@@ -308,16 +308,16 @@ namespace RayGene3D
           dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1DARRAY;
           dsv_desc.Format = get_format(resource->GetFormat());
           dsv_desc.Flags = 0;
-          dsv_desc.Texture1DArray.MipSlice = mipmap_offset;
-          dsv_desc.Texture1DArray.FirstArraySlice = layer_offset;
-          dsv_desc.Texture1DArray.ArraySize = layer_count == -1 ? resource->GetLayers() : layer_count;
+          dsv_desc.Texture1DArray.MipSlice = mipmap_range.offset;
+          dsv_desc.Texture1DArray.FirstArraySlice = layer_range.offset;
+          dsv_desc.Texture1DArray.ArraySize = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
         }
         else
         {
           dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE1D;
           dsv_desc.Format = get_format(resource->GetFormat());
           dsv_desc.Flags = 0;
-          dsv_desc.Texture1D.MipSlice = mipmap_offset;
+          dsv_desc.Texture1D.MipSlice = mipmap_range.offset;
         }
         break;
       }
@@ -328,16 +328,16 @@ namespace RayGene3D
           dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
           dsv_desc.Format = get_format(resource->GetFormat());
           dsv_desc.Flags = 0;
-          dsv_desc.Texture2DArray.MipSlice = mipmap_offset;
-          dsv_desc.Texture2DArray.FirstArraySlice = layer_offset;
-          dsv_desc.Texture2DArray.ArraySize = layer_count == -1 ? resource->GetLayers() : layer_count;
+          dsv_desc.Texture2DArray.MipSlice = mipmap_range.offset;
+          dsv_desc.Texture2DArray.FirstArraySlice = layer_range.offset;
+          dsv_desc.Texture2DArray.ArraySize = layer_range.count == -1 ? resource->GetLayers() : layer_range.count;
         }
         else
         {
           dsv_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
           dsv_desc.Format = get_format(resource->GetFormat());
           dsv_desc.Flags = 0;
-          dsv_desc.Texture2D.MipSlice = mipmap_offset;
+          dsv_desc.Texture2D.MipSlice = mipmap_range.offset;
         }
         break;
       }
@@ -353,7 +353,7 @@ namespace RayGene3D
       break;
     }
 
-    case BIND_UNORDERED_ACCESS:
+    case USAGE_UNORDERED_ACCESS:
     {
       auto uav = reinterpret_cast<ID3D11UnorderedAccessView*>(view);
       BLAST_ASSERT(S_OK == device->GetDevice()->CreateUnorderedAccessView(resource->GetResource(), nullptr, reinterpret_cast<ID3D11UnorderedAccessView**>(&view)));
