@@ -801,10 +801,11 @@ maxDescriptorSetAccelerationStructures: %d\n"
     return config;
   }
 
-  const std::shared_ptr<Pass>& VLKDevice::CreatePass(const std::string& name, std::pair<const Pass::Subpass*, uint32_t> subpasses,
+  const std::shared_ptr<Pass>& VLKDevice::CreatePass(const std::string& name, Pass::Type type, std::pair<const Pass::Subpass*, uint32_t> subpasses,
     std::pair<const Pass::RTAttachment*, uint32_t> rt_attachments, std::pair<const Pass::DSAttachment*, uint32_t> ds_attachments)
   {
     const auto& pass = passes.emplace_back(new VLKPass(name, *this));
+    pass->SetType(type);
     pass->UpdateSubpasses(subpasses);
     pass->UpdateRTAttachments(rt_attachments);
     pass->UpdateDSAttachments(ds_attachments);

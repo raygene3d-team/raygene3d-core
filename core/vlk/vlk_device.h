@@ -112,8 +112,8 @@ namespace RayGene3D
       const Config::IAState& ia_state, const Config::RCState& rc_state, const Config::DSState& ds_state, const Config::OMState& om_state) override;
 
     const std::shared_ptr<Pass>& CreatePass(const std::string& name) override { return passes.emplace_back(new VLKPass(name, *this)); }
-    const std::shared_ptr<Pass>& CreatePass(const std::string& name, std::pair<const Pass::Subpass*, uint32_t> subpasses,
-      std::pair<const Pass::RTAttachment*, uint32_t> rt_attachments, std::pair<const Pass::DSAttachment*, uint32_t> ds_attachments) override;
+    const std::shared_ptr<Pass>& CreatePass(const std::string& name, Pass::Type type, std::pair<const Pass::Subpass*, uint32_t> subpasses,
+      std::pair<const Pass::RTAttachment*, uint32_t> rt_attachments = {}, std::pair<const Pass::DSAttachment*, uint32_t> ds_attachments = {}) override;
 
   public:
     const VkPhysicalDeviceProperties& GetProperties() const { return properties; }

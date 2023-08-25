@@ -49,6 +49,9 @@ namespace RayGene3D
       TYPE_RAYTRACING = 3,
     };
 
+  protected:
+    Type type{ TYPE_UNKNOWN };
+
     //struct Graphic
     //{
     //  uint32_t idx_count{ 0 };
@@ -67,6 +70,7 @@ namespace RayGene3D
     //  uint32_t padding{ uint32_t(-1) };
     //};
 
+  public:
     struct Argument
     {
       uint32_t idx_count{ 0 };
@@ -98,7 +102,8 @@ namespace RayGene3D
       std::vector<std::shared_ptr<View>> ia_views;
     };
 
-    Type type{ TYPE_UNKNOWN };
+  protected:
+    std::vector<Subpass> subpasses;
 
   public:
     struct RTAttachment
@@ -107,13 +112,13 @@ namespace RayGene3D
       RTValue value;
     };
 
-  public:
     struct DSAttachment
     {
       std::shared_ptr<View> view;
       DSValue value;
     };
 
+  protected:
     std::vector<RTAttachment> rt_attachments;
     std::vector<DSAttachment> ds_attachments;
 
@@ -121,8 +126,6 @@ namespace RayGene3D
     std::vector<std::shared_ptr<View>> ds_views;
     std::vector<RTValue> rt_values;
     std::vector<DSValue> ds_values;
-
-    std::vector<Subpass> subpasses;
 
   protected:
     bool enabled{ false };

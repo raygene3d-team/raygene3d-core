@@ -189,15 +189,15 @@ namespace RayGene3D
     {
       Fill fill_mode{ FILL_SOLID };
       Cull cull_mode{ CULL_BACK };
+      std::vector<Viewport> viewports;
+      std::vector<Scissor> scissors;
       int32_t depth_bias{ 0 };
       float bias_clamp{ 0.0f };
       float bias_slope{ 0.0f };
-      bool clip_enabled{ true };
+      bool clip_enabled{ false };
       bool scissor_enabled{ false };
       bool multisample_enabled{ false };
       float line_width{ 1.0f };
-      std::vector<Viewport> viewports;
-      std::vector<Scissor> scissors;
     };
 
   protected:
@@ -244,7 +244,6 @@ namespace RayGene3D
       bool depth_enabled{ true };
       bool depth_write{ true };
       Comparison depth_comparison{ COMPARISON_LESS };
-
       bool stencil_enabled{ false };
       uint8_t stencil_rmask{ 0xFF };
       uint8_t stencil_wmask{ 0xFF };
@@ -300,11 +299,11 @@ namespace RayGene3D
   public:
     struct OMState
     {
+      bool separated_blend{ false };
+      std::vector<Blend> target_blends;
       bool atc_enabled{ false };
       float blend_factor[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
       uint32_t sample_mask{ 0xFFFFFFFF };
-      bool separated_blend{ false };
-      std::vector<Blend> target_blends;
     };
 
     protected:

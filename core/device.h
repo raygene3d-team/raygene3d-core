@@ -113,8 +113,8 @@ namespace RayGene3D
     void DestroyConfig(const std::shared_ptr<Config>& config) { configs.remove(config); }
 
     virtual const std::shared_ptr<Pass>& CreatePass(const std::string& name) = 0;
-    virtual const std::shared_ptr<Pass>& CreatePass(const std::string& name, std::pair<const Pass::Subpass*, uint32_t> subpasses,
-      std::pair<const Pass::RTAttachment*, uint32_t> rt_attachments, std::pair<const Pass::DSAttachment*, uint32_t> ds_attachments) = 0;
+    virtual const std::shared_ptr<Pass>& CreatePass(const std::string& name, Pass::Type type, std::pair<const Pass::Subpass*, uint32_t> subpasses,
+      std::pair<const Pass::RTAttachment*, uint32_t> rt_attachments = {}, std::pair<const Pass::DSAttachment*, uint32_t> ds_attachments = {}) = 0;
     void VisitPass(std::function<void(const std::shared_ptr<Pass>&)> visitor) { for (const auto& pass : passes) visitor(pass); }
     void DestroyPass(const std::shared_ptr<Pass>& pass) { passes.remove(pass); }
 
