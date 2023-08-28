@@ -215,7 +215,7 @@ namespace RayGene3D
 
           if (command.view)
           {
-            device->GetContext()->DrawIndexedInstancedIndirect((reinterpret_cast<D11Resource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetByteOffset() + 0 * 4);
+            device->GetContext()->DrawIndexedInstancedIndirect((reinterpret_cast<D11Resource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetCount().offset + 0 * 4);
           }
           else
           {
@@ -261,7 +261,7 @@ namespace RayGene3D
 
           if (command.view)
           {
-            device->GetContext()->DispatchIndirect((reinterpret_cast<D11Resource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetByteOffset() + 5 * 4);
+            device->GetContext()->DispatchIndirect((reinterpret_cast<D11Resource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetCount().offset + 5 * 4);
           }
           else
           {

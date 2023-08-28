@@ -32,10 +32,24 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  View::View(const std::string& name, Resource& resource) 
+  View::View(const std::string& name, Resource& resource,
+    Usage usage, const View::Range& bytes)
     : Usable(name)
     , resource(resource)
   {
+    this->usage = usage;
+    this->count = bytes;
+  }
+
+  View::View(const std::string& name, Resource& resource,
+    Usage usage, View::Bind bind, const View::Range& mipmaps, const View::Range& layers)
+    : Usable(name)
+    , resource(resource)
+  {
+    this->usage = usage;
+    this->bind = bind;
+    this->stride = mipmaps;
+    this->count = layers;
   }
 
   View::~View()

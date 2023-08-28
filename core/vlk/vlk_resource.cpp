@@ -236,9 +236,9 @@ namespace RayGene3D
       //}
       break;
     }
-    case TYPE_IMAGE1D:
-    case TYPE_IMAGE2D:
-    case TYPE_IMAGE3D:
+    case TYPE_TEX1D:
+    case TYPE_TEX2D:
+    case TYPE_TEX3D:
     {
       const auto get_bind = [this]()
       {
@@ -262,14 +262,24 @@ namespace RayGene3D
 
       const auto get_type = [this]()
       {
-        if (type == TYPE_IMAGE3D) return VK_IMAGE_TYPE_3D;
-        if (type == TYPE_IMAGE2D) return VK_IMAGE_TYPE_2D;
-        if (type == TYPE_IMAGE1D) return VK_IMAGE_TYPE_1D;
+        if (type == TYPE_TEX1D) return VK_IMAGE_TYPE_1D;
+        if (type == TYPE_TEX2D) return VK_IMAGE_TYPE_2D;
+        if (type == TYPE_TEX3D) return VK_IMAGE_TYPE_3D;
         return VK_IMAGE_TYPE_MAX_ENUM;
       };
 
-      const auto get_format = [this]()
+      const auto get_extent = [this]()
       {
+        const auto extent =
+          TYPE_TEX1D ? VkExtent3D{ size_x, 1, 1} :
+          TYPE_TEX2D ? VkExtent3D{ size_x, size_y, 1} :
+          TYPE_TEX3D ? VkExtent3D{ size_x, size_y, size_z} :
+          VkExtent3D{};
+        return extent;
+      };
+
+      const auto get_format = [this]()
+      {        
         switch (format)
         {
         default: return VK_FORMAT_UNDEFINED;
@@ -346,14 +356,16 @@ namespace RayGene3D
         }
       };
 
+
+
       auto create_info = VkImageCreateInfo{};
       create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
       create_info.flags = get_flags();
       create_info.imageType = get_type();
       create_info.format = get_format();
-      create_info.extent = {extent_x, extent_y, extent_z};
-      create_info.mipLevels = mipmaps;
-      create_info.arrayLayers = layers;
+      create_info.extent = get_extent();
+      create_info.mipLevels = stride;
+      create_info.arrayLayers = count;
       create_info.samples = VK_SAMPLE_COUNT_1_BIT;
       create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
       create_info.usage = get_bind();
@@ -376,7 +388,7 @@ namespace RayGene3D
 
       BLAST_ASSERT(VK_SUCCESS == vkBindImageMemory(device->GetDevice(), image, memory, 0));
 
-      if (interops.size() == layers)
+      if (interops.size() == count)
       {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -387,7 +399,7 @@ namespace RayGene3D
         VkCommandBuffer commandBuffer;
         BLAST_ASSERT(VK_SUCCESS == vkAllocateCommandBuffers(device->GetDevice(), &allocInfo, &commandBuffer));
 
-        for (uint32_t i = 0; i < layers; ++i)
+        for (uint32_t i = 0; i < count; ++i)
         {
           const auto [raw_data, raw_size] = interops.at(i);
           BLAST_ASSERT(raw_data != nullptr && raw_size != 0);
@@ -398,11 +410,11 @@ namespace RayGene3D
           BLAST_ASSERT(raw_size <= staging_size);
 
           uint32_t layer_size = 0;
-          for (uint32_t j = 0; j < mipmaps; ++j)
+          for (uint32_t j = 0; j < stride; ++j)
           {
-            const uint32_t extent_x = this->extent_x > 1 ? this->extent_x >> j : 1;
-            const uint32_t extent_y = this->extent_y > 1 ? this->extent_y >> j : 1;
-            const uint32_t extent_z = this->extent_z > 1 ? this->extent_z >> j : 1;
+            const uint32_t extent_x = size_x > 1 ? size_x >> j : 1;
+            const uint32_t extent_y = size_y > 1 ? size_y >> j : 1;
+            const uint32_t extent_z = size_z > 1 ? size_z >> j : 1;
             const uint32_t mipmap_size = extent_x * extent_y * extent_z * BitCount(format) / 8;
             layer_size += mipmap_size;
           }
@@ -421,13 +433,13 @@ namespace RayGene3D
 
 
           uint32_t offset = 0;
-          for (uint32_t j = 0; j < mipmaps; ++j)
+          for (uint32_t j = 0; j < stride; ++j)
           {
             const uint32_t layer = i;
             const uint32_t mipmap = j;
-            const uint32_t extent_x = this->extent_x > 1 ? this->extent_x >> mipmap : 1;
-            const uint32_t extent_y = this->extent_y > 1 ? this->extent_y >> mipmap : 1;
-            const uint32_t extent_z = this->extent_z > 1 ? this->extent_z >> mipmap : 1;
+            const uint32_t extent_x = size_x > 1 ? size_x >> mipmap : 1;
+            const uint32_t extent_y = size_y > 1 ? size_y >> mipmap : 1;
+            const uint32_t extent_z = size_z > 1 ? size_z >> mipmap : 1;
 
             {
               VkImageMemoryBarrier barrier = {};
@@ -538,9 +550,9 @@ namespace RayGene3D
         }
         break;
       }
-      case TYPE_IMAGE1D:
-      case TYPE_IMAGE2D:
-      case TYPE_IMAGE3D:
+      case TYPE_TEX1D:
+      case TYPE_TEX2D:
+      case TYPE_TEX3D:
       {
         if (image)
         {
@@ -600,30 +612,32 @@ namespace RayGene3D
   {
   }
 
-  const std::shared_ptr<View>& VLKResource::CreateView(const std::string& name,
-    Usage usage, View::Range bytes)
+  VLKResource::VLKResource(const std::string& name, Device& device, const Resource::BufferDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Resource(name, device, desc, hint, interops)
   {
-    const auto& view = views.emplace_back(new VLKView(name, *this));
-    view->SetUsage(usage);
-    view->SetByteRange(bytes);
-    view->Initialize();
-    return view;
-  }
-  const std::shared_ptr<View>& VLKResource::CreateView(const std::string& name,
-    Usage usage, View::Bind bind, View::Range layers, View::Range mipmaps)
-  {
-    const auto& view = views.emplace_back(new VLKView(name, *this));
-    view->SetUsage(usage);
-    view->SetBind(bind);
-    view->SetLayerRange(layers);
-    view->SetMipmapRange(mipmaps);
-    view->Initialize();
-    return view;
+    VLKResource::Initialize();
   }
 
-  VLKResource::VLKResource(const std::string& name, Device& device) 
-    : Resource(name, device)
+  VLKResource::VLKResource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Resource(name, device, desc, hint, interops)
   {
+    VLKResource::Initialize();
+  }
+
+  VLKResource::VLKResource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Resource(name, device, desc, hint, interops)
+  {
+    VLKResource::Initialize();
+  }
+
+  VLKResource::VLKResource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Resource(name, device, desc, hint, interops)
+  {
+    VLKResource::Initialize();
   }
 
   VLKResource::~VLKResource()

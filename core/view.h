@@ -37,7 +37,6 @@ namespace RayGene3D
   class View : public Usable
   {
   public:
-
     enum Bind
     {
       BIND_UNKNOWN = 0x0L,
@@ -52,7 +51,7 @@ namespace RayGene3D
     struct Range
     {
       uint32_t offset{ 0 };
-      uint32_t count{ uint32_t(-1) };
+      uint32_t length{ uint32_t(-1) };
     };
    
   protected:
@@ -61,55 +60,23 @@ namespace RayGene3D
   protected:
     Usage usage{ USAGE_UNKNOWN };
 
-  //protected:
-  //  Format format{ FORMAT_UNKNOWN };
-
   protected:
     Bind bind{ BIND_UNKNOWN };
 
   protected:
-    Range byte_range;
-    Range layer_range;
-    Range mipmap_range;
+    Range stride;
+    Range count;
 
   public:
     Resource& GetResource() { return resource; }
     
   public:
-    Bind GetBind() const { return bind; }
-    void SetBind(Bind bind) { this->bind = bind; }
     Usage GetUsage() const { return usage; }
-    void SetUsage(Usage usage) { this->usage = usage; }
+    Bind GetBind() const { return bind; }
 
   public:
-    //void SetFormat(Format format) { this->format = format; }
-    //Format GetFormat() const { return format; }
-
-  public:
-    void SetByteOffset(uint32_t byte_offset) { this->byte_range.offset = byte_offset; }
-    uint32_t GetByteOffset() const { return byte_range.offset; }
-    void SetByteCount(uint32_t byte_count) { this->byte_range.count = byte_count; }
-    uint32_t GetByteCount() const { return byte_range.count; }
-
-  public:
-    void SetLayerOffset(uint32_t layer_offset) { this->layer_range.offset = layer_offset; }
-    uint32_t GetLayerOffset() const { return layer_range.offset; }
-    void SetLayerCount(uint32_t layer_count) { this->layer_range.count = layer_count; }
-    uint32_t GetLayerCount() const { return layer_range.count; }
-    void SetMipmapOffset(uint32_t mipmap_offset) { this->mipmap_range.offset = mipmap_offset; }
-    uint32_t GetMipmapOffset() const { return mipmap_range.offset; }
-    void SetMipmapCount(uint32_t mipmap_count) { this->mipmap_range.count = mipmap_count; }
-    uint32_t GetMipmapCount() const { return mipmap_range.count; }
-
-  public:
-    void SetByteRange(const Range& range) { byte_range = range; }
-    const Range& GetByteRange() const { return byte_range; }
-
-  public:
-    void SetLayerRange(const Range& range) { layer_range = range; }
-    const Range& GetLayerRange() const { return layer_range; }
-    void SetMipmapRange(const Range& range) { mipmap_range = range; }
-    const Range& GetMipmapRange() const { return mipmap_range; }
+    const Range& GetStride() const { return stride; }
+    const Range& GetCount() const { return count; }
 
   public:
     void Initialize() override = 0;
@@ -117,7 +84,10 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    View(const std::string& name, Resource& resource);
+    View(const std::string& name, Resource& resource,
+      Usage usage, const View::Range& bytes = {});
+    View(const std::string& name, Resource& resource,
+      Usage usage, View::Bind bind, const View::Range& mipmaps = {}, const View::Range& layers = {});
     virtual ~View();
   };
 }

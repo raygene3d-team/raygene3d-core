@@ -243,8 +243,8 @@ namespace RayGene3D
         {
           const auto& rt_view = rt_views[i];
           rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
-          extent_x = std::max(extent_x, rt_view->GetResource().GetExtentX());
-          extent_y = std::max(extent_y, rt_view->GetResource().GetExtentY());
+          extent_x = std::max(extent_x, rt_view->GetResource().GetSizeX());
+          extent_y = std::max(extent_y, rt_view->GetResource().GetSizeY());
         }
 
         std::vector<VkImageView> ds_attachment_views(ds_views.size());
@@ -252,8 +252,8 @@ namespace RayGene3D
         {
           const auto& ds_view = ds_views[i];
           ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
-          extent_x = std::max(extent_x, ds_view->GetResource().GetExtentX());
-          extent_y = std::max(extent_y, ds_view->GetResource().GetExtentY());
+          extent_x = std::max(extent_x, ds_view->GetResource().GetSizeX());
+          extent_y = std::max(extent_y, ds_view->GetResource().GetSizeY());
         }
 
         attachment_views.clear();
@@ -452,7 +452,7 @@ namespace RayGene3D
           if (va_view)
           {
             va_items[k] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
-            va_offsets[k] = va_view->GetByteOffset();
+            va_offsets[k] = va_view->GetCount().offset;
           }
         }
 
@@ -473,7 +473,7 @@ namespace RayGene3D
           if (ia_view)
           {
             ia_items[k] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
-            ia_offsets[k] = ia_view->GetByteOffset();            
+            ia_offsets[k] = ia_view->GetCount().offset;            
             ia_formats[k] = config->GetIndexer()
               == Config::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
               : Config::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
@@ -495,7 +495,7 @@ namespace RayGene3D
 
           if (command.view)
           {
-            vkCmdDrawIndexedIndirect(command_buffer, (reinterpret_cast<VLKResource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetByteOffset() + 0 * 4, 1, 0);
+            vkCmdDrawIndexedIndirect(command_buffer, (reinterpret_cast<VLKResource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetCount().offset + 0 * 4, 1, 0);
           }
           else
           {
@@ -541,7 +541,7 @@ namespace RayGene3D
 
           if (command.view)
           {
-            vkCmdDispatchIndirect(command_buffer, (reinterpret_cast<VLKResource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetByteOffset() + 5 * 4);
+            vkCmdDispatchIndirect(command_buffer, (reinterpret_cast<VLKResource*>(&command.view->GetResource()))->GetBuffer(), command.view->GetCount().offset + 5 * 4);
           }
           else
           {

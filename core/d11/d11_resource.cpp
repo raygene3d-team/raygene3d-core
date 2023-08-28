@@ -67,7 +67,7 @@ namespace RayGene3D
       misc = hint & HINT_CUBEMAP_IMAGE ? misc | D3D11_RESOURCE_MISC_TEXTURECUBE : misc;
       for (const auto& view : views)
       {
-        misc = (type == TYPE_BUFFER && (usage & USAGE_SHADER_RESOURCE)) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
+        misc = (type == TYPE_BUFFER && (usage & USAGE_SHADER_RESOURCE))  ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
         misc = (type == TYPE_BUFFER && (usage & USAGE_UNORDERED_ACCESS)) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
         misc = (type == TYPE_BUFFER && (usage & USAGE_COMMAND_INDIRECT)) ? misc | D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS : misc;
       }
@@ -196,12 +196,12 @@ namespace RayGene3D
       break;
     }
 
-    case TYPE_IMAGE1D:
+    case TYPE_TEX1D:
     {
       D3D11_TEXTURE1D_DESC tex1d_desc = {};
-      tex1d_desc.Width = extent_x;
-      tex1d_desc.MipLevels = mipmaps;
-      tex1d_desc.ArraySize = layers;
+      tex1d_desc.Width = size_x;
+      tex1d_desc.MipLevels = stride;
+      tex1d_desc.ArraySize = count;
       tex1d_desc.Format = get_format();
       tex1d_desc.Usage = get_usage();
       tex1d_desc.BindFlags = get_bind();
@@ -223,13 +223,13 @@ namespace RayGene3D
       break;
     }
 
-    case TYPE_IMAGE2D:
+    case TYPE_TEX2D:
     {
       D3D11_TEXTURE2D_DESC tex2d_desc = {};
-      tex2d_desc.Width = extent_x;
-      tex2d_desc.Height = extent_y;
-      tex2d_desc.MipLevels = mipmaps;
-      tex2d_desc.ArraySize = layers;
+      tex2d_desc.Width = size_x;
+      tex2d_desc.Height = size_y;
+      tex2d_desc.MipLevels = stride;
+      tex2d_desc.ArraySize = count;
       tex2d_desc.Format = get_format();
       tex2d_desc.SampleDesc = { 1, 0 };
       tex2d_desc.Usage = get_usage();
@@ -254,23 +254,23 @@ namespace RayGene3D
       }
       else
       {
-        std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(layers * mipmaps);
-        for (uint32_t i = 0; i < layers; ++i)
+        std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(stride * count);
+        for (uint32_t i = 0; i < count; ++i)
         {
           const auto [data, size] = interops[i];
           BLAST_ASSERT(data != nullptr && size != 0);
 
           auto mip_data = reinterpret_cast<const uint8_t*>(data);
           auto mip_size = 0;
-          for (uint32_t j = 0; j < mipmaps; ++j)
+          for (uint32_t j = 0; j < stride; ++j)
           {
-            const auto mip_extent_x = extent_x >> j;
-            const auto mip_extent_y = extent_y >> j;
+            const auto mip_extent_x = size_x >> j;
+            const auto mip_extent_y = size_y >> j;
             mip_size = mip_extent_x * mip_extent_y * BitCount(format) / 8;
 
-            arr_sd_items[i * mipmaps + j].pSysMem = mip_data;
-            arr_sd_items[i * mipmaps + j].SysMemPitch = mip_size / mip_extent_y;
-            arr_sd_items[i * mipmaps + j].SysMemSlicePitch = mip_size / (mip_extent_x * mip_extent_y);
+            arr_sd_items[i * stride + j].pSysMem = mip_data;
+            arr_sd_items[i * stride + j].SysMemPitch = mip_size / mip_extent_y;
+            arr_sd_items[i * stride + j].SysMemSlicePitch = mip_size / (mip_extent_x * mip_extent_y);
 
             mip_data += mip_size;
             mip_size = 0;
@@ -282,13 +282,13 @@ namespace RayGene3D
       break;
     }
 
-    case TYPE_IMAGE3D:
+    case TYPE_TEX3D:
     {
       D3D11_TEXTURE3D_DESC tex3d_desc = {};
-      tex3d_desc.Width = extent_x;
-      tex3d_desc.Height = extent_y;
-      tex3d_desc.Depth = extent_z;
-      tex3d_desc.MipLevels = mipmaps;
+      tex3d_desc.Width = size_x;
+      tex3d_desc.Height = size_x;
+      tex3d_desc.Depth = size_x;
+      tex3d_desc.MipLevels = stride;
       tex3d_desc.Format = get_format();
       tex3d_desc.Usage = get_usage();
       tex3d_desc.BindFlags = get_bind();
@@ -360,24 +360,24 @@ namespace RayGene3D
       }
       break;
 
-    case TYPE_IMAGE1D:
-      if (size * 8 == extent_x * BitCount(format))
+    case TYPE_TEX1D:
+      if (size * 8 == size_x * BitCount(format))
       {
         device->GetContext()->UpdateSubresource(resource, index, nullptr, data, 0, 0);
       }
       break;
 
-    case TYPE_IMAGE2D:
-      if (size * 8 == extent_x * extent_y * BitCount(format))
+    case TYPE_TEX2D:
+      if (size * 8 == size_x * size_y * BitCount(format))
       {
-        device->GetContext()->UpdateSubresource(resource, index, nullptr, data, extent_x, 0);
+        device->GetContext()->UpdateSubresource(resource, index, nullptr, data, size_x, 0);
       }
       break;
 
-    case TYPE_IMAGE3D:
-      if (size * 8 == extent_x * extent_y * extent_z * BitCount(format))
+    case TYPE_TEX3D:
+      if (size * 8 == size_x * size_y * size_z * BitCount(format))
       {
-        device->GetContext()->UpdateSubresource(resource, index, nullptr, data, extent_x, extent_x * extent_y);
+        device->GetContext()->UpdateSubresource(resource, index, nullptr, data, size_x, size_x * size_y);
       }
       break;
     }
@@ -491,31 +491,32 @@ namespace RayGene3D
     device->GetContext()->Unmap(this->resource, 0);
   }
 
-  const std::shared_ptr<View>& D11Resource::CreateView(const std::string& name,
-    Usage usage, View::Range bytes)
+  D11Resource::D11Resource(const std::string& name, Device& device, const Resource::BufferDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Resource(name, device, desc, hint, interops)
   {
-    const auto& view = views.emplace_back(new D11View(name, *this));
-    view->SetUsage(usage);
-    view->SetByteRange(bytes);
-    view->Initialize();
-    return view;
-  }
-  const std::shared_ptr<View>& D11Resource::CreateView(const std::string& name,
-    Usage usage, View::Bind bind, View::Range layers, View::Range mipmaps)
-  {
-    const auto& view = views.emplace_back(new D11View(name, *this));
-    view->SetUsage(usage);
-    view->SetBind(bind);
-    view->SetLayerRange(layers);
-    view->SetMipmapRange(mipmaps);
-    view->Initialize();
-    return view;
+    D11Resource::Initialize();
   }
 
-
-  D11Resource::D11Resource(const std::string& name, Device& device) 
-    : Resource(name, device)
+  D11Resource::D11Resource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Resource(name, device, desc, hint, interops)
   {
+    D11Resource::Initialize();
+  }
+
+  D11Resource::D11Resource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Resource(name, device, desc, hint, interops)
+  {
+    D11Resource::Initialize();
+  }
+
+  D11Resource::D11Resource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Resource(name, device, desc, hint, interops)
+  {
+    D11Resource::Initialize();
   }
 
   D11Resource::~D11Resource()

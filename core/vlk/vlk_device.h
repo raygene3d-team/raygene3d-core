@@ -89,15 +89,26 @@ namespace RayGene3D
 
 
   public:
-    const std::shared_ptr<Resource>& CreateResource(const std::string& name) override { return resources.emplace_back(new VLKResource(name, *this)); }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::BufferDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+    {
+      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interops));
+    }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex1DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+    {
+      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interops));
+    }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex2DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+    {
+      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interops));
+    }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex3DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+    {
+      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interops));
+    }
 
     const std::shared_ptr<Layout>& CreateLayout(const std::string& name) override { return layouts.emplace_back(new VLKLayout(name, *this)); }
     const std::shared_ptr<Layout>& CreateLayout(const std::string& name,

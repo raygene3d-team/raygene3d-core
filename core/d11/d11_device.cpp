@@ -406,65 +406,6 @@ namespace RayGene3D
   //{
   //}
 
-    const std::shared_ptr<Resource>& D11Device::CreateResource(const std::string& name, const Resource::BufferDesc& desc,
-      Resource::Hint hint, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops)
-    {
-      const auto& resource = resources.emplace_back(new D11Resource(name, *this));
-      resource->SetBufferDesc(desc);
-      resource->SetHint(hint);
-      resource->SetInteropCount(interops.second);
-      for (uint32_t i = 0; i < interops.second; ++i)
-      {
-        resource->SetInteropItem(i, interops.first[i]);
-      }
-      resource->Initialize();
-      return resource;
-    }
-
-    const std::shared_ptr<Resource>& D11Device::CreateResource(const std::string& name, const Resource::Tex1DDesc& desc,
-      Resource::Hint hint, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops)
-    {
-      const auto& resource = resources.emplace_back(new D11Resource(name, *this));
-      resource->SetTex1DDesc(desc);
-      resource->SetHint(hint);
-      resource->SetInteropCount(interops.second);
-      for (uint32_t i = 0; i < interops.second; ++i)
-      {
-        resource->SetInteropItem(i, interops.first[i]);
-      }
-      resource->Initialize();
-      return resource;
-    }
-
-    const std::shared_ptr<Resource>& D11Device::CreateResource(const std::string& name, const Resource::Tex2DDesc& desc,
-      Resource::Hint hint, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops)
-    {
-      const auto& resource = resources.emplace_back(new D11Resource(name, *this));
-      resource->SetTex2DDesc(desc);
-      resource->SetHint(hint);
-      resource->SetInteropCount(interops.second);
-      for (uint32_t i = 0; i < interops.second; ++i)
-      {
-        resource->SetInteropItem(i, interops.first[i]);
-      }
-      resource->Initialize();
-      return resource;
-    }
-
-    const std::shared_ptr<Resource>& D11Device::CreateResource(const std::string& name, const Resource::Tex3DDesc& desc,
-      Resource::Hint hint, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops)
-    {
-      const auto& resource = resources.emplace_back(new D11Resource(name, *this));
-      resource->SetTex3DDesc(desc);
-      resource->SetHint(hint);
-      resource->SetInteropCount(interops.second);
-      for (uint32_t i = 0; i < interops.second; ++i)
-      {
-        resource->SetInteropItem(i, interops.first[i]);
-      }
-      resource->Initialize();
-      return resource;
-    }
 
     const std::shared_ptr<Layout>& D11Device::CreateLayout(const std::string& name,
       std::pair<const std::shared_ptr<View>*, uint32_t> ub_views, std::pair<const std::shared_ptr<View>*, uint32_t> sb_views,

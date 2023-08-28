@@ -62,7 +62,10 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11View(const std::string& name, Resource& resource);
+    D11View(const std::string& name, Resource& resource,
+      Usage usage, const View::Range& bytes = {});
+    D11View(const std::string& name, Resource& resource,
+      Usage usage, View::Bind bind, const View::Range& mipmaps = {}, const View::Range& layers = {});
     virtual ~D11View();
   };
 }

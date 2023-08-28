@@ -66,11 +66,16 @@ namespace RayGene3D
     ID3D11Texture3D* GetTexture3D() const { return reinterpret_cast<ID3D11Texture3D*>(resource); }
 
   public:
-    const std::shared_ptr<View>& CreateView(const std::string& name) override { return views.emplace_back(new D11View(name, *this)); }
     const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, View::Range bytes = {}) override;
+      Usage usage, const View::Range& bytes = {}) override
+    {
+      return views.emplace_back(new D11View(name, *this, usage, bytes));
+    }
     const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, View::Bind bind, View::Range layers = {}, View::Range mipmaps = {}) override;
+      Usage usage, View::Bind bind, const View::Range& mipmaps = {}, const View::Range& layers = {}) override
+    {
+      return views.emplace_back(new D11View(name, *this, usage, bind, mipmaps, layers));
+    }
 
   public:
     void Initialize() override;
@@ -78,7 +83,14 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11Resource(const std::string& name, Device& device);
+    D11Resource(const std::string& name, Device& device, const Resource::BufferDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    D11Resource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    D11Resource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    D11Resource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
     virtual ~D11Resource();
   };
 }

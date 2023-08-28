@@ -52,11 +52,17 @@ namespace RayGene3D
     VkImage image{ nullptr };
 
   public:
-    const std::shared_ptr<View>& CreateView(const std::string& name) override { return views.emplace_back(new VLKView(name, *this)); }
     const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, View::Range bytes = {}) override;
+      Usage usage, const View::Range& bytes = {}) override
+    {
+      return views.emplace_back(new VLKView(name, *this, usage, bytes));
+    }
+
     const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, View::Bind bind, View::Range layers = {}, View::Range mipmaps = {}) override;
+      Usage usage, View::Bind bind, const View::Range& mipmaps = {}, const View::Range& layers = {}) override
+    {
+      return views.emplace_back(new VLKView(name, *this, usage, bind, mipmaps, layers));
+    }
 
   public:
     VkBuffer GetBuffer() const { return buffer; }
@@ -77,7 +83,14 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    VLKResource(const std::string& name, Device& device);
+    VLKResource(const std::string& name, Device& device, const Resource::BufferDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    VLKResource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    VLKResource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    VLKResource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
     virtual ~VLKResource();
   };
 }

@@ -627,8 +627,8 @@ namespace RayGene3D
       {
         auto& buffer_info = buffer_infos.at(i);
         buffer_info.buffer = (reinterpret_cast<VLKResource*>(&ub_views.at(i)->GetResource()))->GetBuffer();
-        buffer_info.offset = ub_views.at(i)->GetByteOffset();        
-        buffer_info.range = ub_views.at(i)->GetByteCount() == uint32_t(-1) ? VK_WHOLE_SIZE : ub_views.at(i)->GetByteCount();
+        buffer_info.offset = ub_views.at(i)->GetCount().offset;        
+        buffer_info.range = ub_views.at(i)->GetCount().length == uint32_t(-1) ? VK_WHOLE_SIZE : ub_views.at(i)->GetCount().length;
 
         auto& descriptor = descriptors.at(i);
         descriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -653,8 +653,8 @@ namespace RayGene3D
       {
         auto& buffer_info = buffer_infos.at(i);
         buffer_info.buffer = (reinterpret_cast<VLKResource*>(&sb_views.at(i)->GetResource()))->GetBuffer();
-        buffer_info.offset = sb_views.at(i)->GetByteOffset();
-        buffer_info.range = sb_views.at(i)->GetByteCount() == uint32_t(-1) ? VK_WHOLE_SIZE : sb_views.at(i)->GetByteCount();
+        buffer_info.offset = sb_views.at(i)->GetCount().offset;
+        buffer_info.range = sb_views.at(i)->GetCount().length == uint32_t(-1) ? VK_WHOLE_SIZE : sb_views.at(i)->GetCount().length;
 
         auto& descriptor = descriptors.at(i);
         descriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

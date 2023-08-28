@@ -56,7 +56,10 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    VLKView(const std::string& name, Resource& resource);
+    VLKView(const std::string& name, Resource& resource,
+      Usage usage, const View::Range& bytes = {});
+    VLKView(const std::string& name, Resource& resource,
+      Usage usage, View::Bind bind, const View::Range& mipmaps = {}, const View::Range& layers = {});
     virtual ~VLKView();
   };
 }

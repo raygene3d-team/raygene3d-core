@@ -31,10 +31,65 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  Resource::Resource(const std::string& name, Device& device) 
+  Resource::Resource(const std::string& name, Device& device, const Resource::BufferDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Usable(name)
     , device(device)
   {
+    this->type = TYPE_BUFFER;
+    this->usage = desc.usage;
+    this->stride = desc.stride;
+    this->count = desc.count;
+    this->hint = hint;
+    this->interops.assign(interops.first, interops.first + interops.second);
+  }
+
+  Resource::Resource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Usable(name)
+    , device(device)
+  {
+    this->type = TYPE_TEX1D;
+    this->usage = desc.usage;
+    this->stride = desc.mipmaps;
+    this->count = desc.layers;
+    this->format = desc.format;
+    this->size_x = desc.size_x;
+    this->hint = hint;
+    this->interops.assign(interops.first, interops.first + interops.second);
+  }
+
+  Resource::Resource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Usable(name)
+    , device(device)
+  {
+    this->type = TYPE_TEX2D;
+    this->usage = desc.usage;
+    this->stride = desc.mipmaps;
+    this->count = desc.layers;
+    this->format = desc.format;
+    this->size_x = desc.size_x;
+    this->size_y = desc.size_y;
+    this->hint = hint;
+    this->interops.assign(interops.first, interops.first + interops.second);
+  }
+
+  Resource::Resource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
+    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    : Usable(name)
+    , device(device)
+  {
+    this->type = TYPE_TEX3D;
+    this->usage = desc.usage;
+    this->stride = desc.mipmaps;
+    this->count = desc.layers;
+    this->format = desc.format;
+    this->size_x = desc.size_x;
+    this->size_y = desc.size_y;
+    this->size_z = desc.size_z;
+    this->hint = hint;
+    this->interops.assign(interops.first, interops.first + interops.second);
   }
 
   Resource::~Resource()

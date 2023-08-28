@@ -55,15 +55,26 @@ namespace RayGene3D
       std::pair<std::shared_ptr<Resource>, uint32_t> dst, uint32_t size_x, uint32_t size_y, uint32_t size_z);
 
   public:
-    const std::shared_ptr<Resource>& CreateResource(const std::string& name) override { return resources.emplace_back(new D11Resource(name, *this)); }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::BufferDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+    {
+      return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
+    }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex1DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+    {
+      return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
+    }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex2DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+    {
+      return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
+    }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex3DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) override;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+    {
+      return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
+    }
 
     const std::shared_ptr<Layout>& CreateLayout(const std::string& name) override { return layouts.emplace_back(new D11Layout(name, *this)); }
     const std::shared_ptr<Layout>& CreateLayout(const std::string& name,

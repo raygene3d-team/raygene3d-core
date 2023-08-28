@@ -84,15 +84,14 @@ namespace RayGene3D
     const std::shared_ptr<Resource>& GetScreen() const { return screen; }
 
   public:
-    virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::BufferDesc& desc, 
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) = 0;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex1DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) = 0;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex2DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) = 0;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name, const Resource::Tex3DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, std::pair<std::pair<const void*, uint32_t>*, uint32_t> interops = {}) = 0;
+      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
     void VisitResource(std::function<void(const std::shared_ptr<Resource>&)> visitor) { for (const auto& resource : resources) visitor(resource); }
     void DestroyResource(const std::shared_ptr<Resource>& resource) { resources.remove(resource); }
 
