@@ -64,7 +64,16 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11Layout(const std::string& name, Device& device);
+    D11Layout(const std::string& name,
+      Device& device,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+      const std::pair<const Layout::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities = {});
     virtual ~D11Layout();
   };
 }

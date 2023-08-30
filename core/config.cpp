@@ -31,9 +31,23 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  Config::Config(const std::string& name, Device& device)
+  Config::Config(const std::string& name,
+    Device& device,
+    const std::string& source,
+    Config::Compilation compilation, 
+    const std::pair<const std::pair<const std::string&, const std::string&>*, uint32_t>& defines,
+    const Config::IAState& ia_state,
+    const Config::RCState& rc_state,
+    const Config::DSState& ds_state,
+    const Config::OMState& om_state)
     : Usable(name)
     , device(device)
+    , source(source)
+    , defines(defines.first, defines.first + defines.second)
+    , ia_state(ia_state)
+    , rc_state(rc_state)
+    , ds_state(ds_state)
+    , om_state(om_state)
   {
   }
 

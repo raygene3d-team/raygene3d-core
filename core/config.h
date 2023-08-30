@@ -335,63 +335,63 @@ namespace RayGene3D
   //  void SetMissBytecode(const std::vector<char>& source) { miss_bytecode = source; }
   //  const std::vector<char>& GetMissBytecode() const { return miss_bytecode; }
 
+  //public:
+  //  void SetSource(const std::string& source) { this->source = source; }
+  //  const std::string& GetSource() const { return source; }
+  //  void SetCompilation(Compilation compilation) { this->compilation = compilation; }
+  //  Compilation GetCompilation() const { return compilation; }
+  //
+  //public:
+  //  void SetDefineItem(const std::string& key, const std::string& value) { defines[key] = value; }
+  //  const std::string& GetDefineItem(const std::string& key) const { return defines.at(key); }
+  //  bool CheckDefineItem(const std::string& key) { return defines.find(key) != defines.end(); }
+  //  void RemoveDefineItem(const std::string& key) { defines.erase(key); }
+  //  //uint32_t CountDefineItem() { return uint32_t(defines.size()); }
+  //  //void VisitDefineItem(DefineVisitor visitor) { for (const auto& define : defines) visitor(define.first, define.second); }
+  
   public:
-    void SetSource(const std::string& source) { this->source = source; }
-    const std::string& GetSource() const { return source; }
-    void SetCompilation(Compilation compilation) { this->compilation = compilation; }
-    Compilation GetCompilation() const { return compilation; }
-
-  public:
-    void SetDefineItem(const std::string& key, const std::string& value) { defines[key] = value; }
-    const std::string& GetDefineItem(const std::string& key) const { return defines.at(key); }
-    bool CheckDefineItem(const std::string& key) { return defines.find(key) != defines.end(); }
-    void RemoveDefineItem(const std::string& key) { defines.erase(key); }
-    //uint32_t CountDefineItem() { return uint32_t(defines.size()); }
-    //void VisitDefineItem(DefineVisitor visitor) { for (const auto& define : defines) visitor(define.first, define.second); }
-
-  public:
-    void SetIAState(const IAState& state) { ia_state = state; }
+  //  void SetIAState(const IAState& state) { ia_state = state; }
     const IAState& GetIAState() const { return ia_state; }
-  public: //obsolete methods
-    void SetTopology(Topology topology) { this->ia_state.topology = topology; }
-    Topology GetTopology() const { return ia_state.topology; }
-    void SetIndexer(Indexer indexer) { this->ia_state.indexer = indexer; }
-    Indexer GetIndexer() const { return ia_state.indexer; }
-    void UpdateAttributes(std::pair<const Attribute*, uint32_t> attributes) { this->ia_state.attributes.assign(attributes.first, attributes.first + attributes.second); }
-    
+  //public: //obsolete methods
+  //  void SetTopology(Topology topology) { this->ia_state.topology = topology; }
+  //  Topology GetTopology() const { return ia_state.topology; }
+  //  void SetIndexer(Indexer indexer) { this->ia_state.indexer = indexer; }
+  //  Indexer GetIndexer() const { return ia_state.indexer; }
+  //  void UpdateAttributes(std::pair<const Attribute*, uint32_t> attributes) { this->ia_state.attributes.assign(attributes.first, attributes.first + attributes.second); }
+  //  
   public:
-    void SetRCState(const RCState& state) { rc_state = state; }
+  //  void SetRCState(const RCState& state) { rc_state = state; }
     const RCState& GetRCState() const { return rc_state; }
-  public: //obsolete methods
-    void SetFillMode(Fill fill_mode) { this->rc_state.fill_mode = fill_mode; }
-    Fill GetFillMode() const { return this->rc_state.fill_mode; }
-    void SetCullMode(Cull cull_mode) { this->rc_state.cull_mode = cull_mode; }
-    Cull GetCullMode() const { return this->rc_state.cull_mode; }
-    void SetClipEnabled(bool clip_enabled) { this->rc_state.clip_enabled = clip_enabled; }
-    bool GetClipEnabled() const { return this->rc_state.clip_enabled; }
-    void UpdateViewports(std::pair<const Viewport*, uint32_t> viewports) { this->rc_state.viewports.assign(viewports.first, viewports.first + viewports.second); }
-    void UpdateScissors(std::pair<const Scissor*, uint32_t> scissors) { this->rc_state.scissors.assign(scissors.first, scissors.first + scissors.second); }
-
+  //public: //obsolete methods
+  //  void SetFillMode(Fill fill_mode) { this->rc_state.fill_mode = fill_mode; }
+  //  Fill GetFillMode() const { return this->rc_state.fill_mode; }
+  //  void SetCullMode(Cull cull_mode) { this->rc_state.cull_mode = cull_mode; }
+  //  Cull GetCullMode() const { return this->rc_state.cull_mode; }
+  //  void SetClipEnabled(bool clip_enabled) { this->rc_state.clip_enabled = clip_enabled; }
+  //  bool GetClipEnabled() const { return this->rc_state.clip_enabled; }
+  //  void UpdateViewports(std::pair<const Viewport*, uint32_t> viewports) { this->rc_state.viewports.assign(viewports.first, viewports.first + viewports.second); }
+  //  void UpdateScissors(std::pair<const Scissor*, uint32_t> scissors) { this->rc_state.scissors.assign(scissors.first, scissors.first + scissors.second); }
+  //
   public:
-    void SetDSState(const DSState& state) { ds_state = state; }
+  //  void SetDSState(const DSState& state) { ds_state = state; }
     const DSState& GetDSState() const { return ds_state; }
-  public: //obsolete methods
-    void SetDepthEnabled(bool depth_enabled) { this->ds_state.depth_enabled = depth_enabled; }
-    bool GetDepthEnabled() const { return this->ds_state.depth_enabled; }
-    void SetDepthWrite(bool depth_write) { this->ds_state.depth_write = depth_write; }
-    bool GetDepthWrite() const { return this->ds_state.depth_write; }
-    void SetDepthComparison(Comparison depth_comparison) { this->ds_state.depth_comparison = depth_comparison; }
-    Comparison GetDepthComparison() const { return this->ds_state.depth_comparison; }
-
+  //public: //obsolete methods
+  //  void SetDepthEnabled(bool depth_enabled) { this->ds_state.depth_enabled = depth_enabled; }
+  //  bool GetDepthEnabled() const { return this->ds_state.depth_enabled; }
+  //  void SetDepthWrite(bool depth_write) { this->ds_state.depth_write = depth_write; }
+  //  bool GetDepthWrite() const { return this->ds_state.depth_write; }
+  //  void SetDepthComparison(Comparison depth_comparison) { this->ds_state.depth_comparison = depth_comparison; }
+  //  Comparison GetDepthComparison() const { return this->ds_state.depth_comparison; }
+  //
   public:
-    void SetOMState(const OMState& state) { om_state = state; }
+  //  void SetOMState(const OMState& state) { om_state = state; }
     const OMState& GetOMState() const { return om_state; }
-  public: //obsolete methods
-    void SetATCEnabled(bool atc_enabled) { this->om_state.atc_enabled = atc_enabled; }
-    bool GetATCEnabled() const { return this->om_state.atc_enabled; }
-    void UpdateBlends(std::pair<const Blend*, uint32_t> blends) { this->om_state.target_blends.assign(blends.first, blends.first + blends.second); }
-
-  public:
+  //public: //obsolete methods
+  //  void SetATCEnabled(bool atc_enabled) { this->om_state.atc_enabled = atc_enabled; }
+  //  bool GetATCEnabled() const { return this->om_state.atc_enabled; }
+  //  void UpdateBlends(std::pair<const Blend*, uint32_t> blends) { this->om_state.target_blends.assign(blends.first, blends.first + blends.second); }
+  //
+  //public:
 
 
   public:
@@ -400,7 +400,15 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    Config(const std::string& name, Device& device);
+    Config(const std::string& name,
+      Device& device,
+      const std::string& source,
+      Config::Compilation compilation, 
+      const std::pair<const std::pair<const std::string&, const std::string&>*, uint32_t>& defines,
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state);
     virtual ~Config();
   };
 }

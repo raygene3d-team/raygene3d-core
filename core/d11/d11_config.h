@@ -96,7 +96,15 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11Config(const std::string& name, Device& device);
+    D11Config(const std::string& name,
+      Device& device,
+      const std::string& source,
+      Config::Compilation compilation,
+      const std::pair<const std::pair<const std::string&, const std::string&>*, uint32_t>& defines,
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state);
     virtual ~D11Config();
   };
 }

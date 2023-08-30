@@ -379,14 +379,21 @@ namespace RayGene3D
     }
   }
 
-  D11View::D11View(const std::string& name, Resource& resource,
-    Usage usage, const View::Range& bytes)
+  D11View::D11View(const std::string& name,
+    Resource& resource,
+    Usage usage,
+    const View::Range& bytes)
     : View(name, resource, usage, bytes)
   {
     D11View::Initialize();
   }
-  D11View::D11View(const std::string& name, Resource& resource,
-    Usage usage, View::Bind bind, const View::Range& mipmaps, const View::Range& layers)
+
+  D11View::D11View(const std::string& name,
+    Resource& resource,
+    Usage usage,
+    View::Bind bind,
+    const View::Range& mipmaps,
+    const View::Range& layers)
     : View(name, resource, usage, bind, mipmaps, layers)
   {
     D11View::Initialize();

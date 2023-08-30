@@ -170,14 +170,22 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    Resource(const std::string& name, Device& device, const Resource::BufferDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
-    Resource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
-    Resource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
-    Resource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
-      Resource::Hint hint = Resource::HINT_UNKNOWN, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    Resource(const std::string& name,
+      Device& device, const Resource::BufferDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN,
+      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    Resource(const std::string& name,
+      Device& device, const Resource::Tex1DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN,
+      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    Resource(const std::string& name,
+      Device& device, const Resource::Tex2DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN,
+      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+    Resource(const std::string& name,
+      Device& device, const Resource::Tex3DDesc& desc,
+      Resource::Hint hint = Resource::HINT_UNKNOWN,
+      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
     virtual ~Resource();
   };
 }

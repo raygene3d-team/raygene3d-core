@@ -84,10 +84,16 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    View(const std::string& name, Resource& resource,
-      Usage usage, const View::Range& bytes = {});
-    View(const std::string& name, Resource& resource,
-      Usage usage, View::Bind bind, const View::Range& mipmaps = {}, const View::Range& layers = {});
+    View(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      const View::Range& bytes = {});
+    View(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      View::Bind bind,
+      const View::Range& mipmaps = {},
+      const View::Range& layers = {});
     virtual ~View();
   };
 }

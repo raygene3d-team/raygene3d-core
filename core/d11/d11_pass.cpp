@@ -182,7 +182,7 @@ namespace RayGene3D
           if (ia_view)
           {
             ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
-            ia_formats[i] = config->GetIndexer() 
+            ia_formats[i] = config->GetIAState().indexer
               == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT 
                : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
                : DXGI_FORMAT_UNKNOWN;
@@ -289,9 +289,15 @@ namespace RayGene3D
     //}
   }
 
-  D11Pass::D11Pass(const std::string& name, Device& device) 
-    : Pass(name, device)
+  D11Pass::D11Pass(const std::string& name,
+    Device& device,
+    Pass::Type type,
+    const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
+    const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
+    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
+    : Pass(name, device, type, subpasses, rt_attachments, ds_attachments)
   {
+    D11Pass::Initialize();
   }
 
   D11Pass::~D11Pass()

@@ -610,9 +610,17 @@ namespace RayGene3D
     }
   }
 
-  D11Config::D11Config(const std::string& name, Device& device) 
-    : Config(name, device)
+  D11Config::D11Config(const std::string& name,
+    Device& device,
+    const std::string& source, Config::Compilation compilation,
+    const std::pair<const std::pair<const std::string&, const std::string&>*, uint32_t>& defines,
+    const Config::IAState& ia_state,
+    const Config::RCState& rc_state,
+    const Config::DSState& ds_state,
+    const Config::OMState& om_state)
+    : Config(name, device, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
+    D11Config::Initialize();
   }
 
   D11Config::~D11Config()

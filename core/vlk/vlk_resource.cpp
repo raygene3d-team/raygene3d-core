@@ -270,12 +270,10 @@ namespace RayGene3D
 
       const auto get_extent = [this]()
       {
-        const auto extent =
-          TYPE_TEX1D ? VkExtent3D{ size_x, 1, 1} :
-          TYPE_TEX2D ? VkExtent3D{ size_x, size_y, 1} :
-          TYPE_TEX3D ? VkExtent3D{ size_x, size_y, size_z} :
-          VkExtent3D{};
-        return extent;
+        if (type == TYPE_TEX1D) return VkExtent3D{ size_x, 1, 1 };
+        if (type == TYPE_TEX2D) return VkExtent3D{ size_x, size_y, 1 };
+        if (type == TYPE_TEX3D) return VkExtent3D{ size_x, size_y, size_z };
+        return VkExtent3D{};
       };
 
       const auto get_format = [this]()
@@ -612,29 +610,41 @@ namespace RayGene3D
   {
   }
 
-  VLKResource::VLKResource(const std::string& name, Device& device, const Resource::BufferDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+  VLKResource::VLKResource(const std::string& name,
+    Device& device,
+    const Resource::BufferDesc& desc,
+    Resource::Hint hint,
+    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     VLKResource::Initialize();
   }
 
-  VLKResource::VLKResource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+  VLKResource::VLKResource(const std::string& name,
+    Device& device,
+    const Resource::Tex1DDesc& desc,
+    Resource::Hint hint,
+    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     VLKResource::Initialize();
   }
 
-  VLKResource::VLKResource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+  VLKResource::VLKResource(const std::string& name,
+    Device& device,
+    const Resource::Tex2DDesc& desc,
+    Resource::Hint hint,
+    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     VLKResource::Initialize();
   }
 
-  VLKResource::VLKResource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+  VLKResource::VLKResource(const std::string& name,
+    Device& device,
+    const Resource::Tex3DDesc& desc,
+    Resource::Hint hint,
+    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     VLKResource::Initialize();

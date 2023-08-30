@@ -474,7 +474,7 @@ namespace RayGene3D
           {
             ia_items[k] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
             ia_offsets[k] = ia_view->GetCount().offset;            
-            ia_formats[k] = config->GetIndexer()
+            ia_formats[k] = config->GetIAState().indexer
               == Config::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
               : Config::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
               : VK_INDEX_TYPE_MAX_ENUM;
@@ -638,9 +638,15 @@ namespace RayGene3D
 
   }
 
-  VLKPass::VLKPass(const std::string& name, Device& device)
-    : Pass(name, device)
+  VLKPass::VLKPass(const std::string& name,
+    Device& device,
+    Pass::Type type,
+    const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
+    const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
+    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
+    : Pass(name, device, type, subpasses, rt_attachments, ds_attachments)
   {
+    VLKPass:Initialize();
   }
 
   VLKPass::~VLKPass()

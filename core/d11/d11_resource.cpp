@@ -491,29 +491,41 @@ namespace RayGene3D
     device->GetContext()->Unmap(this->resource, 0);
   }
 
-  D11Resource::D11Resource(const std::string& name, Device& device, const Resource::BufferDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+  D11Resource::D11Resource(const std::string& name,
+    Device& device,
+    const Resource::BufferDesc& desc,
+    Resource::Hint hint,
+    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     D11Resource::Initialize();
   }
 
-  D11Resource::D11Resource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+  D11Resource::D11Resource(const std::string& name,
+    Device& device,
+    const Resource::Tex1DDesc& desc,
+    Resource::Hint hint,
+    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     D11Resource::Initialize();
   }
 
-  D11Resource::D11Resource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+  D11Resource::D11Resource(const std::string& name,
+    Device& device,
+    const Resource::Tex2DDesc& desc,
+    Resource::Hint hint,
+    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     D11Resource::Initialize();
   }
 
-  D11Resource::D11Resource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+  D11Resource::D11Resource(const std::string& name,
+    Device& device,
+    const Resource::Tex3DDesc& desc,
+    Resource::Hint hint,
+    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     D11Resource::Initialize();

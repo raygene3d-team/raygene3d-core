@@ -910,9 +910,19 @@ namespace RayGene3D
     }
   }
 
-  VLKLayout::VLKLayout(const std::string& name, Device& device) 
-    : Layout(name, device)
+  VLKLayout::VLKLayout(const std::string& name,
+    Device& device,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+    const std::pair<const Layout::Sampler*, uint32_t>& samplers,
+    const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities)
+    : Layout(name, device, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities)
   {
+    VLKLayout::Initialize();
   }
 
   VLKLayout::~VLKLayout()
