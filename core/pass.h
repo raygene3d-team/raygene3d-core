@@ -122,10 +122,10 @@ namespace RayGene3D
     std::vector<RTAttachment> rt_attachments;
     std::vector<DSAttachment> ds_attachments;
 
-    std::vector<std::shared_ptr<View>> rt_views;
-    std::vector<std::shared_ptr<View>> ds_views;
-    std::vector<RTValue> rt_values;
-    std::vector<DSValue> ds_values;
+    //std::vector<std::shared_ptr<View>> rt_views;
+    //std::vector<std::shared_ptr<View>> ds_views;
+    //std::vector<RTValue> rt_values;
+    //std::vector<DSValue> ds_values;
 
   protected:
     bool enabled{ false };
@@ -147,19 +147,19 @@ namespace RayGene3D
     void UpdateDSAttachments(std::pair<const DSAttachment*, uint32_t> attachments) {
       this->ds_attachments.assign(attachments.first, attachments.first + attachments.second);
     }
-  public:
-    void UpdateRTViews(std::pair<const std::shared_ptr<View>*, uint32_t> rt_views) { 
-      this->rt_views.assign(rt_views.first, rt_views.first + rt_views.second);
-    }
-    void UpdateDSViews(std::pair<const std::shared_ptr<View>*, uint32_t> ds_views) {
-      this-> ds_views.assign(ds_views.first, ds_views.first + ds_views.second); 
-    }
-    void UpdateRTValues(std::pair<const RTValue*, uint32_t> rt_values) { 
-      this->rt_values.assign(rt_values.first, rt_values.first + rt_values.second);
-    }
-    void UpdateDSValues(std::pair<const DSValue*, uint32_t> ds_values) { 
-      this->ds_values.assign(ds_values.first, ds_values.first + ds_values.second);
-    }
+  //public:
+  //  void UpdateRTViews(std::pair<const std::shared_ptr<View>*, uint32_t> rt_views) { 
+  //    this->rt_views.assign(rt_views.first, rt_views.first + rt_views.second);
+  //  }
+  //  void UpdateDSViews(std::pair<const std::shared_ptr<View>*, uint32_t> ds_views) {
+  //    this-> ds_views.assign(ds_views.first, ds_views.first + ds_views.second); 
+  //  }
+  //  void UpdateRTValues(std::pair<const RTValue*, uint32_t> rt_values) { 
+  //    this->rt_values.assign(rt_values.first, rt_values.first + rt_values.second);
+  //  }
+  //  void UpdateDSValues(std::pair<const DSValue*, uint32_t> ds_values) { 
+  //    this->ds_values.assign(ds_values.first, ds_values.first + ds_values.second);
+  //  }
 
   public:
     void UpdateSubpasses(std::pair<const Subpass*, uint32_t> subpasses) {

@@ -65,7 +65,6 @@ namespace RayGene3D
     {
       uint32_t misc = 0;
       misc = hint & HINT_CUBEMAP_IMAGE ? misc | D3D11_RESOURCE_MISC_TEXTURECUBE : misc;
-      for (const auto& view : views)
       {
         misc = (type == TYPE_BUFFER && (usage & USAGE_SHADER_RESOURCE))  ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
         misc = (type == TYPE_BUFFER && (usage & USAGE_UNORDERED_ACCESS)) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
@@ -77,7 +76,6 @@ namespace RayGene3D
     const auto get_bind = [this]()
     {
       uint32_t bind = 0;
-      for (const auto& view : views)
       {
         bind = usage & USAGE_SHADER_RESOURCE ? bind | D3D11_BIND_SHADER_RESOURCE : bind;
         bind = usage & USAGE_RENDER_TARGET ? bind | D3D11_BIND_RENDER_TARGET : bind;

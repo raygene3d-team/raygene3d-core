@@ -100,7 +100,7 @@ namespace RayGene3D
     const std::shared_ptr<Config>& CreateConfig(const std::string& name,
       const std::string& source,
       Config::Compilation compilation,
-      const std::pair<const std::pair<const std::string&, const std::string&>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
       const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,

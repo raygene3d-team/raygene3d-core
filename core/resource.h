@@ -90,8 +90,8 @@ namespace RayGene3D
     struct Tex1DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      uint32_t layers{ 0 };
       uint32_t mipmaps{ 0 };
+      uint32_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
     };
@@ -99,8 +99,8 @@ namespace RayGene3D
     struct Tex2DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      uint32_t layers{ 0 };
       uint32_t mipmaps{ 0 };
+      uint32_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
       uint32_t size_y{ 0 };
@@ -109,8 +109,8 @@ namespace RayGene3D
     struct Tex3DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      uint32_t layers{ 0 };
       uint32_t mipmaps{ 0 };
+      uint32_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
       uint32_t size_y{ 0 };

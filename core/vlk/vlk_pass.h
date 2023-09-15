@@ -61,6 +61,7 @@ namespace RayGene3D
     uint32_t extent_y{ 0 };
     std::vector<VkImageView> attachment_views;
     std::vector<VkClearValue> attachment_values;
+    std::vector<VkAttachmentDescription> attachment_descs;
     VkFramebuffer framebuffer{ nullptr };
     VkRenderPass renderpass{ nullptr };
 

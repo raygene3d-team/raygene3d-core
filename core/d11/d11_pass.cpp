@@ -50,11 +50,11 @@ namespace RayGene3D
     {
       const uint32_t rt_limit = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
       ID3D11RenderTargetView* rt_items[rt_limit]{ nullptr };
-      const uint32_t rt_count = std::min(rt_limit, uint32_t(rt_views.size()));
+      const uint32_t rt_count = std::min(rt_limit, uint32_t(rt_attachments.size()));
       for (uint32_t i = 0; i < rt_count; ++i)
       {
-        const auto& rt_view = rt_views[i];
-        const auto& rt_value = rt_values[i];
+        const auto& rt_view = rt_attachments[i].view;
+        const auto& rt_value = rt_attachments[i].value;
 
         if (rt_view)
         {
@@ -70,11 +70,11 @@ namespace RayGene3D
 
       const uint32_t ds_limit = 1;
       ID3D11DepthStencilView* ds_items[ds_limit]{ nullptr };
-      const uint32_t ds_count = std::min(ds_limit, uint32_t(ds_views.size()));
+      const uint32_t ds_count = std::min(ds_limit, uint32_t(ds_attachments.size()));
       for (uint32_t i = 0; i < ds_count; ++i)
       {
-        const auto& ds_view = ds_views[i];
-        const auto& ds_value = ds_values[i];
+        const auto& ds_view = ds_attachments[i].view;
+        const auto& ds_value = ds_attachments[i].value;
 
         if (ds_view)
         {
