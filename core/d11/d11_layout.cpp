@@ -187,6 +187,7 @@ namespace RayGene3D
     const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities)
     : Layout(name, device, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities)
   {
+    D11Layout::Initialize();
   }
 
   D11Layout::~D11Layout()
