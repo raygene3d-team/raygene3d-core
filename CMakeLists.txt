@@ -55,7 +55,7 @@ set(SOURCE core.h core.cpp
 	${CORE_VLK_SOURCE}
 )
 ELSE(WIN32)
-set(SOURCE base.h base.cpp core.h core.cpp
+set(SOURCE core.h core.cpp
 	${CORE_SOURCE}
 	${CORE_VLK_SOURCE}
 )
