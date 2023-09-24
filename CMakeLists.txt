@@ -64,10 +64,6 @@ ENDIF(WIN32)
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCE})
 
 add_library(${NAME}-core STATIC ${SOURCE})
-
-target_link_libraries(${NAME}-core PRIVATE
-	Vulkan::Vulkan
-)
 	
 target_include_directories(${NAME}-core PUBLIC
 	${CMAKE_SOURCE_DIR}/3rdparty
@@ -95,12 +91,13 @@ target_link_libraries(raygene3d-core PRIVATE
 	debug ${GLSLANG_LIB_PATH}/HLSLd.lib optimized ${GLSLANG_LIB_PATH}/HLSL.lib
 	debug ${GLSLANG_LIB_PATH}/OGLCompilerd.lib optimized ${GLSLANG_LIB_PATH}/OGLCompiler.lib
 	debug ${GLSLANG_LIB_PATH}/OSDependentd.lib optimized ${GLSLANG_LIB_PATH}/OSDependent.lib
+	debug ${GLSLANG_LIB_PATH}/GenericCodeGend.lib optimized ${GLSLANG_LIB_PATH}/GenericCodeGen.lib
+	debug ${GLSLANG_LIB_PATH}/MachineIndependentd.lib optimized ${GLSLANG_LIB_PATH}/MachineIndependent.lib
 )
 
 target_link_libraries(raygene3d-core PRIVATE
 	debug ${SPIRV_LIB_PATH}/SPIRVd.lib optimized ${SPIRV_LIB_PATH}/SPIRV.lib
 	debug ${SPIRV_LIB_PATH}/SPVRemapperd.lib optimized ${SPIRV_LIB_PATH}/SPVRemapper.lib
-	debug ${SPIRV_LIB_PATH}/SPIRVd.lib optimized ${SPIRV_LIB_PATH}/SPIRV.lib
 )
 
 target_link_libraries(raygene3d-core PRIVATE
@@ -110,18 +107,17 @@ target_link_libraries(raygene3d-core PRIVATE
 )
 ELSE(WIN32)
 target_link_libraries(${NAME}-core PRIVATE
-	optimized ${GLSLANG_LIB_PATH}/libMachineIndependent.a
-	optimized ${GLSLANG_LIB_PATH}/libGenericCodeGen.a
 	optimized ${GLSLANG_LIB_PATH}/libglslang.a
 	optimized ${GLSLANG_LIB_PATH}/libHLSL.a
 	optimized ${GLSLANG_LIB_PATH}/libOGLCompiler.a
 	optimized ${GLSLANG_LIB_PATH}/libOSDependent.a
+	optimized ${GLSLANG_LIB_PATH}/libGenericCodeGen.a
+	optimized ${GLSLANG_LIB_PATH}/libMachineIndependent.a
 )
 
 target_link_libraries(${NAME}-core PRIVATE
 	optimized ${SPIRV_LIB_PATH}/libSPIRV.a
 	optimized ${SPIRV_LIB_PATH}/libSPVRemapper.a
-	optimized ${SPIRV_LIB_PATH}/libSPIRV.a
 )
 
 target_link_libraries(${NAME}-core PRIVATE
@@ -129,8 +125,12 @@ target_link_libraries(${NAME}-core PRIVATE
 	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools-opt.a
 	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools-reduce.a
 )
-target_link_libraries(${NAME}-core PRIVATE
-	optimized -ldl
-	optimized -lpthread
-)
+#target_link_libraries(${NAME}-core PRIVATE
+#	optimized -ldl
+#	optimized -lpthread
+#)
 ENDIF(WIN32)
+
+target_link_libraries(${NAME}-core PRIVATE
+	Vulkan::Vulkan
+)
