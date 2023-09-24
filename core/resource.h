@@ -152,9 +152,11 @@ namespace RayGene3D
 
   public:
     virtual const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, const View::Range& bytes = {}) = 0;
+      Usage usage, const View::Range& bytes = View::Range{ 0, uint32_t(-1) }) = 0;
     virtual const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, View::Bind bind, const View::Range& mipmaps = {}, const View::Range& layers = {}) = 0;
+      Usage usage, View::Bind bind, 
+      const View::Range& mipmaps = View::Range{ 0, uint32_t(-1) }, 
+      const View::Range& layers = View::Range{ 0, uint32_t(-1) }) = 0;
     void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view); }
     void DestroyView(const std::shared_ptr<View>& view) { views.remove(view); };
 

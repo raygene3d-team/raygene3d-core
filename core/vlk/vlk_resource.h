@@ -53,13 +53,15 @@ namespace RayGene3D
 
   public:
     const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, const View::Range& bytes = {}) override
+      Usage usage, const View::Range& bytes = View::Range{ 0, uint32_t(-1) }) override
     {
       return views.emplace_back(new VLKView(name, *this, usage, bytes));
     }
 
     const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, View::Bind bind, const View::Range& mipmaps = {}, const View::Range& layers = {}) override
+      Usage usage, View::Bind bind, 
+      const View::Range& mipmaps = View::Range{ 0, uint32_t(-1) }, 
+      const View::Range& layers = View::Range{ 0, uint32_t(-1) }) override
     {
       return views.emplace_back(new VLKView(name, *this, usage, bind, mipmaps, layers));
     }

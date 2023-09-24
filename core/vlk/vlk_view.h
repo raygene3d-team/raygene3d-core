@@ -59,13 +59,13 @@ namespace RayGene3D
     VLKView(const std::string& name,
       Resource& resource,
       Usage usage,
-      const View::Range& bytes = Range());
+      const View::Range& bytes = Range{ 0, uint32_t(-1) });
     VLKView(const std::string& name,
       Resource& resource,
       Usage usage,
       View::Bind bind,
-      const View::Range& mipmaps = Range(),
-      const View::Range& layers = Range());
+      const View::Range& mipmaps = Range{ 0, uint32_t(-1) },
+      const View::Range& layers = Range{ 0, uint32_t(-1) });
     virtual ~VLKView();
   };
 }
