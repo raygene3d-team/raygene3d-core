@@ -177,7 +177,7 @@ namespace RayGene3D
       create_info.subresourceRange.baseMipLevel = stride.offset;
       create_info.subresourceRange.levelCount = stride.length == -1 ? resource->GetStride() : stride.length;
       create_info.subresourceRange.baseArrayLayer = count.offset;
-      create_info.subresourceRange.layerCount = count.length == -1 ? resource->GetCount() : stride.length;
+      create_info.subresourceRange.layerCount = count.length == -1 ? resource->GetCount() : count.length;
 
       //if (create_info.format == VK_FORMAT_D32_SFLOAT && bind != BIND_DEPTH_STENCIL)
       //{
