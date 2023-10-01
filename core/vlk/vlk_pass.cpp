@@ -304,7 +304,7 @@ namespace RayGene3D
         create_info.pAttachments = attachment_views.data();
         create_info.width = extent_x;
         create_info.height = extent_y;
-        create_info.layers = 1;
+        create_info.layers = layers;
         BLAST_ASSERT(VK_SUCCESS == vkCreateFramebuffer(device->GetDevice(), &create_info, nullptr, &framebuffer));
       }
 

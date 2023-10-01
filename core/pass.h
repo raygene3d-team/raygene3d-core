@@ -140,6 +140,12 @@ namespace RayGene3D
     void SetEnabled(bool enabled) { this->enabled = enabled; }
     bool GetEnabled() const { return enabled; }
 
+    void SetExtentX(uint32_t x) { extent_x = x; }
+    uint32_t GetExtentX() { return extent_x; }
+
+    void SetExtentY(uint32_t y) { extent_y = y; }
+    uint32_t GetExtentY() { return extent_y; }
+
   public:
     void UpdateRTAttachments(std::pair<const RTAttachment*, uint32_t> attachments) {
       this->rt_attachments.assign(attachments.first, attachments.first + attachments.second);
