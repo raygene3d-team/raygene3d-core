@@ -70,6 +70,9 @@ namespace RayGene3D
     //  uint32_t padding{ uint32_t(-1) };
     //};
 
+    //uint32_t extent_x{ 0 };
+    //uint32_t extent_y{ 0 };
+
   public:
     struct Argument
     {
@@ -140,11 +143,11 @@ namespace RayGene3D
     void SetEnabled(bool enabled) { this->enabled = enabled; }
     bool GetEnabled() const { return enabled; }
 
-    void SetExtentX(uint32_t x) { extent_x = x; }
-    uint32_t GetExtentX() { return extent_x; }
+    //void SetExtentX(uint32_t x) { extent_x = x; }
+    //uint32_t GetExtentX() { return extent_x; }
 
-    void SetExtentY(uint32_t y) { extent_y = y; }
-    uint32_t GetExtentY() { return extent_y; }
+    //void SetExtentY(uint32_t y) { extent_y = y; }
+    //uint32_t GetExtentY() { return extent_y; }
 
   public:
     void UpdateRTAttachments(std::pair<const RTAttachment*, uint32_t> attachments) {

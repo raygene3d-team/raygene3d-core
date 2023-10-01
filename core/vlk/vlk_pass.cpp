@@ -155,6 +155,7 @@ namespace RayGene3D
           rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
           extent_x = std::max(extent_x, rt_view->GetResource().GetSizeX());
           extent_y = std::max(extent_y, rt_view->GetResource().GetSizeY());
+          layers = std::max(rt_view->GetCount().length == -1 ? 1 : rt_view->GetCount().length, layers);
         }
 
         std::vector<VkClearValue> ds_attachment_values(ds_attachments.size());
@@ -180,6 +181,7 @@ namespace RayGene3D
           ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
           extent_x = std::max(extent_x, ds_view->GetResource().GetSizeX());
           extent_y = std::max(extent_y, ds_view->GetResource().GetSizeY());
+          layers = std::max(ds_view->GetCount().length == -1 ? 1 : ds_view->GetCount().length, layers);
         }
 
         attachment_values.clear();

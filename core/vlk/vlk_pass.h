@@ -64,6 +64,12 @@ namespace RayGene3D
     VkRenderPass renderpass{ nullptr };
 
   protected:
+    uint32_t extent_x{ 0 };
+    uint32_t extent_y{ 0 };
+    uint32_t layers{ 1 };
+    // Perhaps we should set these parameters externally and validate during initialize
+
+  protected:
     PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV{ nullptr };
     PFN_vkGetRayTracingShaderGroupHandlesNV vkGetRayTracingShaderGroupHandlesNV{ nullptr };
     PFN_vkCmdTraceRaysNV vkCmdTraceRaysNV{ nullptr };
