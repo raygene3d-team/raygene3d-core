@@ -1029,5 +1029,6 @@ namespace RayGene3D
 
   VLKConfig::~VLKConfig()
   {
+    VLKConfig::Discard();
   }
 }
