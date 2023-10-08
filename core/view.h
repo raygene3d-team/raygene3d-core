@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../../raygene3d-root/base.h"
+#include "../../raygene3d-wrap/base.h"
 
 namespace RayGene3D
 {
