@@ -96,8 +96,6 @@ namespace RayGene3D
       uint32_t ia_count;
     };
 
-
-
   protected:
     std::vector<std::shared_ptr<View>> ub_views; //uniform buffers
     std::vector<std::shared_ptr<View>> sb_views; //shifted buffers
@@ -118,45 +116,6 @@ namespace RayGene3D
     
   public:
     Device& GetDevice() { return device; }
-
-  //public:
-  //  void UpdateUBViews(std::pair<const std::shared_ptr<View>*, uint32_t> ub_views) { this->ub_views.assign(ub_views.first, ub_views.first + ub_views.second); }
-  //  void UpdateSBViews(std::pair<const std::shared_ptr<View>*, uint32_t> sb_views) { this->sb_views.assign(sb_views.first, sb_views.first + sb_views.second); }
-  //
-  //public:
-  //  void UpdateRIViews(std::pair<const std::shared_ptr<View>*, uint32_t> ri_views) { this->ri_views.assign(ri_views.first, ri_views.first + ri_views.second); }
-  //  void UpdateWIViews(std::pair<const std::shared_ptr<View>*, uint32_t> wi_views) { this->wi_views.assign(wi_views.first, wi_views.first + wi_views.second); }
-  //  void UpdateRBViews(std::pair<const std::shared_ptr<View>*, uint32_t> rb_views) { this->rb_views.assign(rb_views.first, rb_views.first + rb_views.second); }
-  //  void UpdateWBViews(std::pair<const std::shared_ptr<View>*, uint32_t> wb_views) { this->wb_views.assign(wb_views.first, wb_views.first + wb_views.second); }
-  //
-  //public:
-  //  void UpdateSamplers(std::pair<const Sampler*, uint32_t> samplers) { this->samplers.assign(samplers.first, samplers.first + samplers.second); }
-  //
-  //public:
-  //  void UpdateRTXEntities(std::pair<const RTXEntity*, uint32_t> rtx_entities) { this->rtx_entities.assign(rtx_entities.first, rtx_entities.first + rtx_entities.second); }
-  //
-  //
-  //public:
-  //  void SetRTXEntityCount(uint32_t count) 
-  //  { 
-  //    rtx_entities.resize(count);
-  //  }
-  //  void SetRTXEntityTransform(uint32_t index, const float transform[12])
-  //  {
-  //    memcpy(rtx_entities[index].transform, transform, 12 * sizeof(float));
-  //  }
-  //  void SetRTXEntityVAView(uint32_t index, const std::shared_ptr<View>& va_view, uint32_t va_offset, uint32_t va_count)
-  //  {
-  //    rtx_entities[index].va_view = va_view;
-  //    rtx_entities[index].va_offset = va_offset;
-  //    rtx_entities[index].va_count = va_count;
-  //  }
-  //  void SetRTXEntityIAView(uint32_t index, const std::shared_ptr<View>& ia_view, uint32_t ia_offset, uint32_t ia_count)
-  //  {
-  //    rtx_entities[index].ia_view = ia_view;
-  //    rtx_entities[index].ia_offset = ia_offset;
-  //    rtx_entities[index].ia_count = ia_count;
-  //  }
 
   public:
     void Initialize() override = 0;

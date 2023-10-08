@@ -198,41 +198,6 @@ namespace RayGene3D
       }
 
       {
-        //std::vector<VkAttachmentDescription> rt_attachment_desc(rt_attachments.size());
-        //for (size_t i = 0; i < rt_attachments.size(); ++i)
-        //{
-        //  const auto& rt_view = rt_attachments[i].view;
-
-        //  rt_attachment_desc[i].format = get_format(rt_views[i]->GetResource().GetFormat());
-        //  rt_attachment_desc[i].samples = VK_SAMPLE_COUNT_1_BIT;
-        //  rt_attachment_desc[i].loadOp = rt_value ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
-        //  rt_attachment_desc[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        //  rt_attachment_desc[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        //  rt_attachment_desc[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        //  rt_attachment_desc[i].initialLayout = rt_value ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
-        //  rt_attachment_desc[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-        //}
-
-        //std::vector<VkAttachmentDescription> ds_attachment_desc(ds_views.size());
-        //for (size_t i = 0; i < ds_views.size(); ++i)
-        //{
-        //  const auto& ds_value = ds_values[i];
-
-        //  ds_attachment_desc[i].format = get_format(ds_views[i]->GetResource().GetFormat());
-        //  ds_attachment_desc[i].samples = VK_SAMPLE_COUNT_1_BIT;
-        //  ds_attachment_desc[i].loadOp = ds_value.first ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
-        //  ds_attachment_desc[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        //  ds_attachment_desc[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        //  ds_attachment_desc[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        //  ds_attachment_desc[i].initialLayout = ds_value.first ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
-        //  ds_attachment_desc[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-        //}
-
-        //std::vector<VkAttachmentDescription> attachment_desc;
-        //std::move(rt_attachment_desc.begin(), rt_attachment_desc.end(), std::back_inserter(attachment_desc));
-        //std::move(ds_attachment_desc.begin(), ds_attachment_desc.end(), std::back_inserter(attachment_desc));
-
-
         std::vector<VkAttachmentReference> rt_attachment_refs(rt_attachments.size());
         for (size_t i = 0; i < rt_attachments.size(); ++i)
         {
@@ -280,25 +245,6 @@ namespace RayGene3D
 
 
       {
-        //std::vector<VkImageView> rt_attachment_views(rt_views.size());
-        //for (size_t i = 0; i < rt_views.size(); ++i)
-        //{
-        //  const auto& rt_view = rt_views[i];
-        //  rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
-        //  extent_x = std::max(extent_x, rt_view->GetResource().GetSizeX());
-        //  extent_y = std::max(extent_y, rt_view->GetResource().GetSizeY());
-        //}
-
-        //std::vector<VkImageView> ds_attachment_views(ds_views.size());
-        //for (size_t i = 0; i < ds_views.size(); ++i)
-        //{
-        //  const auto& ds_view = ds_views[i];
-        //  ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
-        //  extent_x = std::max(extent_x, ds_view->GetResource().GetSizeX());
-        //  extent_y = std::max(extent_y, ds_view->GetResource().GetSizeY());
-        //}
-
-
         VkFramebufferCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         create_info.renderPass = renderpass;
