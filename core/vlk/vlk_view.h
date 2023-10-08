@@ -26,30 +26,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
+
 #pragma once
-#include "core/device.h"
+#include "../view.h"
+
+#ifdef __linux__
+#define VK_USE_PLATFORM_XLIB_KHR
+#elif _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#elif __OBJC__
+#define VK_USE_PLATFORM_METAL_EXT
+#endif
+#define VK_ENABLE_BETA_EXTENSIONS
+#include <vulkan/vulkan.h>
 
 namespace RayGene3D
 {
-  class Core : public Usable
+  class VLKView : public View
   {
+  protected:
+    VkImageView view{ nullptr };
+
   public:
-
-    enum DeviceType
-    {
-      DEVICE_UNKNOWN = 0,
-      DEVICE_D11 = 1,
-      DEVICE_VLK = 2,
-    };
-
-  protected:
-    DeviceType type;
-
-  protected:
-    std::unique_ptr<Device> device;
-
-  protected:
-    std::list<std::weak_ptr<View>> views;
+    VkImageView GetView() const { return view; }
 
   public:
     void Initialize() override;
@@ -57,15 +56,16 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    const std::unique_ptr<Device>& GetDevice() { return device; }
-
-  public:
-    void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
-
-  public:
-    Core(DeviceType type);
-    virtual ~Core();
+    VLKView(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      const View::Range& bytes = Range{ 0, uint32_t(-1) });
+    VLKView(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      View::Bind bind,
+      const View::Range& mipmaps = Range{ 0, uint32_t(-1) },
+      const View::Range& layers = Range{ 0, uint32_t(-1) });
+    virtual ~VLKView();
   };
 }

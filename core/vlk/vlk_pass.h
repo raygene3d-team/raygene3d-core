@@ -26,30 +26,56 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
+
 #pragma once
-#include "core/device.h"
+#include "../pass.h"
+
+#ifdef __linux__
+#define VK_USE_PLATFORM_XLIB_KHR
+#elif _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#elif __OBJC__
+#define VK_USE_PLATFORM_METAL_EXT
+#endif
+#define VK_ENABLE_BETA_EXTENSIONS
+#include <vulkan/vulkan.h>
 
 namespace RayGene3D
 {
-  class Core : public Usable
+  class VLKPass : public Pass
   {
-  public:
+  protected:
+    VkCommandBuffer command_buffer{ nullptr };
+    VkFence fence{ nullptr };
 
-    enum DeviceType
+  protected:
+    struct SubpassProxy
     {
-      DEVICE_UNKNOWN = 0,
-      DEVICE_D11 = 1,
-      DEVICE_VLK = 2,
+      VkPipeline pipeline{ nullptr };
+      VkDeviceMemory memoryLayout{ nullptr };
+      VkBuffer bufferLayout{ nullptr };
     };
+    std::vector<SubpassProxy> subpass_proxies;
+
+    std::vector<VkImageView> attachment_views;
+    std::vector<VkClearValue> attachment_values;
+    std::vector<VkAttachmentDescription> attachment_descs;
+    VkFramebuffer framebuffer{ nullptr };
+    VkRenderPass renderpass{ nullptr };
 
   protected:
-    DeviceType type;
+    uint32_t extent_x{ 0 };
+    uint32_t extent_y{ 0 };
+    uint32_t layers{ 1 };
+    // Perhaps we should set these parameters externally and validate during initialize
 
   protected:
-    std::unique_ptr<Device> device;
+    PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV{ nullptr };
+    PFN_vkGetRayTracingShaderGroupHandlesNV vkGetRayTracingShaderGroupHandlesNV{ nullptr };
+    PFN_vkCmdTraceRaysNV vkCmdTraceRaysNV{ nullptr };
 
-  protected:
-    std::list<std::weak_ptr<View>> views;
+  public:
+    VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
 
   public:
     void Initialize() override;
@@ -57,15 +83,12 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    const std::unique_ptr<Device>& GetDevice() { return device; }
-
-  public:
-    void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
-
-  public:
-    Core(DeviceType type);
-    virtual ~Core();
+    VLKPass(const std::string& name,
+      Device& device,
+      Pass::Type type,
+      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
+      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
+    virtual ~VLKPass();
   };
 }

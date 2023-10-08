@@ -26,46 +26,74 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
+
 #pragma once
-#include "core/device.h"
+#include "../../raygene3d-wrap/base.h"
 
 namespace RayGene3D
 {
-  class Core : public Usable
+  class Resource;
+
+  class View : public Usable
   {
   public:
-
-    enum DeviceType
+    enum Bind
     {
-      DEVICE_UNKNOWN = 0,
-      DEVICE_D11 = 1,
-      DEVICE_VLK = 2,
+      BIND_UNKNOWN = 0x0L,
+      BIND_DEPTH_ONLY = 0x1L,
+      BIND_STENCIL_ONLY = 0x2L,
+      BIND_CUBEMAP_LAYER = 0x4L,
+      BIND_CUBEMAP_ARRAY = 0x8L,
+      BIND_FORCE_UINT = 0xffffffff
     };
 
+  public:
+    struct Range
+    {
+      uint32_t offset{ 0 };
+      uint32_t length{ uint32_t(-1) };
+    };
+   
   protected:
-    DeviceType type;
+    Resource& resource;
 
   protected:
-    std::unique_ptr<Device> device;
+    Usage usage{ USAGE_UNKNOWN };
 
   protected:
-    std::list<std::weak_ptr<View>> views;
+    Bind bind{ BIND_UNKNOWN };
+
+  protected:
+    Range stride;
+    Range count;
 
   public:
-    void Initialize() override;
-    void Use() override;
-    void Discard() override;
+    Resource& GetResource() { return resource; }
+    
+  public:
+    Usage GetUsage() const { return usage; }
+    Bind GetBind() const { return bind; }
 
   public:
-    const std::unique_ptr<Device>& GetDevice() { return device; }
+    const Range& GetStride() const { return stride; }
+    const Range& GetCount() const { return count; }
 
   public:
-    void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
+    void Initialize() override = 0;
+    void Use() override = 0;
+    void Discard() override = 0;
 
   public:
-    Core(DeviceType type);
-    virtual ~Core();
+    View(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      const View::Range& bytes = Range{0, uint32_t(-1)});
+    View(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      View::Bind bind,
+      const View::Range& mipmaps = Range{ 0, uint32_t(-1) },
+      const View::Range& layers = Range{ 0, uint32_t(-1) });
+    virtual ~View();
   };
 }

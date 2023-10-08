@@ -26,46 +26,33 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
-#pragma once
-#include "core/device.h"
+
+#include "config.h"
 
 namespace RayGene3D
 {
-  class Core : public Usable
+  Config::Config(const std::string& name,
+    Device& device,
+    const std::string& source,
+    Config::Compilation compilation, 
+    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const Config::IAState& ia_state,
+    const Config::RCState& rc_state,
+    const Config::DSState& ds_state,
+    const Config::OMState& om_state)
+    : Usable(name)
+    , device(device)
+    , source(source)
+    , compilation(compilation)
+    , defines(defines.first, defines.first + defines.second)
+    , ia_state(ia_state)
+    , rc_state(rc_state)
+    , ds_state(ds_state)
+    , om_state(om_state)
   {
-  public:
+  }
 
-    enum DeviceType
-    {
-      DEVICE_UNKNOWN = 0,
-      DEVICE_D11 = 1,
-      DEVICE_VLK = 2,
-    };
-
-  protected:
-    DeviceType type;
-
-  protected:
-    std::unique_ptr<Device> device;
-
-  protected:
-    std::list<std::weak_ptr<View>> views;
-
-  public:
-    void Initialize() override;
-    void Use() override;
-    void Discard() override;
-
-  public:
-    const std::unique_ptr<Device>& GetDevice() { return device; }
-
-  public:
-    void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
-
-  public:
-    Core(DeviceType type);
-    virtual ~Core();
-  };
+  Config::~Config()
+  {
+  }
 }

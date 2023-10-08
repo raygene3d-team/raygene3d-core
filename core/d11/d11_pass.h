@@ -26,30 +26,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
+
 #pragma once
-#include "core/device.h"
+#include "../pass.h"
+
+#include <dxgi.h>
+#include <d3d11_1.h>
 
 namespace RayGene3D
 {
-  class Core : public Usable
+  class D11Pass : public Pass
   {
-  public:
-
-    enum DeviceType
-    {
-      DEVICE_UNKNOWN = 0,
-      DEVICE_D11 = 1,
-      DEVICE_VLK = 2,
-    };
 
   protected:
-    DeviceType type;
-
-  protected:
-    std::unique_ptr<Device> device;
-
-  protected:
-    std::list<std::weak_ptr<View>> views;
+    //ID3D11DeviceContext* context{ nullptr };
+    //ID3D11CommandList* command_list{ nullptr };
 
   public:
     void Initialize() override;
@@ -57,15 +48,12 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    const std::unique_ptr<Device>& GetDevice() { return device; }
-
-  public:
-    void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
-
-  public:
-    Core(DeviceType type);
-    virtual ~Core();
+    D11Pass(const std::string& name,
+      Device& device,
+      Pass::Type type,
+      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
+      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
+    virtual ~D11Pass();
   };
 }

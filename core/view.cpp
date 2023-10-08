@@ -26,46 +26,39 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
-#pragma once
-#include "core/device.h"
+
+#include "view.h"
+
 
 namespace RayGene3D
 {
-  class Core : public Usable
+  View::View(const std::string& name,
+    Resource& resource,
+    Usage usage,
+    const View::Range& bytes)
+    : Usable(name)
+    , resource(resource)
+    , usage(usage)
+    , count(bytes)
   {
-  public:
+  }
 
-    enum DeviceType
-    {
-      DEVICE_UNKNOWN = 0,
-      DEVICE_D11 = 1,
-      DEVICE_VLK = 2,
-    };
+  View::View(const std::string& name,
+    Resource& resource,
+    Usage usage,
+    View::Bind bind,
+    const View::Range& mipmaps,
+    const View::Range& layers)
+    : Usable(name)
+    , resource(resource)
+    , usage(usage)
+    , bind(bind)
+    , stride(mipmaps)
+    , count(layers)
+  {
+  }
 
-  protected:
-    DeviceType type;
-
-  protected:
-    std::unique_ptr<Device> device;
-
-  protected:
-    std::list<std::weak_ptr<View>> views;
-
-  public:
-    void Initialize() override;
-    void Use() override;
-    void Discard() override;
-
-  public:
-    const std::unique_ptr<Device>& GetDevice() { return device; }
-
-  public:
-    void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
-
-  public:
-    Core(DeviceType type);
-    virtual ~Core();
-  };
+  View::~View()
+  {
+  }
 }

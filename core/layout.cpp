@@ -26,46 +26,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
-#pragma once
-#include "core/device.h"
+
+#include "layout.h"
 
 namespace RayGene3D
 {
-  class Core : public Usable
+  Layout::Layout(const std::string& name,
+    Device& device,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+    const std::pair<const Layout::Sampler*, uint32_t>& samplers,
+    const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities)
+    : Usable(name)
+    , device(device)
+    , ub_views(ub_views.first, ub_views.first + ub_views.second)
+    , sb_views(sb_views.first, sb_views.first + sb_views.second)
+    , ri_views(ri_views.first, ri_views.first + ri_views.second)
+    , wi_views(wi_views.first, wi_views.first + wi_views.second)
+    , rb_views(rb_views.first, rb_views.first + rb_views.second)
+    , wb_views(wb_views.first, wb_views.first + wb_views.second)
+    , samplers(samplers.first, samplers.first + samplers.second)
+    , rtx_entities(rtx_entities.first, rtx_entities.first + rtx_entities.second)
   {
-  public:
+  }
 
-    enum DeviceType
-    {
-      DEVICE_UNKNOWN = 0,
-      DEVICE_D11 = 1,
-      DEVICE_VLK = 2,
-    };
-
-  protected:
-    DeviceType type;
-
-  protected:
-    std::unique_ptr<Device> device;
-
-  protected:
-    std::list<std::weak_ptr<View>> views;
-
-  public:
-    void Initialize() override;
-    void Use() override;
-    void Discard() override;
-
-  public:
-    const std::unique_ptr<Device>& GetDevice() { return device; }
-
-  public:
-    void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
-
-  public:
-    Core(DeviceType type);
-    virtual ~Core();
-  };
+  Layout::~Layout()
+  {
+  }
 }

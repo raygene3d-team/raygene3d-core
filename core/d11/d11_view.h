@@ -26,30 +26,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
+
 #pragma once
-#include "core/device.h"
+#include "../view.h"
+
+#include <dxgi.h>
+#include <d3d11_1.h>
 
 namespace RayGene3D
 {
-  class Core : public Usable
+  class D11View : public View
   {
-  public:
+  protected:
+    ID3D11View* view{ nullptr };
 
-    enum DeviceType
+    union Info
     {
-      DEVICE_UNKNOWN = 0,
-      DEVICE_D11 = 1,
-      DEVICE_VLK = 2,
-    };
+      D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+      D3D11_RENDER_TARGET_VIEW_DESC rtv_desc;
+      D3D11_DEPTH_STENCIL_VIEW_DESC dsv_desc;
+      D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc;
+    } info;
 
-  protected:
-    DeviceType type;
-
-  protected:
-    std::unique_ptr<Device> device;
-
-  protected:
-    std::list<std::weak_ptr<View>> views;
+  public:
+    void SetView(ID3D11View* view) { this->view = view; }
+    ID3D11View* GetView() { return view; }
+    ID3D11ShaderResourceView* GetSRView() const { return reinterpret_cast<ID3D11ShaderResourceView*>(view); }
+    ID3D11RenderTargetView* GetRTView() const { return reinterpret_cast<ID3D11RenderTargetView*>(view); }
+    ID3D11DepthStencilView* GetDSView() const { return reinterpret_cast<ID3D11DepthStencilView*>(view); }
+    ID3D11UnorderedAccessView* GetUAView() const { return reinterpret_cast<ID3D11UnorderedAccessView*>(view); }
 
   public:
     void Initialize() override;
@@ -57,15 +62,16 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    const std::unique_ptr<Device>& GetDevice() { return device; }
-
-  public:
-    void AddView(const std::shared_ptr<View>& view) { return views.push_back(view); }
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
-    //void RemoveView(const std::shared_ptr<View>& view) { return views.remove(view); }
-
-  public:
-    Core(DeviceType type);
-    virtual ~Core();
+    D11View(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      const View::Range& bytes = Range{ 0, uint32_t(-1) });
+    D11View(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      View::Bind bind,
+      const View::Range& mipmaps = Range{ 0, uint32_t(-1) },
+      const View::Range& layers = Range{ 0, uint32_t(-1) });
+    virtual ~D11View();
   };
 }
