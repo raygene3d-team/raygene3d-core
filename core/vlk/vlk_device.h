@@ -57,7 +57,7 @@ namespace RayGene3D
     VkPhysicalDeviceMemoryProperties memory{};
     
     bool raytracing_supported{ false };
-    VkPhysicalDeviceRayTracingPropertiesNV raytracing_properties;
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR raytracing_properties;
 
 
     VkDevice device{ nullptr };

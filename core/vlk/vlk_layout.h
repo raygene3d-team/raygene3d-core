@@ -59,18 +59,26 @@ namespace RayGene3D
     std::vector<VkDescriptorSetLayout> tables;
 
   protected:
+    std::vector<VkAccelerationStructureGeometryKHR> bottom_geometries;
+    std::vector<VkAccelerationStructureBuildRangeInfoKHR> bottom_range_infos;
+    std::vector<VkAccelerationStructureBuildSizesInfoKHR> bottom_sizes_infos;
     std::vector<VkDeviceSize> bottom_sizes;
-    std::vector<VkAccelerationStructureNV> bottom_accelerations;
+    std::vector<VkAccelerationStructureKHR> bottom_accelerations;
     std::vector<VkDeviceMemory> bottom_memories;
+    std::vector<VkBuffer> bottom_buffers;
     std::vector<uint64_t> bottom_handles;
 
+    VkAccelerationStructureGeometryKHR top_geometry;
+    VkAccelerationStructureBuildRangeInfoKHR top_range_info;
+    VkAccelerationStructureBuildSizesInfoKHR top_sizes_info;
     VkDeviceSize top_size{ 0 };
-    VkAccelerationStructureNV top_acceleration{ nullptr };
+    VkAccelerationStructureKHR top_acceleration{ nullptr };
     VkDeviceMemory top_memory{ nullptr };
+    VkBuffer top_buffer{ nullptr };
     uint64_t top_handle{ 0 };
 
-    VkDeviceMemory memoryInstances{ nullptr };
-    VkBuffer bufferInstances{ nullptr };
+    VkDeviceMemory memory_instances{ nullptr };
+    VkBuffer buffer_instances{ nullptr };
 
     VkDeviceMemory memoryScratch{ nullptr };
     VkBuffer bufferScratch{ nullptr };

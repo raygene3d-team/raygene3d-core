@@ -205,8 +205,10 @@ namespace RayGene3D
     {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #ifdef ENABLE_RTX
-      VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-      VK_NV_RAY_TRACING_EXTENSION_NAME,
+      //VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+      //VK_NV_RAY_TRACING_EXTENSION_NAME,
+      VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+      VK_KHR_RAY_QUERY_EXTENSION_NAME,
 #endif
     };
 
@@ -273,8 +275,8 @@ namespace RayGene3D
 
 #ifdef ENABLE_RTX
     {
-      VkPhysicalDeviceRayTracingPropertiesNV rtx_properties = {};
-      rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
+      VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtx_properties = {};
+      rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
       VkPhysicalDeviceProperties2 device_properties = {};
       device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
       device_properties.pNext = &rtx_properties;
@@ -288,18 +290,18 @@ shaderGroupHandleSize: %d\n\
 maxRecursionDepth: &d\n\
 maxShaderGroupStride: %d\n\
 shaderGroupBaseAlignment: %d\n\
-maxGeometryCount: %d\n\
-maxInstanceCount: %d\n\
-maxTriangleCount: %d\n\
-maxDescriptorSetAccelerationStructures: %d\n"
+shaderGroupHandleCaptureReplaySize: %d\n\
+maxRayDispatchInvocationCount: %d\n\
+shaderGroupHandleAlignment: %d\n\
+maxRayHitAttributeSize: %d\n"
         , raytracing_properties.shaderGroupHandleSize
         , raytracing_properties.maxRecursionDepth
         , raytracing_properties.maxShaderGroupStride
         , raytracing_properties.shaderGroupBaseAlignment
-        , raytracing_properties.maxGeometryCount
-        , raytracing_properties.maxInstanceCount
-        , raytracing_properties.maxTriangleCount
-        , raytracing_properties.maxDescriptorSetAccelerationStructures);
+        , raytracing_properties.shaderGroupHandleCaptureReplaySize
+        , raytracing_properties.maxRayDispatchInvocationCount
+        , raytracing_properties.shaderGroupHandleAlignment
+        , raytracing_properties.maxRayHitAttributeSize);
     }
 #endif
   }
