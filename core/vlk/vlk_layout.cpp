@@ -284,19 +284,10 @@ namespace RayGene3D
         }
 
         {
-          VkBufferDeviceAddressInfo address_info = {};
-          address_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-          address_info.buffer = buffer_instances;
-
-          // Wraps a device pointer to the above uploaded instances.
-          VkAccelerationStructureGeometryInstancesDataKHR instances_data = {};
-          instances_data.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-          instances_data.data.deviceAddress = vkGetBufferDeviceAddress(device->GetDevice(), &address_info);
-
-          // Put the above into a VkAccelerationStructureGeometryKHR. We need to put the instances struct in a union and label it as instance data.
           top_geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
           top_geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-          top_geometry.geometry.instances = instances_data;
+          top_geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+          top_geometry.geometry.instances.data.deviceAddress = get_device_address_fn(device->GetDevice(), buffer_instances);
 
           VkAccelerationStructureBuildGeometryInfoKHR geometry_info = {};
           geometry_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -311,35 +302,38 @@ namespace RayGene3D
           vkGetAccelerationStructureBuildSizesKHR(device->GetDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
             &geometry_info, &instances_count, &top_sizes_info);
 
-          VkAccelerationStructureCreateInfoNV accelerationInfo = {};
-          accelerationInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-          accelerationInfo.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-          accelerationInfo.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-          accelerationInfo.info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
-          accelerationInfo.info.instanceCount = uint32_t(instancesNV.size());
-          accelerationInfo.info.geometryCount = 0;
-          BLAST_ASSERT(VK_SUCCESS == vkCreateAccelerationStructureNV(device->GetDevice(), &accelerationInfo, nullptr, &top_acceleration));
+          VkBufferCreateInfo info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+          info.size = top_sizes_info.accelerationStructureSize;
+          info.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
+            | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+            | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+          BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device->GetDevice(), &info, nullptr, &top_buffer));
 
-          VkAccelerationStructureMemoryRequirementsInfoNV requirementsInfo = {};
-          requirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-          requirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-          requirementsInfo.accelerationStructure = top_acceleration;
+          VkBufferMemoryRequirementsInfo2 requirements_info = {};
+          requirements_info.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2;
+          requirements_info.buffer = top_buffer;
           VkMemoryRequirements2 requirements = {};
-          vkGetAccelerationStructureMemoryRequirementsNV(device->GetDevice(), &requirementsInfo, &requirements);
-          VkMemoryAllocateInfo allocateInfo = {};
-          allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-          allocateInfo.allocationSize = requirements.memoryRequirements.size;
-          allocateInfo.memoryTypeIndex = device->GetMemoryIndex(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, requirements.memoryRequirements.memoryTypeBits);
-          BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocateInfo, nullptr, &top_memory));
+          requirements.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+          vkGetBufferMemoryRequirements2(device->GetDevice(), &requirements_info, &requirements);
+          VkMemoryAllocateInfo allocate_info = {};
+          allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+          allocate_info.allocationSize = requirements.memoryRequirements.size;
+          allocate_info.memoryTypeIndex = device->GetMemoryIndex(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, requirements.memoryRequirements.memoryTypeBits);
+          BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocate_info, nullptr, &top_memory));
           top_size = requirements.memoryRequirements.size;
+          BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), top_buffer, top_memory, 0));
 
-          VkBindAccelerationStructureMemoryInfoNV bindInfo = {};
-          bindInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
-          bindInfo.accelerationStructure = top_acceleration;
-          bindInfo.memory = top_memory;
-          BLAST_ASSERT(VK_SUCCESS == vkBindAccelerationStructureMemoryNV(device->GetDevice(), 1, &bindInfo));
+          VkAccelerationStructureCreateInfoKHR create_info = {};
+          create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+          create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+          create_info.size = top_sizes_info.accelerationStructureSize;
+          create_info.buffer = top_buffer;
+          BLAST_ASSERT(VK_SUCCESS == vkCreateAccelerationStructureKHR(device->GetDevice(), &create_info, nullptr, &top_acceleration));
 
-          BLAST_ASSERT(VK_SUCCESS == vkGetAccelerationStructureHandleNV(device->GetDevice(), top_acceleration, sizeof(uint64_t), &top_handle));
+          VkAccelerationStructureDeviceAddressInfoKHR address_info = {};
+          address_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+          address_info.accelerationStructure = top_acceleration;
+          top_handle = vkGetAccelerationStructureDeviceAddressKHR(device->GetDevice(), &address_info);
 
           BLAST_LOG("Accelearion/memory/size/handle: %d, %d, %d, %d", top_acceleration, top_memory, top_size, top_handle);
         }
