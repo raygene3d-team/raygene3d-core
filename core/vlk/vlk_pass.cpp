@@ -122,9 +122,9 @@ namespace RayGene3D
 
   	if (device->GetRTXSupported())
     {
-      vkCreateRayTracingPipelinesNV = reinterpret_cast<PFN_vkCreateRayTracingPipelinesNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateRayTracingPipelinesNV"));
-      vkGetRayTracingShaderGroupHandlesNV = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetRayTracingShaderGroupHandlesNV"));
-      vkCmdTraceRaysNV = reinterpret_cast<PFN_vkCmdTraceRaysNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdTraceRaysNV"));
+      vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateRayTracingPipelinesKHR"));
+      vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetRayTracingShaderGroupHandlesKHR"));
+      vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdTraceRaysKHR"));
     }
 
     if (type == TYPE_GRAPHIC)
@@ -323,17 +323,17 @@ namespace RayGene3D
           const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
           const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
-          VkRayTracingPipelineCreateInfoNV create_info = {};
+          VkRayTracingPipelineCreateInfoKHR create_info = {};
           create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_NV;
           create_info.flags = 0;
           create_info.stageCount = config->GetStageCount();
           create_info.pStages = config->GetStageArray();
           create_info.groupCount = config->GetGroupCount();
           create_info.pGroups = config->GetGroupArray();
-          create_info.maxRecursionDepth = 1;
+          create_info.maxPipelineRayRecursionDepth = 1;
           create_info.layout = layout->GetLayout();
           create_info.basePipelineHandle = VK_NULL_HANDLE;
-          BLAST_ASSERT(VK_SUCCESS == vkCreateRayTracingPipelinesNV(device->GetDevice(), VK_NULL_HANDLE, 1, &create_info, nullptr, &subpass_proxy.pipeline));
+          BLAST_ASSERT(VK_SUCCESS == vkCreateRayTracingPipelinesKHR(device->GetDevice(), {}, VK_NULL_HANDLE, 1, &create_info, nullptr, &subpass_proxy.pipeline));
 
           const auto binding_size = device->GetRTXProperties().shaderGroupHandleSize;
           const auto binding_align = device->GetRTXProperties().shaderGroupBaseAlignment;
@@ -349,7 +349,7 @@ namespace RayGene3D
           BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device->GetDevice(), &buffer_info, nullptr, &subpass_proxy.bufferLayout));
 
           auto* binding_data = new uint8_t[config->GetGroupCount() * binding_align];
-          BLAST_ASSERT(VK_SUCCESS == vkGetRayTracingShaderGroupHandlesNV(device->GetDevice(), subpass_proxy.pipeline, 0, config->GetGroupCount(), config->GetGroupCount() * binding_align, binding_data));
+          BLAST_ASSERT(VK_SUCCESS == vkGetRayTracingShaderGroupHandlesKHR(device->GetDevice(), subpass_proxy.pipeline, 0, config->GetGroupCount(), config->GetGroupCount() * binding_align, binding_data));
 
 
           VkMemoryRequirements requirements;
@@ -373,6 +373,10 @@ namespace RayGene3D
           vkUnmapMemory(device->GetDevice(), subpass_proxy.memoryLayout);
 
           BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), subpass_proxy.bufferLayout, subpass_proxy.memoryLayout, 0));
+
+          subpass_proxy.rgen_table = { device->GetAddress(subpass_proxy.bufferLayout), 0 * binding_align, binding_align };
+          subpass_proxy.miss_table = { device->GetAddress(subpass_proxy.bufferLayout), 1 * binding_align, binding_align };
+          subpass_proxy.xhit_table = { device->GetAddress(subpass_proxy.bufferLayout), 2 * binding_align, binding_align };
         }
       }
     }
@@ -548,23 +552,24 @@ namespace RayGene3D
           const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
           const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
 
-          vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, subpass_proxy.pipeline);
+          vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, subpass_proxy.pipeline);
           const auto vk_layout = layout->GetLayout();
           const auto set_items = layout->GetSetItems();
           const auto set_count = layout->GetSetCount();
           if (set_count > 0)
           {
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_NV, vk_layout, 0, set_count, set_items, 0, nullptr);
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vk_layout, 0, set_count, set_items, 0, nullptr);
           }
           const auto binding_size = device->GetRTXProperties().shaderGroupHandleSize;
           const auto binding_align = device->GetRTXProperties().shaderGroupBaseAlignment;
           const auto extent_x = device->GetExtentX();
           const auto extent_y = device->GetExtentY();
-          vkCmdTraceRaysNV(command_buffer,
-            subpass_proxy.bufferLayout, 0 * binding_align,
-            subpass_proxy.bufferLayout, 1 * binding_align, binding_align,
-            subpass_proxy.bufferLayout, 2 * binding_align, binding_align,
-            VK_NULL_HANDLE, 0, 0,
+          
+          vkCmdTraceRaysKHR(command_buffer,
+            &subpass_proxy.rgen_table,
+            &subpass_proxy.miss_table,
+            &subpass_proxy.xhit_table,
+            VK_NULL_HANDLE,
             extent_x, extent_y, 1);
         }
       }

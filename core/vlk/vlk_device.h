@@ -171,6 +171,14 @@ namespace RayGene3D
 
   public:
     uint32_t GetMemoryIndex(VkMemoryPropertyFlags flags, uint32_t bits) const;
+    VkDeviceAddress GetAddress(VkBuffer buffer) const;
+    VkBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const;
+    VkMemoryRequirements GetRequirements(VkBuffer buffer) const;
+    VkDeviceMemory AllocateMemory(VkDeviceSize size, uint32_t index) const;
+
+  //public:
+  //  void* MapMemory(VkDeviceMemory memory) const;
+  //  void UnmapMemory(VkDeviceMemory memory) const;
 
     //const VkCommandBuffer& CreateCommand() const;
     //void DestroyCommand(const VkCommandBuffer& command);
@@ -182,7 +190,7 @@ namespace RayGene3D
 
   public:
     bool GetRTXSupported() const { return raytracing_supported; }
-    const VkPhysicalDeviceRayTracingPropertiesNV& GetRTXProperties() const { return  raytracing_properties; }
+    const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& GetRTXProperties() const { return  raytracing_properties; }
 
   protected:
     void CreateInstance();

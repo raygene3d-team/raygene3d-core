@@ -665,7 +665,68 @@ maxRayHitAttributeSize: %d\n"
     return memory.memoryTypeCount;
   }
 
+  VkDeviceAddress VLKDevice::GetAddress(VkBuffer buffer) const
+  {
+    if (!buffer) return 0ULL;
 
+    VkBufferDeviceAddressInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    info.buffer = buffer;
+    return vkGetBufferDeviceAddress(device, &info);
+  };
+
+  VkBuffer VLKDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const
+  {
+    VkBuffer buffer{ nullptr };
+
+    VkBufferCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    info.size = size;
+    info.usage = usage;
+
+    BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device, &info, nullptr, &buffer));
+
+    return buffer;
+  };
+
+  VkMemoryRequirements VLKDevice::GetRequirements(VkBuffer buffer) const
+  {
+    //VkBufferMemoryRequirementsInfo info{};
+    //info.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2;
+    //info.buffer = buffer;
+
+    VkMemoryRequirements requirements{};
+    vkGetBufferMemoryRequirements(device, buffer, &requirements);
+
+    return requirements;
+  };
+
+  VkDeviceMemory VLKDevice::AllocateMemory(VkDeviceSize size, uint32_t index) const
+  {
+    VkDeviceMemory memory{ nullptr };
+
+    VkMemoryAllocateInfo info{};
+    info.sType             = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    info.allocationSize    = size;
+    info.memoryTypeIndex   = index;
+    BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device, &info, nullptr, &memory));
+
+    return memory;
+  };
+
+  //void* VLKDevice::MapMemory(VkDeviceMemory memory) const
+  //{
+  //  void* mapped{ nullptr };
+
+  //  BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device, memory, 0, VK_WHOLE_SIZE, 0, &mapped));
+  //  
+  //  return mapped;
+  //}
+
+  //void VLKDevice::UnmapMemory(VkDeviceMemory memory) const
+  //{
+  //  vkUnmapMemory(device, memory);
+  //}
 
   void VLKDevice::Discard()
   {

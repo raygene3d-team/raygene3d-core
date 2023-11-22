@@ -59,44 +59,34 @@ namespace RayGene3D
     std::vector<VkDescriptorSetLayout> tables;
 
   protected:
-    std::vector<VkAccelerationStructureGeometryKHR> bottom_geometries;
-    std::vector<VkAccelerationStructureBuildRangeInfoKHR> bottom_range_infos;
-    std::vector<VkAccelerationStructureBuildSizesInfoKHR> bottom_sizes_infos;
-    std::vector<VkDeviceSize> bottom_sizes;
-    std::vector<VkAccelerationStructureKHR> bottom_accelerations;
-    std::vector<VkDeviceMemory> bottom_memories;
-    std::vector<VkBuffer> bottom_buffers;
-    std::vector<uint64_t> bottom_handles;
+    std::vector<VkDeviceMemory> blas_memories;
+    std::vector<VkBuffer> blas_buffers;
+    std::vector<VkAccelerationStructureKHR> blas_items;
 
-    VkAccelerationStructureGeometryKHR top_geometry;
-    VkAccelerationStructureBuildRangeInfoKHR top_range_info;
-    VkAccelerationStructureBuildSizesInfoKHR top_sizes_info;
-    VkDeviceSize top_size{ 0 };
-    VkAccelerationStructureKHR top_acceleration{ nullptr };
-    VkDeviceMemory top_memory{ nullptr };
-    VkBuffer top_buffer{ nullptr };
-    uint64_t top_handle{ 0 };
+    VkDeviceMemory tlas_memory{ nullptr };
+    VkBuffer tlas_buffer{ nullptr };
+    VkAccelerationStructureKHR tlas_item{ nullptr };
 
-    VkDeviceMemory memory_instances{ nullptr };
-    VkBuffer buffer_instances{ nullptr };
+    VkDeviceMemory instances_memory{ nullptr };
+    VkBuffer instances_buffer{ nullptr };
 
-    VkDeviceMemory memoryScratch{ nullptr };
-    VkBuffer bufferScratch{ nullptr };
+    //VkDeviceMemory scratch_memory{ nullptr };
+    //VkBuffer scratch_buffer{ nullptr };
 
     //std::vector<VkGeometryNV> geometries;
 
-    VkCommandBuffer commandBuffer{ nullptr };
+    VkCommandBuffer command_buffer{ nullptr };
     //VkCommandPool commandPool{ nullptr };
     VkFence fence{ nullptr };
 
 
   protected:
-    PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV{ nullptr };
-    PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructureNV{ nullptr };
-    PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV{ nullptr };
-    PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV{ nullptr };
-    PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV{ nullptr };
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV{ nullptr };
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
+    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
+    //PFN_vkBindAccelerationStructureMemoryKHR vkBindAccelerationStructureMemoryNV{ nullptr };
+    PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
+    PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };
+    PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR{ nullptr };
 
   //public:
   //  std::shared_ptr<Command> CreateCommand(const std::string& name) override { return commands.emplace_back(new VLKCommand(name, *this)); }

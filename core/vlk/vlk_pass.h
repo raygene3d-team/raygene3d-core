@@ -54,6 +54,10 @@ namespace RayGene3D
       VkPipeline pipeline{ nullptr };
       VkDeviceMemory memoryLayout{ nullptr };
       VkBuffer bufferLayout{ nullptr };
+      VkStridedDeviceAddressRegionKHR rgen_table{};
+      VkStridedDeviceAddressRegionKHR miss_table{};
+      VkStridedDeviceAddressRegionKHR xhit_table{};
+
     };
     std::vector<SubpassProxy> subpass_proxies;
 
@@ -70,9 +74,9 @@ namespace RayGene3D
     // Perhaps we should set these parameters externally and validate during initialize
 
   protected:
-    PFN_vkCreateRayTracingPipelinesNV vkCreateRayTracingPipelinesNV{ nullptr };
-    PFN_vkGetRayTracingShaderGroupHandlesNV vkGetRayTracingShaderGroupHandlesNV{ nullptr };
-    PFN_vkCmdTraceRaysNV vkCmdTraceRaysNV{ nullptr };
+    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
+    PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR{ nullptr };
+    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR{ nullptr };
 
   public:
     VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
