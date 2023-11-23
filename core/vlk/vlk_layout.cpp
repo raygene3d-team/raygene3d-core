@@ -541,7 +541,7 @@ namespace RayGene3D
         {
           auto& descriptor = descriptors.at(i);
           descriptor.binding = i + uint32_t(bindings.size());
-          descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+          descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
@@ -770,7 +770,7 @@ namespace RayGene3D
       VkWriteDescriptorSetAccelerationStructureKHR descriptor_acceleration = {};
       VkWriteDescriptorSet descriptor = {};
 
-      descriptor_acceleration.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+      descriptor_acceleration.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
       descriptor_acceleration.accelerationStructureCount = 1;
       descriptor_acceleration.pAccelerationStructures = &tlas_item;
 
@@ -780,7 +780,7 @@ namespace RayGene3D
       descriptor.dstBinding = 0 + write_offset;
       descriptor.dstArrayElement = 0;
       descriptor.descriptorCount = 1;
-      descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+      descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
       descriptor.pImageInfo = nullptr;
       descriptor.pBufferInfo = nullptr;
       descriptor.pTexelBufferView = nullptr;

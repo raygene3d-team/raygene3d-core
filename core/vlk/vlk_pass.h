@@ -52,12 +52,11 @@ namespace RayGene3D
     struct SubpassProxy
     {
       VkPipeline pipeline{ nullptr };
-      VkDeviceMemory memoryLayout{ nullptr };
-      VkBuffer bufferLayout{ nullptr };
+      VkDeviceMemory table_memory{ nullptr };
+      VkBuffer table_buffer{ nullptr };
       VkStridedDeviceAddressRegionKHR rgen_table{};
       VkStridedDeviceAddressRegionKHR miss_table{};
       VkStridedDeviceAddressRegionKHR xhit_table{};
-
     };
     std::vector<SubpassProxy> subpass_proxies;
 
