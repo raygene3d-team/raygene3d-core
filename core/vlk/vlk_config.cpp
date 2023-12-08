@@ -228,8 +228,8 @@ namespace RayGene3D
 
     glslang::InitializeProcess();
     
+    glslang::EShTargetLanguageVersion version = glslang::EShTargetSpv_1_0;
     glslang::EShSource language = glslang::EShSourceCount;
-
     std::string preamble = "#define USE_SPIRV\n";
 
     EShLanguage stage = EShLangCount;
@@ -239,10 +239,10 @@ namespace RayGene3D
     if (strcmp(target, "gs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangGeometry; } else
     if (strcmp(target, "ps_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangFragment; } else
     if (strcmp(target, "cs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangCompute; } else
-    if (strcmp(target, "rgen") == 0) { language = glslang::EShSourceGlsl; stage = EShLangRayGen; preamble.append("#define RGEN\n"); } else
-    if (strcmp(target, "chit") == 0) { language = glslang::EShSourceGlsl; stage = EShLangClosestHit; preamble.append("#define CHIT\n"); } else
-    if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; stage = EShLangAnyHit; preamble.append("#define AHIT\n"); } else
-    if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; stage = EShLangMiss; preamble.append("#define MISS\n"); }
+    if (strcmp(target, "rgen") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangRayGen; preamble.append("#define RGEN\n"); } else
+    if (strcmp(target, "chit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangClosestHit; preamble.append("#define CHIT\n"); } else
+    if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangAnyHit; preamble.append("#define AHIT\n"); } else
+    if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMiss; preamble.append("#define MISS\n"); }
 
     for (const auto& define : defines)
     {
@@ -252,7 +252,7 @@ namespace RayGene3D
     glslang::TShader shader(stage);
     shader.setEnvInput(language, stage, glslang::EShClientVulkan, 100);
     shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
-    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+    shader.setEnvTarget(glslang::EShTargetSpv, version);
     shader.setPreamble(preamble.c_str());
     shader.setInvertY(true);
     shader.setEntryPoint(entry);

@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #include "vlk_device.h"
 
-// #define ENABLE_RTX
+//#define ENABLE_RTX
 
 namespace RayGene3D
 {
@@ -38,7 +38,8 @@ namespace RayGene3D
     const auto extension_names = std::vector<const char*>
     {
       VK_KHR_SURFACE_EXTENSION_NAME,
-      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+      //VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
+      //VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
       VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     #ifdef __linux__
       VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
@@ -63,7 +64,7 @@ namespace RayGene3D
     application_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     application_info.pEngineName = "RayGene3D Framework";
     application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    application_info.apiVersion = VK_API_VERSION_1_0;
+    application_info.apiVersion = VK_API_VERSION_1_2;
 
     auto create_info = VkInstanceCreateInfo{};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -205,8 +206,8 @@ namespace RayGene3D
     {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #ifdef ENABLE_RTX
-      //VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-      //VK_NV_RAY_TRACING_EXTENSION_NAME,
+      VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
       VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
       VK_KHR_RAY_QUERY_EXTENSION_NAME,
       VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
@@ -259,8 +260,34 @@ namespace RayGene3D
     const float priority = 1.0; // 0.0...1.0
     queue_create_info.pQueuePriorities = &priority;
 
+    void* extention_features = nullptr;
+#ifdef ENABLE_RTX
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = {};
+    as_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    as_features.pNext = nullptr;
+    as_features.accelerationStructure = true;
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtp_features = {};
+    rtp_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    rtp_features.pNext = &as_features;
+    rtp_features.rayTracingPipeline = true;
+
+    VkPhysicalDeviceRayQueryFeaturesKHR rq_features = {};
+    rq_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    rq_features.pNext = &rtp_features;
+    rq_features.rayQuery = true;
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures bda_features = {};
+    bda_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    bda_features.pNext = &rq_features;
+    bda_features.bufferDeviceAddress = true;
+
+    extention_features = bda_features;
+#endif
+
     VkDeviceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    createInfo.pNext = extention_features;
     createInfo.pQueueCreateInfos = &queue_create_info;
     createInfo.queueCreateInfoCount = 1;
     createInfo.enabledLayerCount = 0;
@@ -276,6 +303,9 @@ namespace RayGene3D
 
 #ifdef ENABLE_RTX
     {
+      //auto vkGetPhysicalDeviceProperties2KHR = (PFN_vkGetPhysicalDeviceProperties2KHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR");
+    //BLAST_ASSERT(VK_SUCCESS == vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &messenger));
+
       VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtx_properties = {};
       rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
       VkPhysicalDeviceProperties2 device_properties = {};
@@ -288,7 +318,7 @@ namespace RayGene3D
       BLAST_LOG("\
 ==RTX capabilities==:\n\
 shaderGroupHandleSize: %d\n\
-maxRecursionDepth: &d\n\
+maxRayRecursionDepth: %d\n\
 maxShaderGroupStride: %d\n\
 shaderGroupBaseAlignment: %d\n\
 shaderGroupHandleCaptureReplaySize: %d\n\
@@ -296,7 +326,7 @@ maxRayDispatchInvocationCount: %d\n\
 shaderGroupHandleAlignment: %d\n\
 maxRayHitAttributeSize: %d\n"
         , raytracing_properties.shaderGroupHandleSize
-        , raytracing_properties.maxRecursionDepth
+        , raytracing_properties.maxRayRecursionDepth
         , raytracing_properties.maxShaderGroupStride
         , raytracing_properties.shaderGroupBaseAlignment
         , raytracing_properties.shaderGroupHandleCaptureReplaySize
@@ -670,6 +700,8 @@ maxRayHitAttributeSize: %d\n"
   {
     if (!buffer) return 0ULL;
 
+    //auto vkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(device, "vkGetBufferDeviceAddressKHR");
+
     VkBufferDeviceAddressInfo info{};
     info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     info.buffer = buffer;
@@ -702,12 +734,17 @@ maxRayHitAttributeSize: %d\n"
     return requirements;
   };
 
-  VkDeviceMemory VLKDevice::AllocateMemory(VkDeviceSize size, uint32_t index) const
+  VkDeviceMemory VLKDevice::AllocateMemory(VkDeviceSize size, uint32_t index, bool addressable) const
   {
     VkDeviceMemory memory{ nullptr };
 
+    VkMemoryAllocateFlagsInfo flags_info{};
+    flags_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+    flags_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
     VkMemoryAllocateInfo info{};
     info.sType             = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    info.pNext             = addressable ? &flags_info : nullptr;
     info.allocationSize    = size;
     info.memoryTypeIndex   = index;
     BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device, &info, nullptr, &memory));

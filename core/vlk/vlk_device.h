@@ -174,7 +174,7 @@ namespace RayGene3D
     VkDeviceAddress GetAddress(VkBuffer buffer) const;
     VkBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const;
     VkMemoryRequirements GetRequirements(VkBuffer buffer) const;
-    VkDeviceMemory AllocateMemory(VkDeviceSize size, uint32_t index) const;
+    VkDeviceMemory AllocateMemory(VkDeviceSize size, uint32_t index, bool addressable = false) const;
 
   //public:
   //  void* MapMemory(VkDeviceMemory memory) const;

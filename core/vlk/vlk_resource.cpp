@@ -56,6 +56,13 @@ namespace RayGene3D
         bind = usage & USAGE_INDEX_ARRAY ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) : bind;
         bind = usage & USAGE_CONSTANT_DATA ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) : bind;
         bind = usage & USAGE_COMMAND_INDIRECT ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) : bind;
+        bind = usage & USAGE_RAYTRACING_INPUT ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR) : bind;
+
+        if(hint & HINT_ADDRESS_BUFFER)
+        {
+          bind |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        }
+
         return bind;
       };
 
@@ -71,10 +78,15 @@ namespace RayGene3D
 
       //device->AllocateMemory(memory, buffer, get_flags(hint));
 
+      VkMemoryAllocateFlagsInfo flags_info{};
+      flags_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+      flags_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
       auto requirements = VkMemoryRequirements{};
       vkGetBufferMemoryRequirements(device->GetDevice(), buffer, &requirements);
       auto allocate_info = VkMemoryAllocateInfo{};
       allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+      allocate_info.pNext = hint & HINT_ADDRESS_BUFFER ? &flags_info : nullptr;
       allocate_info.allocationSize = requirements.size;
       allocate_info.memoryTypeIndex = device->GetMemoryIndex(get_flags(hint), requirements.memoryTypeBits);
       BLAST_LOG("Allocating %d bytes [%s]", requirements.size, name.c_str());
