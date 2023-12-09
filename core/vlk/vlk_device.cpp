@@ -282,7 +282,7 @@ namespace RayGene3D
     bda_features.pNext = &rq_features;
     bda_features.bufferDeviceAddress = true;
 
-    extention_features = bda_features;
+    extention_features = &bda_features;
 #endif
 
     VkDeviceCreateInfo createInfo = {};
