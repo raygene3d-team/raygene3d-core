@@ -38,8 +38,6 @@ namespace RayGene3D
     const auto extension_names = std::vector<const char*>
     {
       VK_KHR_SURFACE_EXTENSION_NAME,
-      //VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-      //VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
       VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     #ifdef __linux__
       VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
@@ -69,12 +67,8 @@ namespace RayGene3D
     auto create_info = VkInstanceCreateInfo{};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &application_info;
-    create_info.enabledExtensionCount = 0;
-    create_info.ppEnabledExtensionNames = nullptr;
     create_info.enabledExtensionCount = uint32_t(extension_names.size());
     create_info.ppEnabledExtensionNames = extension_names.data();
-    create_info.enabledLayerCount = 0;
-    create_info.ppEnabledLayerNames = nullptr;
     create_info.enabledLayerCount = uint32_t(layer_names.size());
     create_info.ppEnabledLayerNames = layer_names.data();
 
@@ -205,13 +199,6 @@ namespace RayGene3D
     auto extension_names = std::vector<const char*>
     {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-#ifdef ENABLE_RTX
-      VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-      VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-      VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-      VK_KHR_RAY_QUERY_EXTENSION_NAME,
-      VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-#endif
     };
 
 
@@ -226,13 +213,6 @@ namespace RayGene3D
     vkGetPhysicalDeviceProperties(adapter, &properties);
     vkGetPhysicalDeviceFeatures(adapter, &features);
     vkGetPhysicalDeviceMemoryProperties(adapter, &memory);
-
-    this->name = std::string(properties.deviceName) + " (Vulkan API)";
-
-    auto extension_count = uint32_t{ 0 };
-    BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, nullptr));
-    auto extension_array = std::vector<VkExtensionProperties>(extension_count);
-    BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, extension_array.data()));
 
     auto queue_count = uint32_t{ 0 };
     vkGetPhysicalDeviceQueueFamilyProperties(adapter, &queue_count, nullptr);
@@ -253,15 +233,65 @@ namespace RayGene3D
     }
     BLAST_ASSERT(family != -1);
 
-    auto queue_create_info = VkDeviceQueueCreateInfo{};
-    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_create_info.queueFamilyIndex = family;
-    queue_create_info.queueCount = 1;
-    const float priority = 1.0; // 0.0...1.0
-    queue_create_info.pQueuePriorities = &priority;
+    auto extension_count = uint32_t{ 0 };
+    BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, nullptr));
+    auto extension_array = std::vector<VkExtensionProperties>(extension_count);
+    BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, extension_array.data()));
 
-    void* extention_features = nullptr;
-#ifdef ENABLE_RTX
+    {
+      name = std::string(properties.deviceName) + " (Vulkan API)";
+    }
+
+    const auto extension_check_fn = [&extension_array](const char* extension)
+    {
+      return std::any_of(extension_array.begin(), extension_array.end(),
+        [extension](const VkExtensionProperties& e) { return strncmp(e.extensionName, extension, 256) == 0; } );
+    };
+
+    {
+      raytracing_supported = extension_check_fn(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+      raytracing_supported &= extension_check_fn(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+      raytracing_supported &= extension_check_fn(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+      raytracing_supported &= extension_check_fn(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+      raytracing_supported &= extension_check_fn(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+
+      if (raytracing_supported)
+      {
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtx_properties = {};
+        rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+        VkPhysicalDeviceProperties2 device_properties = {};
+        device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        device_properties.pNext = &rtx_properties;
+        vkGetPhysicalDeviceProperties2(adapter, &device_properties);
+        raytracing_properties = rtx_properties;
+
+        //BLAST_LOG("\
+        //==RTX capabilities==:\n\
+        //shaderGroupHandleSize: %d\n\
+        //maxRayRecursionDepth: %d\n\
+        //maxShaderGroupStride: %d\n\
+        //shaderGroupBaseAlignment: %d\n\
+        //shaderGroupHandleCaptureReplaySize: %d\n\
+        //maxRayDispatchInvocationCount: %d\n\
+        //shaderGroupHandleAlignment: %d\n\
+        //maxRayHitAttributeSize: %d\n"
+        //  , raytracing_properties.shaderGroupHandleSize
+        //  , raytracing_properties.maxRayRecursionDepth
+        //  , raytracing_properties.maxShaderGroupStride
+        //  , raytracing_properties.shaderGroupBaseAlignment
+        //  , raytracing_properties.shaderGroupHandleCaptureReplaySize
+        //  , raytracing_properties.maxRayDispatchInvocationCount
+        //  , raytracing_properties.shaderGroupHandleAlignment
+        //  , raytracing_properties.maxRayHitAttributeSize);
+
+        extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+        extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        extension_names.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+        extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+      }
+    }
+
     VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = {};
     as_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
     as_features.pNext = nullptr;
@@ -282,59 +312,37 @@ namespace RayGene3D
     bda_features.pNext = &rq_features;
     bda_features.bufferDeviceAddress = true;
 
-    extention_features = &bda_features;
-#endif
+    void* extention_features = raytracing_supported ? &bda_features : nullptr;
 
-    VkDeviceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pNext = extention_features;
-    createInfo.pQueueCreateInfos = &queue_create_info;
-    createInfo.queueCreateInfoCount = 1;
-    createInfo.enabledLayerCount = 0;
-    createInfo.ppEnabledLayerNames = nullptr;
-    createInfo.enabledExtensionCount = uint32_t(extension_names.size());
-    createInfo.ppEnabledExtensionNames = extension_names.data();
-    createInfo.pEnabledFeatures = &features;
-    BLAST_ASSERT(VK_SUCCESS == vkCreateDevice(adapter, &createInfo, nullptr, &device));
+    VkPhysicalDeviceFeatures enabled_features{};
+    BLAST_ASSERT(features.samplerAnisotropy);          enabled_features.samplerAnisotropy = true;
+    BLAST_ASSERT(features.robustBufferAccess);         enabled_features.robustBufferAccess = true;
+    BLAST_ASSERT(features.geometryShader);             enabled_features.geometryShader = true;
+    BLAST_ASSERT(features.tessellationShader);         enabled_features.tessellationShader = true;
+    BLAST_ASSERT(features.imageCubeArray);             enabled_features.imageCubeArray = true;
+
+    VkDeviceQueueCreateInfo queue_create_info = {};
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.queueFamilyIndex = family;
+    queue_create_info.queueCount = 1;
+    const float priority = 1.0f; // 0.0...1.0
+    queue_create_info.pQueuePriorities = &priority;
+
+    VkDeviceCreateInfo device_create_info = {};
+    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.pNext = extention_features;
+    device_create_info.pQueueCreateInfos = &queue_create_info;
+    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.ppEnabledLayerNames = nullptr;
+    device_create_info.enabledExtensionCount = uint32_t(extension_names.size());
+    device_create_info.ppEnabledExtensionNames = extension_names.data();
+    device_create_info.pEnabledFeatures = &enabled_features;
+    BLAST_ASSERT(VK_SUCCESS == vkCreateDevice(adapter, &device_create_info, nullptr, &device));
 
     vkGetDeviceQueue(device, family, 0, &queue);
 
-    BLAST_LOG("Device is created on %s", properties.deviceName);
-
-#ifdef ENABLE_RTX
-    {
-      //auto vkGetPhysicalDeviceProperties2KHR = (PFN_vkGetPhysicalDeviceProperties2KHR)vkGetInstanceProcAddr(instance, "vkGetPhysicalDeviceProperties2KHR");
-    //BLAST_ASSERT(VK_SUCCESS == vkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &messenger));
-
-      VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtx_properties = {};
-      rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-      VkPhysicalDeviceProperties2 device_properties = {};
-      device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-      device_properties.pNext = &rtx_properties;
-      vkGetPhysicalDeviceProperties2(adapter, &device_properties);
-      raytracing_properties = rtx_properties;
-      raytracing_supported = true;
-
-      BLAST_LOG("\
-==RTX capabilities==:\n\
-shaderGroupHandleSize: %d\n\
-maxRayRecursionDepth: %d\n\
-maxShaderGroupStride: %d\n\
-shaderGroupBaseAlignment: %d\n\
-shaderGroupHandleCaptureReplaySize: %d\n\
-maxRayDispatchInvocationCount: %d\n\
-shaderGroupHandleAlignment: %d\n\
-maxRayHitAttributeSize: %d\n"
-        , raytracing_properties.shaderGroupHandleSize
-        , raytracing_properties.maxRayRecursionDepth
-        , raytracing_properties.maxShaderGroupStride
-        , raytracing_properties.shaderGroupBaseAlignment
-        , raytracing_properties.shaderGroupHandleCaptureReplaySize
-        , raytracing_properties.maxRayDispatchInvocationCount
-        , raytracing_properties.shaderGroupHandleAlignment
-        , raytracing_properties.maxRayHitAttributeSize);
-    }
-#endif
+    BLAST_LOG("Device is created on %s %s", properties.deviceName, raytracing_supported ? "(RTX On)" : "(RTX Off)");
   }
 
 
