@@ -177,11 +177,7 @@ namespace RayGene3D
           const auto ia_offset = rtx_entity.ia_offset;
           const auto ia_address = device->GetAddress(ia_resource->GetBuffer());
 
-          const auto primitive_stride = ia_stride;
-          const auto primitive_count = ia_count;
-          const auto primitive_offset = ia_offset;
-
-          BLAST_LOG("Vertices and Triangles count/offset/stride: %d/%d/%d, %d/%d/%d", va_count, va_offset, va_stride, ia_count, ia_offset, ia_stride);
+          //BLAST_LOG("Vertices and Triangles count/offset/stride: %d/%d/%d, %d/%d/%d", va_count, va_offset, va_stride, ia_count, ia_offset, ia_stride);
 
           VkAccelerationStructureGeometryKHR structure_geometry{};
           structure_geometry.sType                                        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -196,8 +192,8 @@ namespace RayGene3D
           structure_geometry.geometry.triangles.indexType                 = VK_INDEX_TYPE_UINT32;
 
           VkAccelerationStructureBuildRangeInfoKHR range_info{};
-          range_info.primitiveCount   = primitive_count;
-          range_info.primitiveOffset  = primitive_offset * primitive_stride; //byte offset
+          range_info.primitiveCount   = ia_count;
+          range_info.primitiveOffset  = ia_offset * ia_stride; //byte offset
           range_info.firstVertex      = va_offset;
           range_info.transformOffset  = 0;
 
@@ -213,7 +209,7 @@ namespace RayGene3D
           sizes_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
           vkGetAccelerationStructureBuildSizesKHR(device->GetDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-            &geometry_info, &primitive_count, &sizes_info);
+            &geometry_info, &ia_count, &sizes_info);
 
           {
             const auto size = sizes_info.accelerationStructureSize;
@@ -257,6 +253,15 @@ namespace RayGene3D
 
           const VkAccelerationStructureBuildRangeInfoKHR* range_info_ptr = &range_info;
           vkCmdBuildAccelerationStructuresKHR(command_buffer, 1, &geometry_info, &range_info_ptr);
+
+          VkMemoryBarrier memory_barrier = {};
+          memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+          memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+          memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+          vkCmdPipelineBarrier(command_buffer,
+            VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+            VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+            0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
         }
       }
 
@@ -309,14 +314,14 @@ namespace RayGene3D
         structure_geometry.sType                                  = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
         structure_geometry.geometryType                           = VK_GEOMETRY_TYPE_INSTANCES_KHR;
         structure_geometry.geometry.instances.sType               = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-        structure_geometry.geometry.instances.data.deviceAddress  = device->GetAddress(instances_buffer);;
+        structure_geometry.geometry.instances.data.deviceAddress  = device->GetAddress(instances_buffer);
 
         const auto instance_count = uint32_t(instances.size());
         const auto instance_offset = 0;
 
         VkAccelerationStructureBuildRangeInfoKHR range_info{};
         range_info.primitiveCount     = instance_count;
-        range_info.primitiveOffset    = instance_offset;
+        range_info.primitiveOffset    = 0;
         range_info.firstVertex        = 0;
         range_info.transformOffset    = 0;
 
@@ -347,8 +352,6 @@ namespace RayGene3D
 
           tlas_buffer = buffer;
           tlas_memory = memory;
-
-          //BLAST_LOG("TLAS calculated/allocated size (bytes): %d/%d", size, requirements.size);
         }
         
 
@@ -372,8 +375,6 @@ namespace RayGene3D
 
           scratch_buffer = buffer;
           scratch_memory = memory;
-
-          //BLAST_LOG("Scratch calculated/allocated size (bytes): %d/%d", size, requirements.size);
         }
 
         geometry_info.dstAccelerationStructure = tlas_item;
@@ -381,6 +382,15 @@ namespace RayGene3D
 
         const VkAccelerationStructureBuildRangeInfoKHR* range_info_ptr = &range_info;
         vkCmdBuildAccelerationStructuresKHR(command_buffer, 1, &geometry_info, &range_info_ptr);
+
+        VkMemoryBarrier memory_barrier = {};
+        memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        vkCmdPipelineBarrier(command_buffer, 
+          VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+          VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+          0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
       }
 
       BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(command_buffer));

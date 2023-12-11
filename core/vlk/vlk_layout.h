@@ -45,6 +45,18 @@ namespace RayGene3D
   class VLKLayout : public Layout
   {
   protected:
+    //struct RTXItem
+    //{
+    //  VkAccelerationStructureGeometryKHR geometry{};
+    //  VkAccelerationStructureBuildGeometryInfoKHR build_geometry_info{};
+    //  VkAccelerationStructureBuildRangeInfoKHR build_range_info{};
+    //  VkAccelerationStructureBuildSizesInfoKHR build_sizes_info{};
+
+    //  VkDeviceMemory memory{ nullptr };
+    //  VkBuffer buffer{ nullptr };
+    //};
+
+  protected:
     VkDescriptorPool pool{ nullptr };
     VkPipelineLayout layout{ nullptr };
 
@@ -59,6 +71,9 @@ namespace RayGene3D
     std::vector<VkDescriptorSetLayout> tables;
 
   protected:
+    //std::vector<RTXProxy> blas_proxies;
+    //std::vector<RTXProxy> tlas_proxies;
+
     std::vector<VkDeviceMemory> blas_memories;
     std::vector<VkBuffer> blas_buffers;
     std::vector<VkAccelerationStructureKHR> blas_items;
@@ -70,26 +85,15 @@ namespace RayGene3D
     VkDeviceMemory instances_memory{ nullptr };
     VkBuffer instances_buffer{ nullptr };
 
-    //VkDeviceMemory scratch_memory{ nullptr };
-    //VkBuffer scratch_buffer{ nullptr };
-
-    //std::vector<VkGeometryNV> geometries;
-
     VkCommandBuffer command_buffer{ nullptr };
-    //VkCommandPool commandPool{ nullptr };
     VkFence fence{ nullptr };
-
 
   protected:
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
     PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
-    //PFN_vkBindAccelerationStructureMemoryKHR vkBindAccelerationStructureMemoryNV{ nullptr };
     PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
     PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };
     PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR{ nullptr };
-
-  //public:
-  //  std::shared_ptr<Command> CreateCommand(const std::string& name) override { return commands.emplace_back(new VLKCommand(name, *this)); }
 
   public:
     const VkPipelineLayout& GetLayout() const { return layout; }
