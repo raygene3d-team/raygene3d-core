@@ -36,7 +36,7 @@ namespace RayGene3D
   {
     const auto& device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
 
-    const auto get_flags = [](Hint hint)
+    const auto get_flags = [this]()
     {
       uint32_t flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       flags = hint & HINT_DYNAMIC_BUFFER ? VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT : flags;
@@ -50,49 +50,62 @@ namespace RayGene3D
       const auto get_bind = [this]()
       {
         uint32_t bind = 0;
-        bind = usage & USAGE_SHADER_RESOURCE ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
+        bind = usage & USAGE_SHADER_RESOURCE  ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
         bind = usage & USAGE_UNORDERED_ACCESS ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
-        bind = usage & USAGE_VERTEX_ARRAY ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) : bind;
-        bind = usage & USAGE_INDEX_ARRAY ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) : bind;
-        bind = usage & USAGE_CONSTANT_DATA ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) : bind;
+        bind = usage & USAGE_VERTEX_ARRAY     ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) : bind;
+        bind = usage & USAGE_INDEX_ARRAY      ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) : bind;
+        bind = usage & USAGE_CONSTANT_DATA    ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) : bind;
         bind = usage & USAGE_COMMAND_INDIRECT ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) : bind;
         bind = usage & USAGE_RAYTRACING_INPUT ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR) : bind;
-
-        if(hint & HINT_ADDRESS_BUFFER)
-        {
-          bind |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-        }
 
         return bind;
       };
 
-      auto create_info = VkBufferCreateInfo{};
-      create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-      create_info.flags = 0;
-      create_info.size = stride * count;
-      create_info.usage = get_bind();
-      create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-      create_info.queueFamilyIndexCount = 0;
-      create_info.pQueueFamilyIndices = nullptr;
-      BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device->GetDevice(), &create_info, nullptr, &buffer));
+      {
+        const auto addressable = hint & HINT_ADDRESS_BUFFER && device->GetRTXSupported();
+        const auto size = stride * count;
+        const auto usage = get_bind() | (addressable ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT : 0);
+        const auto buffer = device->CreateBuffer(size, usage);
+        const auto requirements = device->GetRequirements(buffer);
+        const auto flags = get_flags();
+        const auto index = device->GetMemoryIndex(flags, requirements.memoryTypeBits);
+        
+        BLAST_LOG("Allocating %d bytes [%s]", requirements.size, name.c_str());
+        const auto memory = device->AllocateMemory(requirements.size, index, addressable);
 
-      //device->AllocateMemory(memory, buffer, get_flags(hint));
+        BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
 
-      VkMemoryAllocateFlagsInfo flags_info{};
-      flags_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-      flags_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+        this->buffer = buffer;
+        this->memory = memory;
+      }
 
-      auto requirements = VkMemoryRequirements{};
-      vkGetBufferMemoryRequirements(device->GetDevice(), buffer, &requirements);
-      auto allocate_info = VkMemoryAllocateInfo{};
-      allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-      allocate_info.pNext = hint & HINT_ADDRESS_BUFFER ? &flags_info : nullptr;
-      allocate_info.allocationSize = requirements.size;
-      allocate_info.memoryTypeIndex = device->GetMemoryIndex(get_flags(hint), requirements.memoryTypeBits);
-      BLAST_LOG("Allocating %d bytes [%s]", requirements.size, name.c_str());
-      BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocate_info, nullptr, &memory));
+      //auto create_info = VkBufferCreateInfo{};
+      //create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+      //create_info.flags = 0;
+      //create_info.size = stride * count;
+      //create_info.usage = get_bind();
+      //create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+      //create_info.queueFamilyIndexCount = 0;
+      //create_info.pQueueFamilyIndices = nullptr;
+      //BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device->GetDevice(), &create_info, nullptr, &buffer));
 
-      BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
+      ////device->AllocateMemory(memory, buffer, get_flags(hint));
+
+      //VkMemoryAllocateFlagsInfo flags_info{};
+      //flags_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+      //flags_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+      //auto requirements = VkMemoryRequirements{};
+      //vkGetBufferMemoryRequirements(device->GetDevice(), buffer, &requirements);
+      //auto allocate_info = VkMemoryAllocateInfo{};
+      //allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+      //allocate_info.pNext = hint & HINT_ADDRESS_BUFFER ? &flags_info : nullptr;
+      //allocate_info.allocationSize = requirements.size;
+      //allocate_info.memoryTypeIndex = device->GetMemoryIndex(get_flags(hint), requirements.memoryTypeBits);
+      //BLAST_LOG("Allocating %d bytes [%s]", requirements.size, name.c_str());
+      //BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocate_info, nullptr, &memory));
+
+      //BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
 
       if (!interops.empty())
       {

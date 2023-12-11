@@ -45,18 +45,6 @@ namespace RayGene3D
   class VLKLayout : public Layout
   {
   protected:
-    //struct RTXItem
-    //{
-    //  VkAccelerationStructureGeometryKHR geometry{};
-    //  VkAccelerationStructureBuildGeometryInfoKHR build_geometry_info{};
-    //  VkAccelerationStructureBuildRangeInfoKHR build_range_info{};
-    //  VkAccelerationStructureBuildSizesInfoKHR build_sizes_info{};
-
-    //  VkDeviceMemory memory{ nullptr };
-    //  VkBuffer buffer{ nullptr };
-    //};
-
-  protected:
     VkDescriptorPool pool{ nullptr };
     VkPipelineLayout layout{ nullptr };
 
@@ -71,8 +59,18 @@ namespace RayGene3D
     std::vector<VkDescriptorSetLayout> tables;
 
   protected:
-    //std::vector<RTXProxy> blas_proxies;
-    //std::vector<RTXProxy> tlas_proxies;
+    //struct RTXItem
+    //{
+    //  VkAccelerationStructureGeometryKHR geometry{};
+    //  VkAccelerationStructureBuildGeometryInfoKHR geometry_info{};
+    //  VkAccelerationStructureBuildRangeInfoKHR range_info{};
+    //  VkAccelerationStructureBuildSizesInfoKHR sizes_info{};
+
+    //  VkDeviceMemory memory{ nullptr };
+    //  VkBuffer buffer{ nullptr };
+    //};
+    //std::vector<RTXItem> blas_items;
+    //std::vector<RTXItem> tlas_items;
 
     std::vector<VkDeviceMemory> blas_memories;
     std::vector<VkBuffer> blas_buffers;

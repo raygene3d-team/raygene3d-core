@@ -238,10 +238,6 @@ namespace RayGene3D
     auto extension_array = std::vector<VkExtensionProperties>(extension_count);
     BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, extension_array.data()));
 
-    {
-      name = std::string(properties.deviceName) + " (Vulkan API)";
-    }
-
     const auto extension_check_fn = [&extension_array](const char* extension)
     {
       return std::any_of(extension_array.begin(), extension_array.end(),
@@ -249,10 +245,8 @@ namespace RayGene3D
     };
 
     {
-      raytracing_supported = extension_check_fn(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-      raytracing_supported &= extension_check_fn(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+      raytracing_supported = extension_check_fn(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
       raytracing_supported &= extension_check_fn(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-      raytracing_supported &= extension_check_fn(VK_KHR_RAY_QUERY_EXTENSION_NAME);
       raytracing_supported &= extension_check_fn(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 
       if (raytracing_supported)
@@ -284,10 +278,8 @@ namespace RayGene3D
         //  , raytracing_properties.shaderGroupHandleAlignment
         //  , raytracing_properties.maxRayHitAttributeSize);
 
-        extension_names.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
         extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
         extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-        extension_names.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
         extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
       }
     }
@@ -302,14 +294,9 @@ namespace RayGene3D
     rtp_features.pNext = &as_features;
     rtp_features.rayTracingPipeline = true;
 
-    VkPhysicalDeviceRayQueryFeaturesKHR rq_features = {};
-    rq_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
-    rq_features.pNext = &rtp_features;
-    rq_features.rayQuery = true;
-
     VkPhysicalDeviceBufferDeviceAddressFeatures bda_features = {};
     bda_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
-    bda_features.pNext = &rq_features;
+    bda_features.pNext = &rtp_features;
     bda_features.bufferDeviceAddress = true;
 
     void* extention_features = raytracing_supported ? &bda_features : nullptr;
@@ -342,7 +329,9 @@ namespace RayGene3D
 
     vkGetDeviceQueue(device, family, 0, &queue);
 
-    BLAST_LOG("Device is created on %s %s", properties.deviceName, raytracing_supported ? "(RTX On)" : "(RTX Off)");
+    BLAST_LOG("Device is created on %s [%d extension(s)]", properties.deviceName, extension_names.size());
+
+    name = std::string(properties.deviceName) + " (Vulkan API)";
   }
 
 

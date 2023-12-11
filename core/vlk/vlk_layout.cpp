@@ -794,14 +794,7 @@ namespace RayGene3D
       write_offset += 1;
     }
 
-    BLAST_LOG("Layout count: %d", write_offset);
-
-
-    //for (auto& command : commands)
-    //{
-    //  command->Initialize();
-    //}
-
+    BLAST_LOG("Binding count: %d [%s]", write_offset, name.c_str());
   }
 
   void VLKLayout::Use()
