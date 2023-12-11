@@ -197,7 +197,7 @@ namespace RayGene3D
 
           VkAccelerationStructureBuildRangeInfoKHR range_info{};
           range_info.primitiveCount   = primitive_count;
-          range_info.primitiveOffset  = primitive_offset * 4; //byte offset
+          range_info.primitiveOffset  = primitive_offset * primitive_stride; //byte offset
           range_info.firstVertex      = va_offset;
           range_info.transformOffset  = 0;
 
