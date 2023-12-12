@@ -373,37 +373,24 @@ namespace RayGene3D
         }
       };
 
+      {
+        const auto flags = get_flags();
+        const auto type = get_type();
+        const auto format = get_format();
+        const auto extent = get_extent();
+        const auto usage = get_bind();
+        const auto image = device->CreateImage(type, format, extent, stride, count, usage, flags);
+        const auto requirements = device->GetRequirements(image);
+        const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
+        BLAST_LOG("Allocating %d bytes [%s]", requirements.size, name.c_str());
+        const auto memory = device->AllocateMemory(requirements.size, index, false);
 
+        BLAST_ASSERT(VK_SUCCESS == vkBindImageMemory(device->GetDevice(), image, memory, 0));
 
-      auto create_info = VkImageCreateInfo{};
-      create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-      create_info.flags = get_flags();
-      create_info.imageType = get_type();
-      create_info.format = get_format();
-      create_info.extent = get_extent();
-      create_info.mipLevels = stride;
-      create_info.arrayLayers = count;
-      create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-      create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-      create_info.usage = get_bind();
-      create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-      create_info.queueFamilyIndexCount = 0;
-      create_info.pQueueFamilyIndices = nullptr;
-      create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; //properties.empty() ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_PREINITIALIZED;
-      BLAST_ASSERT(VK_SUCCESS == vkCreateImage(device->GetDevice(), &create_info, nullptr, &image));
-
-      //device->AllocateMemory(memory, image, get_flags());
-
-      auto requirements = VkMemoryRequirements{};
-      vkGetImageMemoryRequirements(device->GetDevice(), image, &requirements);
-      auto allocate_info = VkMemoryAllocateInfo{};
-      allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-      allocate_info.allocationSize = requirements.size;
-      allocate_info.memoryTypeIndex = device->GetMemoryIndex(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, requirements.memoryTypeBits);
-      BLAST_LOG("Allocating %d bytes [%s]", requirements.size, name.c_str());
-      BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocate_info, nullptr, &memory));
-
-      BLAST_ASSERT(VK_SUCCESS == vkBindImageMemory(device->GetDevice(), image, memory, 0));
+        this->image = image;
+        this->memory = memory;
+      }
 
       if (interops.size() == count)
       {

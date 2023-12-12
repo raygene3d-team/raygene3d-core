@@ -715,28 +715,61 @@ namespace RayGene3D
     return vkGetBufferDeviceAddress(device, &info);
   };
 
-  VkBuffer VLKDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const
+  VkBuffer VLKDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBufferCreateFlags flags) const
   {
     VkBuffer buffer{ nullptr };
 
     VkBufferCreateInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    info.size = size;
-    info.usage = usage;
+    info.sType                  = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    info.size                   = size;
+    info.usage                  = usage;
+    info.flags                  = flags;
+    info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
+    info.queueFamilyIndexCount  = 0;
+    info.pQueueFamilyIndices    = nullptr;
 
     BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device, &info, nullptr, &buffer));
 
     return buffer;
   };
 
+  VkImage VLKDevice::CreateImage(VkImageType type, VkFormat format, VkExtent3D extent,
+    uint32_t mipmaps, uint32_t layers, VkImageUsageFlags usage, VkImageCreateFlags flags) const
+  {
+    VkImage image{ nullptr };
+
+    VkImageCreateInfo info{};
+    info.sType                  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    info.flags                  = flags;
+    info.imageType              = type;
+    info.format                 = format;
+    info.extent                 = extent;
+    info.mipLevels              = mipmaps;
+    info.arrayLayers            = layers;
+    info.samples                = VK_SAMPLE_COUNT_1_BIT;
+    info.tiling                 = VK_IMAGE_TILING_OPTIMAL;
+    info.usage                  = usage;
+    info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
+    info.queueFamilyIndexCount  = 0;
+    info.pQueueFamilyIndices    = nullptr;
+    info.initialLayout          = VK_IMAGE_LAYOUT_UNDEFINED; //properties.empty() ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_PREINITIALIZED;
+    BLAST_ASSERT(VK_SUCCESS == vkCreateImage(device, &info, nullptr, &image));
+
+    return image;
+  };
+
   VkMemoryRequirements VLKDevice::GetRequirements(VkBuffer buffer) const
   {
-    //VkBufferMemoryRequirementsInfo info{};
-    //info.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_REQUIREMENTS_INFO_2;
-    //info.buffer = buffer;
-
     VkMemoryRequirements requirements{};
     vkGetBufferMemoryRequirements(device, buffer, &requirements);
+
+    return requirements;
+  };
+
+  VkMemoryRequirements VLKDevice::GetRequirements(VkImage image) const
+  {
+    VkMemoryRequirements requirements{};
+    vkGetImageMemoryRequirements(device, image, &requirements);
 
     return requirements;
   };

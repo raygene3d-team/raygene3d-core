@@ -183,9 +183,13 @@ namespace RayGene3D
   public:
     uint32_t GetMemoryIndex(VkMemoryPropertyFlags flags, uint32_t bits) const;
     VkDeviceAddress GetAddress(VkBuffer buffer) const;
-    VkBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage) const;
+    VkBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBufferCreateFlags flags = 0) const;
+    VkImage CreateImage(VkImageType type, VkFormat format, VkExtent3D extent, 
+      uint32_t mipmaps, uint32_t layers, VkImageUsageFlags usage, VkImageCreateFlags flags = 0) const;
     VkMemoryRequirements GetRequirements(VkBuffer buffer) const;
-    VkDeviceMemory AllocateMemory(VkDeviceSize size, uint32_t index, bool addressable = false) const;
+    VkMemoryRequirements GetRequirements(VkImage image) const;
+    VkDeviceMemory AllocateMemory(VkDeviceSize size, uint32_t index,
+      bool addressable = false) const;
 
   //public:
   //  void* MapMemory(VkDeviceMemory memory) const;
