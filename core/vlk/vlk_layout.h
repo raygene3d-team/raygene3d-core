@@ -79,11 +79,6 @@ namespace RayGene3D
     VkDeviceMemory instances_memory{ nullptr };
     VkBuffer instances_buffer{ nullptr };
 
-    //VkDeviceSize scratch_size{ 4 * 1024 * 1024 };
-    //VkDeviceMemory scratch_memory{ nullptr };
-    //VkBuffer scratch_buffer{ nullptr };
-    //VkDeviceAddress scratch_address{ 0 };
-
     VkCommandBuffer command_buffer{ nullptr };
     VkFence fence{ nullptr };
 

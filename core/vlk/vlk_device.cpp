@@ -638,26 +638,6 @@ namespace RayGene3D
 
     staging_buffer = buffer;
     staging_memory = memory;
-
-    //VkBufferCreateInfo buffer_info = {};
-    //buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    //buffer_info.flags = 0;
-    //buffer_info.size = staging_size;
-    //buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    //buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    //buffer_info.queueFamilyIndexCount = family;
-    //buffer_info.pQueueFamilyIndices = nullptr;
-    //BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(this->device, &buffer_info, nullptr, &staging_buffer));
-
-    //VkMemoryRequirements requirements = {};
-    //vkGetBufferMemoryRequirements(this->device, staging_buffer, &requirements);
-    //auto allocate_info = VkMemoryAllocateInfo{};
-    //allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    //allocate_info.allocationSize = requirements.size;
-    //allocate_info.memoryTypeIndex = this->GetMemoryIndex(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, requirements.memoryTypeBits);
-    //BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(this->device, &allocate_info, nullptr, &staging_memory));
-
-    //BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(this->device, staging_buffer, staging_memory, 0));
   }
 
 
@@ -665,13 +645,13 @@ namespace RayGene3D
   {
     if (staging_memory)
     {
-      vkFreeMemory(this->device, staging_memory, nullptr);
+      vkFreeMemory(device, staging_memory, nullptr);
       staging_memory = nullptr;
     }
 
     if (staging_buffer)
     {
-      vkDestroyBuffer(this->device, staging_buffer, nullptr);
+      vkDestroyBuffer(device, staging_buffer, nullptr);
       staging_buffer = nullptr;
     }
   }
@@ -706,7 +686,7 @@ namespace RayGene3D
     if (scratch_memory)
     {
       vkFreeMemory(device, scratch_memory, nullptr);
-      staging_memory = nullptr;
+      scratch_memory = nullptr;
     }
 
     if (scratch_buffer)
