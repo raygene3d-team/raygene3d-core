@@ -61,7 +61,7 @@ namespace RayGene3D
 
   protected:
     std::vector<VkPipelineShaderStageCreateInfo> stages;
-    std::vector<VkRayTracingShaderGroupCreateInfoNV> groups;
+    std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
 
   //public:
   //  std::shared_ptr<Pipeline> CreatePipeline(const std::string& name) override { return pipelines.emplace_back(new VLKPipeline(name, *this)); }
@@ -93,9 +93,6 @@ namespace RayGene3D
   protected:
     VkPipelineLayout pipeline_layout{ nullptr };
 
-  protected:
-    PFN_vkCmdTraceRaysNV vkCmdTraceRaysNV{ nullptr };
-
   public:
     const VkPipelineVertexInputStateCreateInfo& GetInputState() const { return input_state; }
     const VkPipelineInputAssemblyStateCreateInfo& GetAssemblyState() const { return assembly_state; }
@@ -110,7 +107,7 @@ namespace RayGene3D
     uint32_t GetStageCount() const { return uint32_t(stages.size()); }
     const VkPipelineShaderStageCreateInfo* GetStageArray() const { return stages.data(); }
     uint32_t GetGroupCount() const { return uint32_t(groups.size()); }
-    const VkRayTracingShaderGroupCreateInfoNV* GetGroupArray() const { return groups.data(); }
+    const VkRayTracingShaderGroupCreateInfoKHR* GetGroupArray() const { return groups.data(); }
 
 
   public:

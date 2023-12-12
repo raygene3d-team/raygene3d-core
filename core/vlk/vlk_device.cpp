@@ -29,8 +29,6 @@ THE SOFTWARE.
 
 #include "vlk_device.h"
 
-// #define ENABLE_RTX
-
 namespace RayGene3D
 {
   void VLKDevice::CreateInstance()
@@ -38,7 +36,6 @@ namespace RayGene3D
     const auto extension_names = std::vector<const char*>
     {
       VK_KHR_SURFACE_EXTENSION_NAME,
-      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
       VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
     #ifdef __linux__
       VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
@@ -63,17 +60,13 @@ namespace RayGene3D
     application_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     application_info.pEngineName = "RayGene3D Framework";
     application_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    application_info.apiVersion = VK_API_VERSION_1_0;
+    application_info.apiVersion = VK_API_VERSION_1_2;
 
     auto create_info = VkInstanceCreateInfo{};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &application_info;
-    create_info.enabledExtensionCount = 0;
-    create_info.ppEnabledExtensionNames = nullptr;
     create_info.enabledExtensionCount = uint32_t(extension_names.size());
     create_info.ppEnabledExtensionNames = extension_names.data();
-    create_info.enabledLayerCount = 0;
-    create_info.ppEnabledLayerNames = nullptr;
     create_info.enabledLayerCount = uint32_t(layer_names.size());
     create_info.ppEnabledLayerNames = layer_names.data();
 
@@ -204,10 +197,6 @@ namespace RayGene3D
     auto extension_names = std::vector<const char*>
     {
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-#ifdef ENABLE_RTX
-      VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-      VK_NV_RAY_TRACING_EXTENSION_NAME,
-#endif
     };
 
 
@@ -222,13 +211,6 @@ namespace RayGene3D
     vkGetPhysicalDeviceProperties(adapter, &properties);
     vkGetPhysicalDeviceFeatures(adapter, &features);
     vkGetPhysicalDeviceMemoryProperties(adapter, &memory);
-
-    this->name = std::string(properties.deviceName) + " (Vulkan API)";
-
-    auto extension_count = uint32_t{ 0 };
-    BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, nullptr));
-    auto extension_array = std::vector<VkExtensionProperties>(extension_count);
-    BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, extension_array.data()));
 
     auto queue_count = uint32_t{ 0 };
     vkGetPhysicalDeviceQueueFamilyProperties(adapter, &queue_count, nullptr);
@@ -249,59 +231,105 @@ namespace RayGene3D
     }
     BLAST_ASSERT(family != -1);
 
-    auto queue_create_info = VkDeviceQueueCreateInfo{};
+    auto extension_count = uint32_t{ 0 };
+    BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, nullptr));
+    auto extension_array = std::vector<VkExtensionProperties>(extension_count);
+    BLAST_ASSERT(VK_SUCCESS == vkEnumerateDeviceExtensionProperties(adapter, nullptr, &extension_count, extension_array.data()));
+
+    const auto extension_check_fn = [&extension_array](const char* extension)
+    {
+      return std::any_of(extension_array.begin(), extension_array.end(),
+        [extension](const VkExtensionProperties& e) { return strncmp(e.extensionName, extension, 256) == 0; } );
+    };
+
+    {
+      raytracing_supported = extension_check_fn(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+      raytracing_supported &= extension_check_fn(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+      raytracing_supported &= extension_check_fn(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+
+      if (raytracing_supported)
+      {
+        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtx_properties = {};
+        rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+        VkPhysicalDeviceProperties2 device_properties = {};
+        device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        device_properties.pNext = &rtx_properties;
+        vkGetPhysicalDeviceProperties2(adapter, &device_properties);
+        raytracing_properties = rtx_properties;
+
+        //BLAST_LOG("\
+        //==RTX capabilities==:\n\
+        //shaderGroupHandleSize: %d\n\
+        //maxRayRecursionDepth: %d\n\
+        //maxShaderGroupStride: %d\n\
+        //shaderGroupBaseAlignment: %d\n\
+        //shaderGroupHandleCaptureReplaySize: %d\n\
+        //maxRayDispatchInvocationCount: %d\n\
+        //shaderGroupHandleAlignment: %d\n\
+        //maxRayHitAttributeSize: %d\n"
+        //  , raytracing_properties.shaderGroupHandleSize
+        //  , raytracing_properties.maxRayRecursionDepth
+        //  , raytracing_properties.maxShaderGroupStride
+        //  , raytracing_properties.shaderGroupBaseAlignment
+        //  , raytracing_properties.shaderGroupHandleCaptureReplaySize
+        //  , raytracing_properties.maxRayDispatchInvocationCount
+        //  , raytracing_properties.shaderGroupHandleAlignment
+        //  , raytracing_properties.maxRayHitAttributeSize);
+
+        extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+        extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+        extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+      }
+    }
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR as_features = {};
+    as_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    as_features.pNext = nullptr;
+    as_features.accelerationStructure = true;
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtp_features = {};
+    rtp_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    rtp_features.pNext = &as_features;
+    rtp_features.rayTracingPipeline = true;
+
+    VkPhysicalDeviceBufferDeviceAddressFeatures bda_features = {};
+    bda_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    bda_features.pNext = &rtp_features;
+    bda_features.bufferDeviceAddress = true;
+
+    void* extention_features = raytracing_supported ? &bda_features : nullptr;
+
+    VkPhysicalDeviceFeatures enabled_features{};
+    BLAST_ASSERT(features.samplerAnisotropy);          enabled_features.samplerAnisotropy = true;
+    BLAST_ASSERT(features.robustBufferAccess);         enabled_features.robustBufferAccess = true;
+    BLAST_ASSERT(features.geometryShader);             enabled_features.geometryShader = true;
+    BLAST_ASSERT(features.tessellationShader);         enabled_features.tessellationShader = true;
+    BLAST_ASSERT(features.imageCubeArray);             enabled_features.imageCubeArray = true;
+
+    VkDeviceQueueCreateInfo queue_create_info = {};
     queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queue_create_info.queueFamilyIndex = family;
     queue_create_info.queueCount = 1;
-    const float priority = 1.0; // 0.0...1.0
+    const float priority = 1.0f; // 0.0...1.0
     queue_create_info.pQueuePriorities = &priority;
 
-    VkDeviceCreateInfo createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    createInfo.pQueueCreateInfos = &queue_create_info;
-    createInfo.queueCreateInfoCount = 1;
-    createInfo.enabledLayerCount = 0;
-    createInfo.ppEnabledLayerNames = nullptr;
-    createInfo.enabledExtensionCount = uint32_t(extension_names.size());
-    createInfo.ppEnabledExtensionNames = extension_names.data();
-    createInfo.pEnabledFeatures = &features;
-    BLAST_ASSERT(VK_SUCCESS == vkCreateDevice(adapter, &createInfo, nullptr, &device));
+    VkDeviceCreateInfo device_create_info = {};
+    device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    device_create_info.pNext = extention_features;
+    device_create_info.pQueueCreateInfos = &queue_create_info;
+    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.enabledLayerCount = 0;
+    device_create_info.ppEnabledLayerNames = nullptr;
+    device_create_info.enabledExtensionCount = uint32_t(extension_names.size());
+    device_create_info.ppEnabledExtensionNames = extension_names.data();
+    device_create_info.pEnabledFeatures = &enabled_features;
+    BLAST_ASSERT(VK_SUCCESS == vkCreateDevice(adapter, &device_create_info, nullptr, &device));
 
     vkGetDeviceQueue(device, family, 0, &queue);
 
-    BLAST_LOG("Device is created on %s", properties.deviceName);
+    BLAST_LOG("Device is created on %s [%d extension(s)]", properties.deviceName, extension_names.size());
 
-#ifdef ENABLE_RTX
-    {
-      VkPhysicalDeviceRayTracingPropertiesNV rtx_properties = {};
-      rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_NV;
-      VkPhysicalDeviceProperties2 device_properties = {};
-      device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-      device_properties.pNext = &rtx_properties;
-      vkGetPhysicalDeviceProperties2(adapter, &device_properties);
-      raytracing_properties = rtx_properties;
-      raytracing_supported = true;
-
-      BLAST_LOG("\
-==RTX capabilities==:\n\
-shaderGroupHandleSize: %d\n\
-maxRecursionDepth: &d\n\
-maxShaderGroupStride: %d\n\
-shaderGroupBaseAlignment: %d\n\
-maxGeometryCount: %d\n\
-maxInstanceCount: %d\n\
-maxTriangleCount: %d\n\
-maxDescriptorSetAccelerationStructures: %d\n"
-        , raytracing_properties.shaderGroupHandleSize
-        , raytracing_properties.maxRecursionDepth
-        , raytracing_properties.maxShaderGroupStride
-        , raytracing_properties.shaderGroupBaseAlignment
-        , raytracing_properties.maxGeometryCount
-        , raytracing_properties.maxInstanceCount
-        , raytracing_properties.maxTriangleCount
-        , raytracing_properties.maxDescriptorSetAccelerationStructures);
-    }
-#endif
+    name = std::string(properties.deviceName) + " (Vulkan API)";
   }
 
 
@@ -389,26 +417,7 @@ maxDescriptorSetAccelerationStructures: %d\n"
     CreatePool();
     CreateFence();
     CreateStaging();
-
-    for (auto& resource : resources)
-    {
-    //  if (resource) { resource->Initialize(); }
-    }
-
-    for (auto& layout : layouts)
-    {
-    //  if (layout) { layout->Initialize(); }
-    }
-
-    for (auto& config : configs)
-    {
-    //  if (config) { config->Initialize(); }
-    }
-
-    for (auto& pass : passes)
-    {
-    //  if (pass) { pass->Initialize(); }
-    }
+    CreateScratch();
   }
 
   void VLKDevice::Use()
@@ -617,25 +626,18 @@ maxDescriptorSetAccelerationStructures: %d\n"
 
   void VLKDevice::CreateStaging()
   {
-    VkBufferCreateInfo buffer_info = {};
-    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_info.flags = 0;
-    buffer_info.size = staging_size;
-    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    buffer_info.queueFamilyIndexCount = family;
-    buffer_info.pQueueFamilyIndices = nullptr;
-    BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(this->device, &buffer_info, nullptr, &staging_buffer));
+    const auto size = staging_size;
+    const auto usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    const auto buffer = CreateBuffer(size, usage);
+    const auto requirements = GetRequirements(buffer);
+    const auto property = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    const auto index = GetMemoryIndex(property, requirements.memoryTypeBits);
+    const auto memory = AllocateMemory(requirements.size, index, false);
 
-    VkMemoryRequirements requirements = {};
-    vkGetBufferMemoryRequirements(this->device, staging_buffer, &requirements);
-    auto allocate_info = VkMemoryAllocateInfo{};
-    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocate_info.allocationSize = requirements.size;
-    allocate_info.memoryTypeIndex = this->GetMemoryIndex(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, requirements.memoryTypeBits);
-    BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(this->device, &allocate_info, nullptr, &staging_memory));
+    BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device, buffer, memory, 0));
 
-    BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(this->device, staging_buffer, staging_memory, 0));
+    staging_buffer = buffer;
+    staging_memory = memory;
   }
 
 
@@ -643,14 +645,54 @@ maxDescriptorSetAccelerationStructures: %d\n"
   {
     if (staging_memory)
     {
-      vkFreeMemory(this->device, staging_memory, nullptr);
+      vkFreeMemory(device, staging_memory, nullptr);
       staging_memory = nullptr;
     }
 
     if (staging_buffer)
     {
-      vkDestroyBuffer(this->device, staging_buffer, nullptr);
+      vkDestroyBuffer(device, staging_buffer, nullptr);
       staging_buffer = nullptr;
+    }
+  }
+
+
+  void VLKDevice::CreateScratch()
+  {
+    if (!raytracing_supported) return;
+
+    const auto size = scratch_size;
+    const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    const auto buffer = CreateBuffer(size, usage);
+    const auto requirements = GetRequirements(buffer);
+    const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    const auto index = GetMemoryIndex(property, requirements.memoryTypeBits);
+    const auto memory = AllocateMemory(requirements.size, index, true);
+
+    BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device, buffer, memory, 0));
+
+    scratch_buffer = buffer;
+    scratch_memory = memory;
+
+    scratch_address = GetAddress(buffer);
+  }
+
+
+
+  void VLKDevice::DestroyScratch()
+  {
+    if (!raytracing_supported) return;
+
+    if (scratch_memory)
+    {
+      vkFreeMemory(device, scratch_memory, nullptr);
+      scratch_memory = nullptr;
+    }
+
+    if (scratch_buffer)
+    {
+      vkDestroyBuffer(device, scratch_buffer, nullptr);
+      scratch_buffer = nullptr;
     }
   }
 
@@ -663,7 +705,106 @@ maxDescriptorSetAccelerationStructures: %d\n"
     return memory.memoryTypeCount;
   }
 
+  VkDeviceAddress VLKDevice::GetAddress(VkBuffer buffer) const
+  {
+    if (!buffer) return 0ULL;
 
+    VkBufferDeviceAddressInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    info.buffer = buffer;
+    return vkGetBufferDeviceAddress(device, &info);
+  };
+
+  VkBuffer VLKDevice::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBufferCreateFlags flags) const
+  {
+    VkBuffer buffer{ nullptr };
+
+    VkBufferCreateInfo info{};
+    info.sType                  = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    info.size                   = size;
+    info.usage                  = usage;
+    info.flags                  = flags;
+    info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
+    info.queueFamilyIndexCount  = 0;
+    info.pQueueFamilyIndices    = nullptr;
+
+    BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device, &info, nullptr, &buffer));
+
+    return buffer;
+  };
+
+  VkImage VLKDevice::CreateImage(VkImageType type, VkFormat format, VkExtent3D extent,
+    uint32_t mipmaps, uint32_t layers, VkImageUsageFlags usage, VkImageCreateFlags flags) const
+  {
+    VkImage image{ nullptr };
+
+    VkImageCreateInfo info{};
+    info.sType                  = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    info.flags                  = flags;
+    info.imageType              = type;
+    info.format                 = format;
+    info.extent                 = extent;
+    info.mipLevels              = mipmaps;
+    info.arrayLayers            = layers;
+    info.samples                = VK_SAMPLE_COUNT_1_BIT;
+    info.tiling                 = VK_IMAGE_TILING_OPTIMAL;
+    info.usage                  = usage;
+    info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
+    info.queueFamilyIndexCount  = 0;
+    info.pQueueFamilyIndices    = nullptr;
+    info.initialLayout          = VK_IMAGE_LAYOUT_UNDEFINED; //properties.empty() ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_PREINITIALIZED;
+    BLAST_ASSERT(VK_SUCCESS == vkCreateImage(device, &info, nullptr, &image));
+
+    return image;
+  };
+
+  VkMemoryRequirements VLKDevice::GetRequirements(VkBuffer buffer) const
+  {
+    VkMemoryRequirements requirements{};
+    vkGetBufferMemoryRequirements(device, buffer, &requirements);
+
+    return requirements;
+  };
+
+  VkMemoryRequirements VLKDevice::GetRequirements(VkImage image) const
+  {
+    VkMemoryRequirements requirements{};
+    vkGetImageMemoryRequirements(device, image, &requirements);
+
+    return requirements;
+  };
+
+  VkDeviceMemory VLKDevice::AllocateMemory(VkDeviceSize size, uint32_t index, bool addressable) const
+  {
+    VkDeviceMemory memory{ nullptr };
+
+    VkMemoryAllocateFlagsInfo flags_info{};
+    flags_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+    flags_info.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+
+    VkMemoryAllocateInfo info{};
+    info.sType             = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    info.pNext             = addressable ? &flags_info : nullptr;
+    info.allocationSize    = size;
+    info.memoryTypeIndex   = index;
+    BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device, &info, nullptr, &memory));
+
+    return memory;
+  };
+
+  //void* VLKDevice::MapMemory(VkDeviceMemory memory) const
+  //{
+  //  void* mapped{ nullptr };
+
+  //  BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device, memory, 0, VK_WHOLE_SIZE, 0, &mapped));
+  //  
+  //  return mapped;
+  //}
+
+  //void VLKDevice::UnmapMemory(VkDeviceMemory memory) const
+  //{
+  //  vkUnmapMemory(device, memory);
+  //}
 
   void VLKDevice::Discard()
   {
@@ -692,6 +833,7 @@ maxDescriptorSetAccelerationStructures: %d\n"
       if (resource) { /*BLAST_LOG("Discarding resource [%s]", name.c_str());*/ resource->Discard(); }
     }
 
+    DestroyScratch();
     DestroyStaging();
     DestroyFence();
     DestroyPool();

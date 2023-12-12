@@ -55,6 +55,7 @@ namespace RayGene3D
       HINT_CUBEMAP_IMAGE = 0x1,
       HINT_LAYERED_IMAGE = 0x2,
       HINT_DYNAMIC_BUFFER = 0x10,
+      HINT_ADDRESS_BUFFER = 0x20,
       HINT_FORCE_UINT = 0xffffffff
     };
 

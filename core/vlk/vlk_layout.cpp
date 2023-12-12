@@ -38,12 +38,11 @@ namespace RayGene3D
 
     if (device->GetRTXSupported())
     {
-      vkCreateAccelerationStructureNV = reinterpret_cast<PFN_vkCreateAccelerationStructureNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateAccelerationStructureNV"));
-      vkDestroyAccelerationStructureNV = reinterpret_cast<PFN_vkDestroyAccelerationStructureNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkDestroyAccelerationStructureNV"));
-      vkBindAccelerationStructureMemoryNV = reinterpret_cast<PFN_vkBindAccelerationStructureMemoryNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkBindAccelerationStructureMemoryNV"));
-      vkGetAccelerationStructureHandleNV = reinterpret_cast<PFN_vkGetAccelerationStructureHandleNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureHandleNV"));
-      vkGetAccelerationStructureMemoryRequirementsNV = reinterpret_cast<PFN_vkGetAccelerationStructureMemoryRequirementsNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureMemoryRequirementsNV"));
-      vkCmdBuildAccelerationStructureNV = reinterpret_cast<PFN_vkCmdBuildAccelerationStructureNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdBuildAccelerationStructureNV"));
+      vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateAccelerationStructureKHR"));
+      vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkDestroyAccelerationStructureKHR"));
+      vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureDeviceAddressKHR"));
+      vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureBuildSizesKHR"));
+      vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdBuildAccelerationStructuresKHR"));
     }
 
     {
@@ -128,237 +127,13 @@ namespace RayGene3D
     {
       BLAST_LOG("RTX Instances count: %d", rtx_entities.size());
 
-      std::vector<VkGeometryNV> geometriesNV(rtx_entities.size());
-
-      {
-        bottom_sizes.resize(rtx_entities.size());
-        bottom_accelerations.resize(rtx_entities.size());
-        bottom_memories.resize(rtx_entities.size());
-        bottom_handles.resize(rtx_entities.size());
-
-        for (uint32_t i = 0; i < uint32_t(geometriesNV.size()); ++i)
-        {
-          const auto& rtx_entity = rtx_entities[i];
-
-          const auto& va_view = rtx_entity.va_view;
-          const auto& ia_view = rtx_entity.ia_view;
-
-          auto& bottom_size = bottom_sizes[i];
-          auto& bottom_acceleration = bottom_accelerations[i];
-          auto& bottom_memory = bottom_memories[i];
-          auto& bottom_handle = bottom_handles[i];
-
-          const auto va_resource = reinterpret_cast<VLKResource*>(&va_view->GetResource());
-          const auto va_stride = va_resource->GetStride();
-          const auto va_count = rtx_entity.va_count;
-          const auto va_offset = rtx_entity.va_offset * va_stride;
-
-          const auto ia_resource = reinterpret_cast<VLKResource*>(&ia_view->GetResource());
-          const auto ia_stride = 4;
-          const auto ia_count = rtx_entity.ia_count;
-          const auto ia_offset = rtx_entity.ia_offset * ia_stride;
-
-          BLAST_LOG("Vertices/Triangles count and offset: %d/%d, %d/%d", va_count, ia_count / 3, va_offset, ia_offset / 3);
-
-          auto& geometry = geometriesNV[i];
-          geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
-          geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
-          geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-          geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-          geometry.geometry.triangles.vertexData = va_resource->GetBuffer();
-          geometry.geometry.triangles.vertexOffset = va_offset;
-          geometry.geometry.triangles.vertexCount = va_count;
-          geometry.geometry.triangles.vertexStride = va_stride;
-          geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-          geometry.geometry.triangles.indexData = ia_resource->GetBuffer();
-          geometry.geometry.triangles.indexOffset = ia_offset;
-          geometry.geometry.triangles.indexCount = ia_count;
-          geometry.geometry.triangles.indexType = ia_stride == 4 ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
-          geometry.geometry.triangles.transformData = VK_NULL_HANDLE;
-          geometry.geometry.triangles.transformOffset = 0;
-          geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
-
-          {
-            VkAccelerationStructureCreateInfoNV accelerationInfo = {};
-            accelerationInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-            accelerationInfo.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-            accelerationInfo.info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-            accelerationInfo.info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
-            accelerationInfo.info.instanceCount = 0;
-            accelerationInfo.info.geometryCount = 1;
-            accelerationInfo.info.pGeometries = &geometry;
-            BLAST_ASSERT(VK_SUCCESS == vkCreateAccelerationStructureNV(device->GetDevice(), &accelerationInfo, nullptr, &bottom_acceleration));
-
-            VkAccelerationStructureMemoryRequirementsInfoNV requirementsInfo = {};
-            requirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-            requirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-            requirementsInfo.accelerationStructure = bottom_accelerations[i];
-            VkMemoryRequirements2 requirements = {};
-            vkGetAccelerationStructureMemoryRequirementsNV(device->GetDevice(), &requirementsInfo, &requirements);
-            VkMemoryAllocateInfo allocateInfo = {};
-            allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            allocateInfo.allocationSize = requirements.memoryRequirements.size;
-            allocateInfo.memoryTypeIndex = device->GetMemoryIndex(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, requirements.memoryRequirements.memoryTypeBits);
-            BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocateInfo, nullptr, &bottom_memory));
-            bottom_size = requirements.memoryRequirements.size;
-
-            VkBindAccelerationStructureMemoryInfoNV bindInfo = {};
-            bindInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
-            bindInfo.accelerationStructure = bottom_acceleration;
-            bindInfo.memory = bottom_memory;
-            BLAST_ASSERT(VK_SUCCESS == vkBindAccelerationStructureMemoryNV(device->GetDevice(), 1, &bindInfo));
-
-            BLAST_ASSERT(VK_SUCCESS == vkGetAccelerationStructureHandleNV(device->GetDevice(), bottom_acceleration, sizeof(uint64_t), &bottom_handle));
-
-            BLAST_LOG("Accelearion/memory/size/handle: %d, %d, %d, %d", bottom_acceleration, bottom_memory, bottom_size, bottom_handle);
-          }
-        }
-      }
-
-            
-      struct InstanceNV
-      {
-        float transform[12];
-        uint32_t id : 24;
-        uint32_t mask : 8;
-        uint32_t offset : 24;
-        uint32_t flags : 8;
-        uint64_t handle;
-      };
-      std::vector<InstanceNV> instancesNV(rtx_entities.size());
-
-      {
-        for (uint32_t i = 0; i < uint32_t(instancesNV.size()); ++i)
-        {
-          const auto& rtx_entity = rtx_entities[i];
-
-          //glm::mat3x4 transform = glm::mat3x4(1.0f);
-          instancesNV[i] = { 
-            rtx_entity.transform[0 + 0], rtx_entity.transform[0 + 1], rtx_entity.transform[0 + 2], rtx_entity.transform[0 + 3],
-            rtx_entity.transform[4 + 0], rtx_entity.transform[4 + 1], rtx_entity.transform[4 + 2], rtx_entity.transform[4 + 3],
-            rtx_entity.transform[8 + 0], rtx_entity.transform[8 + 1], rtx_entity.transform[8 + 2], rtx_entity.transform[8 + 3],
-            i, 0xFF, 0, VK_GEOMETRY_INSTANCE_TRIANGLE_CULL_DISABLE_BIT_NV, bottom_handles[i] };
-        }
-
-        {
-          VkBufferCreateInfo bufferInfo = {};
-          bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-          bufferInfo.flags = 0;
-          bufferInfo.size = instancesNV.size() * sizeof(InstanceNV);
-          bufferInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-          bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-          bufferInfo.queueFamilyIndexCount = 0;
-          bufferInfo.pQueueFamilyIndices = nullptr;
-          BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device->GetDevice(), &bufferInfo, nullptr, &bufferInstances));
-
-          VkMemoryRequirements requirements;
-          vkGetBufferMemoryRequirements(device->GetDevice(), bufferInstances, &requirements);
-          VkMemoryAllocateInfo allocateInfo = {};
-          allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-          allocateInfo.allocationSize = requirements.size;
-          allocateInfo.memoryTypeIndex = device->GetMemoryIndex(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, requirements.memoryTypeBits);
-          BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocateInfo, nullptr, &memoryInstances));
-
-          void* mapped = nullptr;
-          BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), memoryInstances, 0, VK_WHOLE_SIZE, 0, &mapped));
-          memcpy(mapped, instancesNV.data(), instancesNV.size() * sizeof(InstanceNV));
-          vkUnmapMemory(device->GetDevice(), memoryInstances);
-
-          BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), bufferInstances, memoryInstances, 0));
-        }
-
-        {
-          VkAccelerationStructureCreateInfoNV accelerationInfo = {};
-          accelerationInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_NV;
-          accelerationInfo.info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-          accelerationInfo.info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-          accelerationInfo.info.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
-          accelerationInfo.info.instanceCount = uint32_t(instancesNV.size());
-          accelerationInfo.info.geometryCount = 0;
-          BLAST_ASSERT(VK_SUCCESS == vkCreateAccelerationStructureNV(device->GetDevice(), &accelerationInfo, nullptr, &top_acceleration));
-
-          VkAccelerationStructureMemoryRequirementsInfoNV requirementsInfo = {};
-          requirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-          requirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_NV;
-          requirementsInfo.accelerationStructure = top_acceleration;
-          VkMemoryRequirements2 requirements = {};
-          vkGetAccelerationStructureMemoryRequirementsNV(device->GetDevice(), &requirementsInfo, &requirements);
-          VkMemoryAllocateInfo allocateInfo = {};
-          allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-          allocateInfo.allocationSize = requirements.memoryRequirements.size;
-          allocateInfo.memoryTypeIndex = device->GetMemoryIndex(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, requirements.memoryRequirements.memoryTypeBits);
-          BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocateInfo, nullptr, &top_memory));
-          top_size = requirements.memoryRequirements.size;
-
-          VkBindAccelerationStructureMemoryInfoNV bindInfo = {};
-          bindInfo.sType = VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_NV;
-          bindInfo.accelerationStructure = top_acceleration;
-          bindInfo.memory = top_memory;
-          BLAST_ASSERT(VK_SUCCESS == vkBindAccelerationStructureMemoryNV(device->GetDevice(), 1, &bindInfo));
-
-          BLAST_ASSERT(VK_SUCCESS == vkGetAccelerationStructureHandleNV(device->GetDevice(), top_acceleration, sizeof(uint64_t), &top_handle));
-
-          BLAST_LOG("Accelearion/memory/size/handle: %d, %d, %d, %d", top_acceleration, top_memory, top_size, top_handle);
-        }
-      }
-
-
-      {
-        VkDeviceSize scratchSize = 0u;
-
-        for(uint32_t i = 0; i < uint32_t(bottom_accelerations.size()); ++i)
-        {
-          VkAccelerationStructureMemoryRequirementsInfoNV requirementsInfo = {};
-          requirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-          requirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-          requirementsInfo.accelerationStructure = bottom_accelerations[i];
-          VkMemoryRequirements2 requirements = {};
-          vkGetAccelerationStructureMemoryRequirementsNV(device->GetDevice(), &requirementsInfo, &requirements);
-          scratchSize = std::max(scratchSize, requirements.memoryRequirements.size);
-
-          BLAST_LOG("Original/scratch size bottom: %d/%d", bottom_sizes[i], requirements.memoryRequirements.size);
-        }
-
-        {
-          VkAccelerationStructureMemoryRequirementsInfoNV requirementsInfo = {};
-          requirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_NV;
-          requirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_NV;
-          requirementsInfo.accelerationStructure = top_acceleration;
-          VkMemoryRequirements2 requirements = {};
-          vkGetAccelerationStructureMemoryRequirementsNV(device->GetDevice(), &requirementsInfo, &requirements);
-          scratchSize = std::max(scratchSize, requirements.memoryRequirements.size);
-
-          BLAST_LOG("Original/scratch size top: %d/%d", top_size, requirements.memoryRequirements.size);
-        }
-
-        VkBufferCreateInfo bufferInfo = {};
-        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        bufferInfo.flags = 0;
-        bufferInfo.size = scratchSize;
-        bufferInfo.usage = VK_BUFFER_USAGE_RAY_TRACING_BIT_NV;
-        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        bufferInfo.queueFamilyIndexCount = 0;
-        bufferInfo.pQueueFamilyIndices = nullptr;
-        BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(device->GetDevice(), &bufferInfo, nullptr, &bufferScratch));
-
-        VkMemoryRequirements requirements = {};
-        vkGetBufferMemoryRequirements(device->GetDevice(), bufferScratch, &requirements);
-        VkMemoryAllocateInfo allocateInfo = {};
-        allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocateInfo.allocationSize = requirements.size;
-        allocateInfo.memoryTypeIndex = device->GetMemoryIndex(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, requirements.memoryTypeBits);
-        BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(device->GetDevice(), &allocateInfo, nullptr, &memoryScratch));
-
-        BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), bufferScratch, memoryScratch, 0));
-      }
-
       {
         VkCommandBufferAllocateInfo allocate_info = {};
         allocate_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocate_info.commandPool = device->GetCommandPool();
         allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocate_info.commandBufferCount = 1;
-        BLAST_ASSERT(VK_SUCCESS == vkAllocateCommandBuffers(device->GetDevice(), &allocate_info, &commandBuffer));
+        BLAST_ASSERT(VK_SUCCESS == vkAllocateCommandBuffers(device->GetDevice(), &allocate_info, &command_buffer));
 
         VkFenceCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -368,55 +143,231 @@ namespace RayGene3D
 
       VkCommandBufferBeginInfo beginInfo = {};
       beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-      BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-      for (uint32_t i = 0; i < uint32_t(bottom_accelerations.size()); ++i)
-      {
-        VkAccelerationStructureInfoNV buildInfo = {};
-        buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_NV;
-        buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
-        buildInfo.instanceCount = 0;
-        buildInfo.geometryCount = 1;
-        buildInfo.pGeometries = &geometriesNV[i];
-        vkCmdBuildAccelerationStructureNV(commandBuffer, &buildInfo, VK_NULL_HANDLE, 0, VK_FALSE, bottom_accelerations[i], VK_NULL_HANDLE, bufferScratch, 0);
-
-        VkMemoryBarrier memoryBarrier = {};
-        memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-        memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-        memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
-          0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
-      }
+      BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(command_buffer, &beginInfo));
 
       {
-        VkAccelerationStructureInfoNV buildInfo = {};
-        buildInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_INFO_NV;
-        buildInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_NV;
-        buildInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_NV;
-        buildInfo.instanceCount = rtx_entities.size();
-        buildInfo.geometryCount = 0;
-        buildInfo.pGeometries = nullptr;
-        vkCmdBuildAccelerationStructureNV(commandBuffer, &buildInfo, bufferInstances, 0, VK_FALSE, top_acceleration, VK_NULL_HANDLE, bufferScratch, 0);
+        blas_memories.resize(rtx_entities.size());
+        blas_buffers.resize(rtx_entities.size());
+        blas_items.resize(rtx_entities.size());
 
-        VkMemoryBarrier memoryBarrier = {};
-        memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-        memoryBarrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-        memoryBarrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_NV | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_NV;
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV, VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_NV,
-          0, 1, &memoryBarrier, 0, nullptr, 0, nullptr);
+        for (uint32_t i = 0; i < uint32_t(rtx_entities.size()); ++i)
+        {
+          auto& blas_memory = blas_memories[i];
+          auto& blas_buffer = blas_buffers[i];
+          auto& blas_item = blas_items[i];
+
+          const auto& rtx_entity = rtx_entities[i];
+
+          const auto va_resource = reinterpret_cast<VLKResource*>(&rtx_entity.va_view->GetResource());
+          const auto va_stride = va_resource->GetStride();
+          const auto va_count = rtx_entity.va_count;
+          const auto va_offset = rtx_entity.va_offset;
+          const auto va_address = device->GetAddress(va_resource->GetBuffer());
+
+          const auto ia_resource = reinterpret_cast<VLKResource*>(&rtx_entity.ia_view->GetResource());
+          const auto ia_stride = ia_resource->GetStride();
+          const auto ia_count = rtx_entity.ia_count;
+          const auto ia_offset = rtx_entity.ia_offset;
+          const auto ia_address = device->GetAddress(ia_resource->GetBuffer());
+
+          //BLAST_LOG("Vertices and Triangles count/offset: %d/%d, %d/%d", va_count, va_offset, ia_count, ia_offset);
+
+          VkAccelerationStructureGeometryKHR structure_geometry{};
+          structure_geometry.sType                                        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+          structure_geometry.flags                                        = VK_GEOMETRY_OPAQUE_BIT_KHR;
+          structure_geometry.geometryType                                 = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+          structure_geometry.geometry.triangles.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+          structure_geometry.geometry.triangles.vertexData.deviceAddress  = va_address;
+          structure_geometry.geometry.triangles.vertexStride              = va_stride;
+          structure_geometry.geometry.triangles.vertexFormat              = VK_FORMAT_R32G32B32_SFLOAT;
+          structure_geometry.geometry.triangles.maxVertex                 = va_count - 1;
+          structure_geometry.geometry.triangles.indexData.deviceAddress   = ia_address;
+          structure_geometry.geometry.triangles.indexType                 = VK_INDEX_TYPE_UINT32;
+
+          VkAccelerationStructureBuildRangeInfoKHR range_info{};
+          range_info.primitiveCount   = ia_count;
+          range_info.primitiveOffset  = ia_offset * ia_stride; //byte offset
+          range_info.firstVertex      = va_offset;
+          range_info.transformOffset  = 0;
+
+          VkAccelerationStructureBuildGeometryInfoKHR geometry_info{};
+          geometry_info.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+          geometry_info.type                      = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+          geometry_info.flags                     = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+          geometry_info.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+          geometry_info.geometryCount             = 1;
+          geometry_info.pGeometries               = &structure_geometry;
+          geometry_info.scratchData.deviceAddress = device->GetScratchAddress();;
+
+          VkAccelerationStructureBuildSizesInfoKHR sizes_info{};
+          sizes_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+          vkGetAccelerationStructureBuildSizesKHR(device->GetDevice(),
+            VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+            &geometry_info,
+            &range_info.primitiveCount,
+            &sizes_info);
+          BLAST_ASSERT(device->GetScratchSize() >= sizes_info.buildScratchSize);
+
+          {
+            const auto size = sizes_info.accelerationStructureSize;
+            const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+            const auto buffer = device->CreateBuffer(size, usage);
+            const auto requirements = device->GetRequirements(buffer);
+            const auto flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            const auto index = device->GetMemoryIndex(flags, requirements.memoryTypeBits);
+            const auto memory = device->AllocateMemory(requirements.size, index, true);
+
+            BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
+
+            blas_buffer = buffer;
+            blas_memory = memory;
+          }
+                   
+          VkAccelerationStructureCreateInfoKHR create_info{};
+          create_info.sType   = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+          create_info.type    = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+          create_info.size    = sizes_info.accelerationStructureSize;
+          create_info.buffer  = blas_buffer;
+          BLAST_ASSERT(VK_SUCCESS == vkCreateAccelerationStructureKHR(device->GetDevice(), &create_info, nullptr, &blas_item));
+          
+          geometry_info.dstAccelerationStructure = blas_item;
+
+          const VkAccelerationStructureBuildRangeInfoKHR* range_info_ptr = &range_info;
+          vkCmdBuildAccelerationStructuresKHR(command_buffer, 1, &geometry_info, &range_info_ptr);
+
+          VkMemoryBarrier memory_barrier = {};
+          memory_barrier.sType          = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+          memory_barrier.srcAccessMask  = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+          memory_barrier.dstAccessMask  = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+          vkCmdPipelineBarrier(command_buffer,
+            VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+            VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+            0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
+        }
       }
 
-      BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(commandBuffer));
-
-
-      VkSubmitInfo submitInfo = {};
-      submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-      submitInfo.commandBufferCount = 1;
-      submitInfo.pCommandBuffers = &commandBuffer;
-      BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE)); // fence));
-      BLAST_ASSERT(VK_SUCCESS == vkQueueWaitIdle(device->GetQueue()));
       
+      {
+        std::vector<VkAccelerationStructureInstanceKHR> instances(rtx_entities.size());
+
+        for (uint32_t i = 0; i < uint32_t(instances.size()); ++i)
+        {
+          const auto& rtx_entity = rtx_entities[i];
+
+          VkAccelerationStructureDeviceAddressInfoKHR address_info{};
+          address_info.sType                  = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+          address_info.accelerationStructure  = blas_items[i];
+          const auto blas_address = vkGetAccelerationStructureDeviceAddressKHR(device->GetDevice(), &address_info);
+
+          VkTransformMatrixKHR transformMatrix = {
+            rtx_entity.transform[0 + 0], rtx_entity.transform[0 + 1], rtx_entity.transform[0 + 2], rtx_entity.transform[0 + 3],
+            rtx_entity.transform[4 + 0], rtx_entity.transform[4 + 1], rtx_entity.transform[4 + 2], rtx_entity.transform[4 + 3],
+            rtx_entity.transform[8 + 0], rtx_entity.transform[8 + 1], rtx_entity.transform[8 + 2], rtx_entity.transform[8 + 3]
+          };
+
+          instances[i] = { transformMatrix, i, 0xFF, 0, VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR, blas_address }; 
+        } 
+
+        {
+          const auto size = instances.size() * sizeof(VkAccelerationStructureInstanceKHR);
+          const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+          const auto buffer = device->CreateBuffer(size, usage);
+          const auto requirements = device->GetRequirements(buffer);
+          const auto flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+          const auto index = device->GetMemoryIndex(flags, requirements.memoryTypeBits);
+          const auto memory = device->AllocateMemory(requirements.size, index, true);
+
+          BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
+
+          instances_buffer = buffer;
+          instances_memory = memory;
+        }
+
+        {
+          void* mapped{ nullptr };
+          BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), instances_memory, 0, VK_WHOLE_SIZE, 0, &mapped));
+          memcpy(mapped, instances.data(), instances.size() * sizeof(VkAccelerationStructureInstanceKHR));
+          vkUnmapMemory(device->GetDevice(), instances_memory);
+        }
+        
+
+        
+        VkAccelerationStructureGeometryKHR structure_geometry{};
+        structure_geometry.sType                                  = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+        structure_geometry.geometryType                           = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+        structure_geometry.geometry.instances.sType               = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+        structure_geometry.geometry.instances.data.deviceAddress  = device->GetAddress(instances_buffer);
+
+        VkAccelerationStructureBuildRangeInfoKHR range_info{};
+        range_info.primitiveCount     = uint32_t(instances.size());
+        range_info.primitiveOffset    = 0;
+        range_info.firstVertex        = 0;
+        range_info.transformOffset    = 0;
+
+        VkAccelerationStructureBuildGeometryInfoKHR geometry_info{};
+        geometry_info.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+        geometry_info.type                      = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        geometry_info.flags                     = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+        geometry_info.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+        geometry_info.geometryCount             = 1;
+        geometry_info.pGeometries               = &structure_geometry;
+        geometry_info.scratchData.deviceAddress = device->GetScratchAddress();
+
+        VkAccelerationStructureBuildSizesInfoKHR sizes_info{};
+        sizes_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+        vkGetAccelerationStructureBuildSizesKHR(device->GetDevice(), 
+          VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+          &geometry_info, 
+          &range_info.primitiveCount,
+          &sizes_info);
+        BLAST_ASSERT(device->GetScratchSize() >= sizes_info.buildScratchSize);
+
+        {
+          const auto size = sizes_info.accelerationStructureSize;
+          const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+          const auto buffer = device->CreateBuffer(size, usage);
+          const auto requirements = device->GetRequirements(buffer);
+          const auto flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+          const auto index = device->GetMemoryIndex(flags, requirements.memoryTypeBits);
+          const auto memory = device->AllocateMemory(requirements.size, index, true);
+
+          BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
+
+          tlas_buffer = buffer;
+          tlas_memory = memory;
+        }
+        
+        VkAccelerationStructureCreateInfoKHR create_info = {};
+        create_info.sType     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+        create_info.type      = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        create_info.size      = sizes_info.accelerationStructureSize;
+        create_info.buffer    = tlas_buffer;
+        BLAST_ASSERT(VK_SUCCESS == vkCreateAccelerationStructureKHR(device->GetDevice(), &create_info, nullptr, &tlas_item));
+
+        geometry_info.dstAccelerationStructure  = tlas_item;
+
+        const VkAccelerationStructureBuildRangeInfoKHR* range_info_ptr = &range_info;
+        vkCmdBuildAccelerationStructuresKHR(command_buffer, 1, &geometry_info, &range_info_ptr);
+
+        VkMemoryBarrier memory_barrier = {};
+        memory_barrier.sType          = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        memory_barrier.srcAccessMask  = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        memory_barrier.dstAccessMask  = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        vkCmdPipelineBarrier(command_buffer, 
+          VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+          VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
+          0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
+      }
+
+      BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(command_buffer));
+
+      VkSubmitInfo submit_info = {};
+      submit_info.sType               = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+      submit_info.commandBufferCount  = 1;
+      submit_info.pCommandBuffers     = &command_buffer;
+
+      BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submit_info, VK_NULL_HANDLE)); // fence));
+      BLAST_ASSERT(VK_SUCCESS == vkQueueWaitIdle(device->GetQueue()));
     }
 
     //ub_views = std::move(cd_views); //TODO: remove this dirty hack
@@ -431,7 +382,7 @@ namespace RayGene3D
       if (!rb_views.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, uint32_t(rb_views.size()) }); }
       if (!wi_views.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, uint32_t(wi_views.size()) }); }
       if (!wb_views.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, uint32_t(wb_views.size()) }); }
-      if (top_acceleration) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV, 1 }); }
+      if (tlas_item) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, 1 }); }
 
       VkDescriptorPoolCreateInfo poolCreateInfo = {};
       poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -457,7 +408,7 @@ namespace RayGene3D
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT 
-            | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -471,7 +422,7 @@ namespace RayGene3D
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -485,7 +436,7 @@ namespace RayGene3D
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -499,7 +450,7 @@ namespace RayGene3D
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -513,7 +464,7 @@ namespace RayGene3D
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -527,7 +478,7 @@ namespace RayGene3D
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -541,21 +492,21 @@ namespace RayGene3D
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
       {
-        std::vector<VkDescriptorSetLayoutBinding> descriptors(top_acceleration ? 1 : 0);
+        std::vector<VkDescriptorSetLayoutBinding> descriptors(tlas_item ? 1 : 0);
         for (uint32_t i = 0; i < uint32_t(descriptors.size()); ++i)
         {
           auto& descriptor = descriptors.at(i);
           descriptor.binding = i + uint32_t(bindings.size());
-          descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+          descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
           descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_NV | VK_SHADER_STAGE_ANY_HIT_BIT_NV | VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV | VK_SHADER_STAGE_MISS_BIT_NV;
+            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -775,14 +726,14 @@ namespace RayGene3D
       write_offset += uint32_t(wi_views.size());
     }
 
-    if (top_acceleration)
+    if (tlas_item)
     {
-      VkWriteDescriptorSetAccelerationStructureNV descriptor_acceleration = {};
+      VkWriteDescriptorSetAccelerationStructureKHR descriptor_acceleration = {};
       VkWriteDescriptorSet descriptor = {};
 
-      descriptor_acceleration.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV;
+      descriptor_acceleration.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
       descriptor_acceleration.accelerationStructureCount = 1;
-      descriptor_acceleration.pAccelerationStructures = &top_acceleration;
+      descriptor_acceleration.pAccelerationStructures = &tlas_item;
 
       descriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
       descriptor.pNext = &descriptor_acceleration;
@@ -790,7 +741,7 @@ namespace RayGene3D
       descriptor.dstBinding = 0 + write_offset;
       descriptor.dstArrayElement = 0;
       descriptor.descriptorCount = 1;
-      descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_NV;
+      descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
       descriptor.pImageInfo = nullptr;
       descriptor.pBufferInfo = nullptr;
       descriptor.pTexelBufferView = nullptr;
@@ -799,14 +750,7 @@ namespace RayGene3D
       write_offset += 1;
     }
 
-    BLAST_LOG("Layout count: %d", write_offset);
-
-
-    //for (auto& command : commands)
-    //{
-    //  command->Initialize();
-    //}
-
+    BLAST_LOG("Binding count: %d [%s]", write_offset, name.c_str());
   }
 
   void VLKLayout::Use()
@@ -851,62 +795,61 @@ namespace RayGene3D
       vkDestroyFence(device->GetDevice(), fence, nullptr); fence = nullptr;
     }
 
-    if (commandBuffer)
+    if (command_buffer)
     {
-      vkFreeCommandBuffers(device->GetDevice(), device->GetCommandPool(), 1, &commandBuffer); commandBuffer = nullptr;
+      vkFreeCommandBuffers(device->GetDevice(), device->GetCommandPool(), 1, &command_buffer); command_buffer = nullptr;
     }
 
-    //if (commandPool)
-    //{
-    //  vkDestroyCommandPool(device->GetDevice(), commandPool, nullptr); commandPool = nullptr;
-    //}
-
-    for (auto& bottom_acceleration : bottom_accelerations)
+    for (auto& blas_item : blas_items)
     {
-      if (bottom_acceleration)
+      if (blas_item)
       {
-        vkDestroyAccelerationStructureNV(device->GetDevice(), bottom_acceleration, nullptr); bottom_acceleration = nullptr;
+        vkDestroyAccelerationStructureKHR(device->GetDevice(), blas_item, nullptr); blas_item = nullptr;
       }
     }
-    bottom_accelerations.clear();
+    blas_items.clear();
 
-    for (auto& bottom_memory : bottom_memories)
+    for (auto& blas_buffer : blas_buffers)
     {
-      if (bottom_memory)
+      if (blas_buffer)
       {
-        vkFreeMemory(device->GetDevice(), bottom_memory, nullptr); bottom_memory = nullptr;
+        vkDestroyBuffer(device->GetDevice(), blas_buffer, nullptr); blas_buffer = nullptr;
       }
     }
-    bottom_memories.clear();
+    blas_buffers.clear();
 
-    if (top_acceleration)
+    for (auto& blas_memory : blas_memories)
     {
-      vkDestroyAccelerationStructureNV(device->GetDevice(), top_acceleration, nullptr); top_acceleration = nullptr;
+      if (blas_memory)
+      {
+        vkFreeMemory(device->GetDevice(), blas_memory, nullptr); blas_memory = nullptr;
+      }
+    }
+    blas_memories.clear();
+
+    if (tlas_item)
+    {
+      vkDestroyAccelerationStructureKHR(device->GetDevice(), tlas_item, nullptr); tlas_item = nullptr;
     }
 
-    if (top_memory)
+    if (tlas_buffer)
     {
-      vkFreeMemory(device->GetDevice(), top_memory, nullptr); top_memory = nullptr;
+      vkDestroyBuffer(device->GetDevice(), tlas_buffer, nullptr); tlas_buffer = nullptr;
     }
 
-    if (bufferInstances)
+    if (tlas_memory)
     {
-      vkDestroyBuffer(device->GetDevice(), bufferInstances, nullptr); bufferInstances = nullptr;
+      vkFreeMemory(device->GetDevice(), tlas_memory, nullptr); tlas_memory = nullptr;
     }
 
-    if (memoryInstances)
+    if (instances_buffer)
     {
-      vkFreeMemory(device->GetDevice(), memoryInstances, nullptr); memoryInstances = nullptr;
+      vkDestroyBuffer(device->GetDevice(), instances_buffer, nullptr); instances_buffer = nullptr;
     }
 
-    if (bufferScratch)
+    if (instances_memory)
     {
-      vkDestroyBuffer(device->GetDevice(), bufferScratch, nullptr); bufferScratch = nullptr;
-    }
-
-    if (memoryScratch)
-    {
-      vkFreeMemory(device->GetDevice(), memoryScratch, nullptr); memoryScratch = nullptr;
+      vkFreeMemory(device->GetDevice(), instances_memory, nullptr); instances_memory = nullptr;
     }
   }
 

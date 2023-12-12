@@ -59,39 +59,35 @@ namespace RayGene3D
     std::vector<VkDescriptorSetLayout> tables;
 
   protected:
-    std::vector<VkDeviceSize> bottom_sizes;
-    std::vector<VkAccelerationStructureNV> bottom_accelerations;
-    std::vector<VkDeviceMemory> bottom_memories;
-    std::vector<uint64_t> bottom_handles;
+    //struct RTXItem
+    //{
+    //  VkDeviceMemory memory{ nullptr };
+    //  VkBuffer buffer{ nullptr };
+    //  VkAccelerationStructureKHR{ nullptr };
+    //};
+    //std::vector<RTXItem> blas_items;
+    //std::vector<RTXItem> tlas_items;
 
-    VkDeviceSize top_size{ 0 };
-    VkAccelerationStructureNV top_acceleration{ nullptr };
-    VkDeviceMemory top_memory{ nullptr };
-    uint64_t top_handle{ 0 };
+    std::vector<VkDeviceMemory> blas_memories;
+    std::vector<VkBuffer> blas_buffers;
+    std::vector<VkAccelerationStructureKHR> blas_items;
 
-    VkDeviceMemory memoryInstances{ nullptr };
-    VkBuffer bufferInstances{ nullptr };
+    VkDeviceMemory tlas_memory{ nullptr };
+    VkBuffer tlas_buffer{ nullptr };
+    VkAccelerationStructureKHR tlas_item{ nullptr };
 
-    VkDeviceMemory memoryScratch{ nullptr };
-    VkBuffer bufferScratch{ nullptr };
+    VkDeviceMemory instances_memory{ nullptr };
+    VkBuffer instances_buffer{ nullptr };
 
-    //std::vector<VkGeometryNV> geometries;
-
-    VkCommandBuffer commandBuffer{ nullptr };
-    //VkCommandPool commandPool{ nullptr };
+    VkCommandBuffer command_buffer{ nullptr };
     VkFence fence{ nullptr };
 
-
   protected:
-    PFN_vkCreateAccelerationStructureNV vkCreateAccelerationStructureNV{ nullptr };
-    PFN_vkDestroyAccelerationStructureNV vkDestroyAccelerationStructureNV{ nullptr };
-    PFN_vkBindAccelerationStructureMemoryNV vkBindAccelerationStructureMemoryNV{ nullptr };
-    PFN_vkGetAccelerationStructureHandleNV vkGetAccelerationStructureHandleNV{ nullptr };
-    PFN_vkGetAccelerationStructureMemoryRequirementsNV vkGetAccelerationStructureMemoryRequirementsNV{ nullptr };
-    PFN_vkCmdBuildAccelerationStructureNV vkCmdBuildAccelerationStructureNV{ nullptr };
-
-  //public:
-  //  std::shared_ptr<Command> CreateCommand(const std::string& name) override { return commands.emplace_back(new VLKCommand(name, *this)); }
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
+    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
+    PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
+    PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };
+    PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR{ nullptr };
 
   public:
     const VkPipelineLayout& GetLayout() const { return layout; }

@@ -57,7 +57,7 @@ namespace RayGene3D
     VkPhysicalDeviceMemoryProperties memory{};
     
     bool raytracing_supported{ false };
-    VkPhysicalDeviceRayTracingPropertiesNV raytracing_properties;
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR raytracing_properties;
 
 
     VkDevice device{ nullptr };
@@ -82,10 +82,21 @@ namespace RayGene3D
     VkDeviceMemory staging_memory{ nullptr };
     VkDeviceSize staging_size{ 32 * 1024 * 1024 };
 
+    VkDeviceAddress scratch_address{ 0 };
+    VkBuffer scratch_buffer{ nullptr };
+    VkDeviceMemory scratch_memory{ nullptr };
+    VkDeviceSize scratch_size{ 4 * 1024 * 1024 };
+
   public:
-    VkBuffer GetStagingBuffer() { return staging_buffer; }
-    VkDeviceMemory GetStagingMemory() { return staging_memory; }
-    VkDeviceSize GetStagingSize() { return staging_size; }
+    VkBuffer GetStagingBuffer() const { return staging_buffer; }
+    VkDeviceMemory GetStagingMemory() const { return staging_memory; }
+    VkDeviceSize GetStagingSize() const { return staging_size; }
+
+  public:
+    VkDeviceAddress GetScratchAddress() const { return scratch_address; };
+    VkBuffer GetScratchBuffer() const { return scratch_buffer; }
+    VkDeviceMemory GetScratchMemory() const { return scratch_memory; }
+    VkDeviceSize GetScratchSize() const { return scratch_size; }
 
 
   public:
@@ -171,6 +182,18 @@ namespace RayGene3D
 
   public:
     uint32_t GetMemoryIndex(VkMemoryPropertyFlags flags, uint32_t bits) const;
+    VkDeviceAddress GetAddress(VkBuffer buffer) const;
+    VkBuffer CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkBufferCreateFlags flags = 0) const;
+    VkImage CreateImage(VkImageType type, VkFormat format, VkExtent3D extent, 
+      uint32_t mipmaps, uint32_t layers, VkImageUsageFlags usage, VkImageCreateFlags flags = 0) const;
+    VkMemoryRequirements GetRequirements(VkBuffer buffer) const;
+    VkMemoryRequirements GetRequirements(VkImage image) const;
+    VkDeviceMemory AllocateMemory(VkDeviceSize size, uint32_t index,
+      bool addressable = false) const;
+
+  //public:
+  //  void* MapMemory(VkDeviceMemory memory) const;
+  //  void UnmapMemory(VkDeviceMemory memory) const;
 
     //const VkCommandBuffer& CreateCommand() const;
     //void DestroyCommand(const VkCommandBuffer& command);
@@ -182,7 +205,7 @@ namespace RayGene3D
 
   public:
     bool GetRTXSupported() const { return raytracing_supported; }
-    const VkPhysicalDeviceRayTracingPropertiesNV& GetRTXProperties() const { return  raytracing_properties; }
+    const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& GetRTXProperties() const { return  raytracing_properties; }
 
   protected:
     void CreateInstance();
@@ -201,6 +224,8 @@ namespace RayGene3D
     void DestroyMessenger();
     void CreateStaging();
     void DestroyStaging();
+    void CreateScratch();
+    void DestroyScratch();
 
   public:
     VkDevice GetDevice() const { return device; }

@@ -228,8 +228,8 @@ namespace RayGene3D
 
     glslang::InitializeProcess();
     
+    glslang::EShTargetLanguageVersion version = glslang::EShTargetSpv_1_0;
     glslang::EShSource language = glslang::EShSourceCount;
-
     std::string preamble = "#define USE_SPIRV\n";
 
     EShLanguage stage = EShLangCount;
@@ -239,10 +239,10 @@ namespace RayGene3D
     if (strcmp(target, "gs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangGeometry; } else
     if (strcmp(target, "ps_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangFragment; } else
     if (strcmp(target, "cs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangCompute; } else
-    if (strcmp(target, "rgen") == 0) { language = glslang::EShSourceGlsl; stage = EShLangRayGen; preamble.append("#define RGEN\n"); } else
-    if (strcmp(target, "chit") == 0) { language = glslang::EShSourceGlsl; stage = EShLangClosestHit; preamble.append("#define CHIT\n"); } else
-    if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; stage = EShLangAnyHit; preamble.append("#define AHIT\n"); } else
-    if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; stage = EShLangMiss; preamble.append("#define MISS\n"); }
+    if (strcmp(target, "rgen") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangRayGen; preamble.append("#define RGEN\n"); } else
+    if (strcmp(target, "chit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangClosestHit; preamble.append("#define CHIT\n"); } else
+    if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangAnyHit; preamble.append("#define AHIT\n"); } else
+    if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMiss; preamble.append("#define MISS\n"); }
 
     for (const auto& define : defines)
     {
@@ -252,7 +252,7 @@ namespace RayGene3D
     glslang::TShader shader(stage);
     shader.setEnvInput(language, stage, glslang::EShClientVulkan, 100);
     shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
-    shader.setEnvTarget(glslang::EShTargetSpv, glslang::EShTargetSpv_1_0);
+    shader.setEnvTarget(glslang::EShTargetSpv, version);
     shader.setPreamble(preamble.c_str());
     shader.setInvertY(true);
     shader.setEntryPoint(entry);
@@ -482,20 +482,20 @@ namespace RayGene3D
       // RTX shaders
       if (!rgen_bytecode.empty())
       {
-        auto shader_group = VkRayTracingShaderGroupCreateInfoNV{};
-        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        auto shader_group = VkRayTracingShaderGroupCreateInfoKHR{};
+        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         shader_group.generalShader = uint32_t(stages.size()); // rgen shader;
-        shader_group.intersectionShader = VK_SHADER_UNUSED_NV;
-        shader_group.closestHitShader = VK_SHADER_UNUSED_NV;
-        shader_group.anyHitShader = VK_SHADER_UNUSED_NV;
+        shader_group.intersectionShader = VK_SHADER_UNUSED_KHR;
+        shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
+        shader_group.anyHitShader = VK_SHADER_UNUSED_KHR;
         groups.push_back(shader_group);
 
         rgen_module = create_shader_module(rgen_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_NV;
+        create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         create_info.module = rgen_module;
         create_info.pName = "main";
         create_info.pSpecializationInfo = nullptr;
@@ -504,20 +504,20 @@ namespace RayGene3D
 
       if (!miss_bytecode.empty())
       {
-        auto shader_group = VkRayTracingShaderGroupCreateInfoNV{};
-        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV;
+        auto shader_group = VkRayTracingShaderGroupCreateInfoKHR{};
+        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
         shader_group.generalShader = uint32_t(stages.size()); // miss shader;
-        shader_group.intersectionShader = VK_SHADER_UNUSED_NV;
-        shader_group.closestHitShader = VK_SHADER_UNUSED_NV;
-        shader_group.anyHitShader = VK_SHADER_UNUSED_NV;
+        shader_group.intersectionShader = VK_SHADER_UNUSED_KHR;
+        shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
+        shader_group.anyHitShader = VK_SHADER_UNUSED_KHR;
         groups.push_back(shader_group);
 
         miss_module = create_shader_module(miss_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        create_info.stage = VK_SHADER_STAGE_MISS_BIT_NV;
+        create_info.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
         create_info.module = miss_module;
         create_info.pName = "main";
         create_info.pSpecializationInfo = nullptr;
@@ -526,20 +526,20 @@ namespace RayGene3D
 
       if (!chit_bytecode.empty())
       {
-        auto shader_group = VkRayTracingShaderGroupCreateInfoNV{};
-        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
-        shader_group.generalShader = VK_SHADER_UNUSED_NV;
-        shader_group.intersectionShader = VK_SHADER_UNUSED_NV;
+        auto shader_group = VkRayTracingShaderGroupCreateInfoKHR{};
+        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+        shader_group.generalShader = VK_SHADER_UNUSED_KHR;
+        shader_group.intersectionShader = VK_SHADER_UNUSED_KHR;
         shader_group.closestHitShader = uint32_t(stages.size()); // chit shader;
-        shader_group.anyHitShader = VK_SHADER_UNUSED_NV;
+        shader_group.anyHitShader = VK_SHADER_UNUSED_KHR;
         groups.push_back(shader_group);
 
         chit_module = create_shader_module(chit_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV;
+        create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         create_info.module = chit_module;
         create_info.pName = "main";
         create_info.pSpecializationInfo = nullptr;
@@ -548,12 +548,12 @@ namespace RayGene3D
 
       if (!ahit_bytecode.empty())
       {
-        auto shader_group = VkRayTracingShaderGroupCreateInfoNV{};
-        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV;
-        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV;
-        shader_group.generalShader = VK_SHADER_UNUSED_NV;
-        shader_group.intersectionShader = VK_SHADER_UNUSED_NV;
-        shader_group.closestHitShader = VK_SHADER_UNUSED_NV;
+        auto shader_group = VkRayTracingShaderGroupCreateInfoKHR{};
+        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+        shader_group.generalShader = VK_SHADER_UNUSED_KHR;
+        shader_group.intersectionShader = VK_SHADER_UNUSED_KHR;
+        shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
         shader_group.anyHitShader = uint32_t(stages.size()); // ahit shader;
         groups.push_back(shader_group);
 
@@ -561,7 +561,7 @@ namespace RayGene3D
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        create_info.stage = VK_SHADER_STAGE_ANY_HIT_BIT_NV;
+        create_info.stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
         create_info.module = ahit_module;
         create_info.pName = "main";
         create_info.pSpecializationInfo = nullptr;
@@ -938,7 +938,6 @@ namespace RayGene3D
     tessellation_state.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
     tessellation_state.patchControlPoints = get_control_points(ia_state.topology);
     }
-
   }
 
   void VLKConfig::Use()
