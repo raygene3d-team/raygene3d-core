@@ -82,10 +82,21 @@ namespace RayGene3D
     VkDeviceMemory staging_memory{ nullptr };
     VkDeviceSize staging_size{ 32 * 1024 * 1024 };
 
+    VkDeviceAddress scratch_address{ 0 };
+    VkBuffer scratch_buffer{ nullptr };
+    VkDeviceMemory scratch_memory{ nullptr };
+    VkDeviceSize scratch_size{ 4 * 1024 * 1024 };
+
   public:
-    VkBuffer GetStagingBuffer() { return staging_buffer; }
-    VkDeviceMemory GetStagingMemory() { return staging_memory; }
-    VkDeviceSize GetStagingSize() { return staging_size; }
+    VkBuffer GetStagingBuffer() const { return staging_buffer; }
+    VkDeviceMemory GetStagingMemory() const { return staging_memory; }
+    VkDeviceSize GetStagingSize() const { return staging_size; }
+
+  public:
+    VkDeviceAddress GetScratchAddress() const { return scratch_address; };
+    VkBuffer GetScratchBuffer() const { return scratch_buffer; }
+    VkDeviceMemory GetScratchMemory() const { return scratch_memory; }
+    VkDeviceSize GetScratchSize() const { return scratch_size; }
 
 
   public:
@@ -209,6 +220,8 @@ namespace RayGene3D
     void DestroyMessenger();
     void CreateStaging();
     void DestroyStaging();
+    void CreateScratch();
+    void DestroyScratch();
 
   public:
     VkDevice GetDevice() const { return device; }

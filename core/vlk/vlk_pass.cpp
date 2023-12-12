@@ -368,9 +368,12 @@ namespace RayGene3D
           vkUnmapMemory(device->GetDevice(), subpass_proxy.table_memory);
           delete [] binding_data;
 
-          subpass_proxy.rgen_table = { device->GetAddress(subpass_proxy.table_buffer) + 0 * binding_align, binding_align, binding_align };
-          subpass_proxy.miss_table = { device->GetAddress(subpass_proxy.table_buffer) + 1 * binding_align, binding_align, binding_align };
-          subpass_proxy.xhit_table = { device->GetAddress(subpass_proxy.table_buffer) + 2 * binding_align, binding_align, binding_align };
+          if (config->GetGroupCount() > 0)
+            subpass_proxy.rgen_region = { device->GetAddress(subpass_proxy.table_buffer) + 0 * binding_align, binding_align, binding_align };
+          if (config->GetGroupCount() > 1)
+            subpass_proxy.miss_region = { device->GetAddress(subpass_proxy.table_buffer) + 1 * binding_align, binding_align, binding_align };
+          if (config->GetGroupCount() > 2)
+            subpass_proxy.xhit_region = { device->GetAddress(subpass_proxy.table_buffer) + 2 * binding_align, binding_align, binding_align };
         }
       }
     }
@@ -559,13 +562,13 @@ namespace RayGene3D
           const auto extent_x = device->GetExtentX();
           const auto extent_y = device->GetExtentY();
 
-          VkStridedDeviceAddressRegionKHR emptySbtEntry = {};
+          VkStridedDeviceAddressRegionKHR empty_region = {};
           
           vkCmdTraceRaysKHR(command_buffer,
-            &subpass_proxy.rgen_table,
-            &subpass_proxy.miss_table,
-            &emptySbtEntry, //subpass_proxy.xhit_table,
-            &emptySbtEntry,
+            &subpass_proxy.rgen_region,
+            &subpass_proxy.miss_region,
+            &subpass_proxy.xhit_region,
+            &empty_region,
             extent_x, extent_y, 1);
         }
       }

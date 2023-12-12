@@ -29,8 +29,6 @@ THE SOFTWARE.
 
 #include "vlk_device.h"
 
-//#define ENABLE_RTX
-
 namespace RayGene3D
 {
   void VLKDevice::CreateInstance()
@@ -419,26 +417,7 @@ namespace RayGene3D
     CreatePool();
     CreateFence();
     CreateStaging();
-
-    for (auto& resource : resources)
-    {
-    //  if (resource) { resource->Initialize(); }
-    }
-
-    for (auto& layout : layouts)
-    {
-    //  if (layout) { layout->Initialize(); }
-    }
-
-    for (auto& config : configs)
-    {
-    //  if (config) { config->Initialize(); }
-    }
-
-    for (auto& pass : passes)
-    {
-    //  if (pass) { pass->Initialize(); }
-    }
+    CreateScratch();
   }
 
   void VLKDevice::Use()
@@ -647,25 +626,38 @@ namespace RayGene3D
 
   void VLKDevice::CreateStaging()
   {
-    VkBufferCreateInfo buffer_info = {};
-    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_info.flags = 0;
-    buffer_info.size = staging_size;
-    buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    buffer_info.queueFamilyIndexCount = family;
-    buffer_info.pQueueFamilyIndices = nullptr;
-    BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(this->device, &buffer_info, nullptr, &staging_buffer));
+    const auto size = staging_size;
+    const auto usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    const auto buffer = CreateBuffer(size, usage);
+    const auto requirements = GetRequirements(buffer);
+    const auto property = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    const auto index = GetMemoryIndex(property, requirements.memoryTypeBits);
+    const auto memory = AllocateMemory(requirements.size, index, false);
 
-    VkMemoryRequirements requirements = {};
-    vkGetBufferMemoryRequirements(this->device, staging_buffer, &requirements);
-    auto allocate_info = VkMemoryAllocateInfo{};
-    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocate_info.allocationSize = requirements.size;
-    allocate_info.memoryTypeIndex = this->GetMemoryIndex(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, requirements.memoryTypeBits);
-    BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(this->device, &allocate_info, nullptr, &staging_memory));
+    BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device, buffer, memory, 0));
 
-    BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(this->device, staging_buffer, staging_memory, 0));
+    staging_buffer = buffer;
+    staging_memory = memory;
+
+    //VkBufferCreateInfo buffer_info = {};
+    //buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    //buffer_info.flags = 0;
+    //buffer_info.size = staging_size;
+    //buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    //buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    //buffer_info.queueFamilyIndexCount = family;
+    //buffer_info.pQueueFamilyIndices = nullptr;
+    //BLAST_ASSERT(VK_SUCCESS == vkCreateBuffer(this->device, &buffer_info, nullptr, &staging_buffer));
+
+    //VkMemoryRequirements requirements = {};
+    //vkGetBufferMemoryRequirements(this->device, staging_buffer, &requirements);
+    //auto allocate_info = VkMemoryAllocateInfo{};
+    //allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    //allocate_info.allocationSize = requirements.size;
+    //allocate_info.memoryTypeIndex = this->GetMemoryIndex(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, requirements.memoryTypeBits);
+    //BLAST_ASSERT(VK_SUCCESS == vkAllocateMemory(this->device, &allocate_info, nullptr, &staging_memory));
+
+    //BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(this->device, staging_buffer, staging_memory, 0));
   }
 
 
@@ -684,6 +676,46 @@ namespace RayGene3D
     }
   }
 
+
+  void VLKDevice::CreateScratch()
+  {
+    if (!raytracing_supported) return;
+
+    const auto size = scratch_size;
+    const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    const auto buffer = CreateBuffer(size, usage);
+    const auto requirements = GetRequirements(buffer);
+    const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    const auto index = GetMemoryIndex(property, requirements.memoryTypeBits);
+    const auto memory = AllocateMemory(requirements.size, index, true);
+
+    BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device, buffer, memory, 0));
+
+    scratch_buffer = buffer;
+    scratch_memory = memory;
+
+    scratch_address = GetAddress(buffer);
+  }
+
+
+
+  void VLKDevice::DestroyScratch()
+  {
+    if (!raytracing_supported) return;
+
+    if (scratch_memory)
+    {
+      vkFreeMemory(device, scratch_memory, nullptr);
+      staging_memory = nullptr;
+    }
+
+    if (scratch_buffer)
+    {
+      vkDestroyBuffer(device, scratch_buffer, nullptr);
+      scratch_buffer = nullptr;
+    }
+  }
+
   uint32_t VLKDevice::GetMemoryIndex(VkMemoryPropertyFlags flags, uint32_t bits) const
   {
     for (uint32_t i = 0; i < memory.memoryTypeCount; ++i)
@@ -696,8 +728,6 @@ namespace RayGene3D
   VkDeviceAddress VLKDevice::GetAddress(VkBuffer buffer) const
   {
     if (!buffer) return 0ULL;
-
-    //auto vkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(device, "vkGetBufferDeviceAddressKHR");
 
     VkBufferDeviceAddressInfo info{};
     info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
@@ -790,6 +820,7 @@ namespace RayGene3D
       if (resource) { /*BLAST_LOG("Discarding resource [%s]", name.c_str());*/ resource->Discard(); }
     }
 
+    DestroyScratch();
     DestroyStaging();
     DestroyFence();
     DestroyPool();

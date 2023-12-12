@@ -40,7 +40,6 @@ namespace RayGene3D
     {
       vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateAccelerationStructureKHR"));
       vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkDestroyAccelerationStructureKHR"));
-      //vkBindAccelerationStructureMemoryNV = reinterpret_cast<PFN_vkBindAccelerationStructureMemoryNV>(vkGetDeviceProcAddr(device->GetDevice(), "vkBindAccelerationStructureMemoryNV"));
       vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureDeviceAddressKHR"));
       vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureBuildSizesKHR"));
       vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdBuildAccelerationStructuresKHR"));
@@ -142,12 +141,6 @@ namespace RayGene3D
         BLAST_ASSERT(VK_SUCCESS == vkCreateFence(device->GetDevice(), &create_info, nullptr, &fence));
       }
 
-      std::vector<VkDeviceMemory> scratch_memories(rtx_entities.size(), nullptr);
-      std::vector<VkBuffer> scratch_buffers(rtx_entities.size(), nullptr);
-
-      VkDeviceMemory scratch_memory{ nullptr };
-      VkBuffer scratch_buffer{ nullptr };
-
       VkCommandBufferBeginInfo beginInfo = {};
       beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
       BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(command_buffer, &beginInfo));
@@ -177,7 +170,7 @@ namespace RayGene3D
           const auto ia_offset = rtx_entity.ia_offset;
           const auto ia_address = device->GetAddress(ia_resource->GetBuffer());
 
-          //BLAST_LOG("Vertices and Triangles count/offset/stride: %d/%d/%d, %d/%d/%d", va_count, va_offset, va_stride, ia_count, ia_offset, ia_stride);
+          //BLAST_LOG("Vertices and Triangles count/offset: %d/%d, %d/%d", va_count, va_offset, ia_count, ia_offset);
 
           VkAccelerationStructureGeometryKHR structure_geometry{};
           structure_geometry.sType                                        = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -198,26 +191,30 @@ namespace RayGene3D
           range_info.transformOffset  = 0;
 
           VkAccelerationStructureBuildGeometryInfoKHR geometry_info{};
-          geometry_info.sType           = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-          geometry_info.type            = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-          geometry_info.flags           = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-          geometry_info.mode            = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-          geometry_info.geometryCount   = 1;
-          geometry_info.pGeometries     = &structure_geometry;
+          geometry_info.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+          geometry_info.type                      = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+          geometry_info.flags                     = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+          geometry_info.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+          geometry_info.geometryCount             = 1;
+          geometry_info.pGeometries               = &structure_geometry;
+          geometry_info.scratchData.deviceAddress = device->GetScratchAddress();;
 
           VkAccelerationStructureBuildSizesInfoKHR sizes_info{};
           sizes_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-
-          vkGetAccelerationStructureBuildSizesKHR(device->GetDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-            &geometry_info, &ia_count, &sizes_info);
+          vkGetAccelerationStructureBuildSizesKHR(device->GetDevice(),
+            VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+            &geometry_info,
+            &range_info.primitiveCount,
+            &sizes_info);
+          BLAST_ASSERT(device->GetScratchSize() >= sizes_info.buildScratchSize);
 
           {
             const auto size = sizes_info.accelerationStructureSize;
             const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
             const auto buffer = device->CreateBuffer(size, usage);
             const auto requirements = device->GetRequirements(buffer);
-            const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-            const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
+            const auto flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            const auto index = device->GetMemoryIndex(flags, requirements.memoryTypeBits);
             const auto memory = device->AllocateMemory(requirements.size, index, true);
 
             BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
@@ -227,37 +224,21 @@ namespace RayGene3D
           }
                    
           VkAccelerationStructureCreateInfoKHR create_info{};
-          create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-          create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-          create_info.size = sizes_info.accelerationStructureSize;
-          create_info.buffer = blas_buffer;
+          create_info.sType   = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+          create_info.type    = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+          create_info.size    = sizes_info.accelerationStructureSize;
+          create_info.buffer  = blas_buffer;
           BLAST_ASSERT(VK_SUCCESS == vkCreateAccelerationStructureKHR(device->GetDevice(), &create_info, nullptr, &blas_item));
-
-          {
-            const auto size = sizes_info.buildScratchSize;
-            const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            const auto buffer = device->CreateBuffer(size, usage);
-            const auto requirements = device->GetRequirements(buffer);
-            const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-            const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
-            const auto memory = device->AllocateMemory(requirements.size, index, true);
-
-            BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
-
-            scratch_buffers[i] = buffer;
-            scratch_memories[i] = memory;
-          }
           
           geometry_info.dstAccelerationStructure = blas_item;
-          geometry_info.scratchData.deviceAddress = device->GetAddress(scratch_buffers[i]);
 
           const VkAccelerationStructureBuildRangeInfoKHR* range_info_ptr = &range_info;
           vkCmdBuildAccelerationStructuresKHR(command_buffer, 1, &geometry_info, &range_info_ptr);
 
           VkMemoryBarrier memory_barrier = {};
-          memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-          memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-          memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+          memory_barrier.sType          = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+          memory_barrier.srcAccessMask  = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+          memory_barrier.dstAccessMask  = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
           vkCmdPipelineBarrier(command_buffer,
             VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
             VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
@@ -292,22 +273,23 @@ namespace RayGene3D
           const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
           const auto buffer = device->CreateBuffer(size, usage);
           const auto requirements = device->GetRequirements(buffer);
-          const auto property = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-          const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
+          const auto flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+          const auto index = device->GetMemoryIndex(flags, requirements.memoryTypeBits);
           const auto memory = device->AllocateMemory(requirements.size, index, true);
 
           BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
 
           instances_buffer = buffer;
           instances_memory = memory;
-
-          //BLAST_LOG("Instance calculated/allocated size (bytes): %d/%d", size, requirements.size);
         }
 
-        void* mapped{ nullptr };
-        BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), instances_memory, 0, VK_WHOLE_SIZE, 0, &mapped));
-        memcpy(mapped, instances.data(), instances.size() * sizeof(VkAccelerationStructureInstanceKHR));
-        vkUnmapMemory(device->GetDevice(), instances_memory);
+        {
+          void* mapped{ nullptr };
+          BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), instances_memory, 0, VK_WHOLE_SIZE, 0, &mapped));
+          memcpy(mapped, instances.data(), instances.size() * sizeof(VkAccelerationStructureInstanceKHR));
+          vkUnmapMemory(device->GetDevice(), instances_memory);
+        }
+        
 
         
         VkAccelerationStructureGeometryKHR structure_geometry{};
@@ -316,36 +298,37 @@ namespace RayGene3D
         structure_geometry.geometry.instances.sType               = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
         structure_geometry.geometry.instances.data.deviceAddress  = device->GetAddress(instances_buffer);
 
-        const auto instance_count = uint32_t(instances.size());
-        const auto instance_offset = 0;
-
         VkAccelerationStructureBuildRangeInfoKHR range_info{};
-        range_info.primitiveCount     = instance_count;
+        range_info.primitiveCount     = uint32_t(instances.size());
         range_info.primitiveOffset    = 0;
         range_info.firstVertex        = 0;
         range_info.transformOffset    = 0;
 
         VkAccelerationStructureBuildGeometryInfoKHR geometry_info{};
-        geometry_info.sType           = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-        geometry_info.type            = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-        geometry_info.flags           = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-        geometry_info.mode            = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-        geometry_info.geometryCount   = 1;
-        geometry_info.pGeometries     = &structure_geometry;
+        geometry_info.sType                     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+        geometry_info.type                      = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        geometry_info.flags                     = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+        geometry_info.mode                      = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+        geometry_info.geometryCount             = 1;
+        geometry_info.pGeometries               = &structure_geometry;
+        geometry_info.scratchData.deviceAddress = device->GetScratchAddress();
 
         VkAccelerationStructureBuildSizesInfoKHR sizes_info{};
         sizes_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-
-        vkGetAccelerationStructureBuildSizesKHR(device->GetDevice(), VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
-          &geometry_info, &instance_count, &sizes_info);
+        vkGetAccelerationStructureBuildSizesKHR(device->GetDevice(), 
+          VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+          &geometry_info, 
+          &range_info.primitiveCount,
+          &sizes_info);
+        BLAST_ASSERT(device->GetScratchSize() >= sizes_info.buildScratchSize);
 
         {
           const auto size = sizes_info.accelerationStructureSize;
           const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
           const auto buffer = device->CreateBuffer(size, usage);
           const auto requirements = device->GetRequirements(buffer);
-          const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-          const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
+          const auto flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+          const auto index = device->GetMemoryIndex(flags, requirements.memoryTypeBits);
           const auto memory = device->AllocateMemory(requirements.size, index, true);
 
           BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
@@ -354,39 +337,22 @@ namespace RayGene3D
           tlas_memory = memory;
         }
         
-
         VkAccelerationStructureCreateInfoKHR create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-        create_info.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-        create_info.size = sizes_info.accelerationStructureSize;
-        create_info.buffer = tlas_buffer;
+        create_info.sType     = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+        create_info.type      = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+        create_info.size      = sizes_info.accelerationStructureSize;
+        create_info.buffer    = tlas_buffer;
         BLAST_ASSERT(VK_SUCCESS == vkCreateAccelerationStructureKHR(device->GetDevice(), &create_info, nullptr, &tlas_item));
-          
-        {
-          const auto size = sizes_info.buildScratchSize;
-          const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-          const auto buffer = device->CreateBuffer(size, usage);
-          const auto requirements = device->GetRequirements(buffer);
-          const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-          const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
-          const auto memory = device->AllocateMemory(requirements.size, index, true);
 
-          BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
-
-          scratch_buffer = buffer;
-          scratch_memory = memory;
-        }
-
-        geometry_info.dstAccelerationStructure = tlas_item;
-        geometry_info.scratchData.deviceAddress = device->GetAddress(scratch_buffer);
+        geometry_info.dstAccelerationStructure  = tlas_item;
 
         const VkAccelerationStructureBuildRangeInfoKHR* range_info_ptr = &range_info;
         vkCmdBuildAccelerationStructuresKHR(command_buffer, 1, &geometry_info, &range_info_ptr);
 
         VkMemoryBarrier memory_barrier = {};
-        memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-        memory_barrier.srcAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
-        memory_barrier.dstAccessMask = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        memory_barrier.sType          = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        memory_barrier.srcAccessMask  = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
+        memory_barrier.dstAccessMask  = VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR;
         vkCmdPipelineBarrier(command_buffer, 
           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
           VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
@@ -395,23 +361,13 @@ namespace RayGene3D
 
       BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(command_buffer));
 
-      VkSubmitInfo submitInfo = {};
-      submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-      submitInfo.commandBufferCount = 1;
-      submitInfo.pCommandBuffers = &command_buffer;
+      VkSubmitInfo submit_info = {};
+      submit_info.sType               = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+      submit_info.commandBufferCount  = 1;
+      submit_info.pCommandBuffers     = &command_buffer;
 
-      BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE)); // fence));
+      BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submit_info, VK_NULL_HANDLE)); // fence));
       BLAST_ASSERT(VK_SUCCESS == vkQueueWaitIdle(device->GetQueue()));
-
-      vkDestroyBuffer(device->GetDevice(), scratch_buffer, nullptr);
-      vkFreeMemory(device->GetDevice(), scratch_memory, nullptr);
-
-      for (uint32_t i = 0; i < uint32_t(rtx_entities.size()); ++i)
-      {
-        vkDestroyBuffer(device->GetDevice(), scratch_buffers[i], nullptr);
-        vkFreeMemory(device->GetDevice(), scratch_memories[i], nullptr);
-        
-      }
     }
 
     //ub_views = std::move(cd_views); //TODO: remove this dirty hack

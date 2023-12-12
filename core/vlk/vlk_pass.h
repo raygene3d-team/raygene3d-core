@@ -54,9 +54,9 @@ namespace RayGene3D
       VkPipeline pipeline{ nullptr };
       VkDeviceMemory table_memory{ nullptr };
       VkBuffer table_buffer{ nullptr };
-      VkStridedDeviceAddressRegionKHR rgen_table{};
-      VkStridedDeviceAddressRegionKHR miss_table{};
-      VkStridedDeviceAddressRegionKHR xhit_table{};
+      VkStridedDeviceAddressRegionKHR rgen_region{};
+      VkStridedDeviceAddressRegionKHR miss_region{};
+      VkStridedDeviceAddressRegionKHR xhit_region{};
     };
     std::vector<SubpassProxy> subpass_proxies;
 
