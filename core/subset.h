@@ -136,9 +136,6 @@ namespace RayGene3D
   protected:
     Device& device;
 
-  protected:
-    std::list<std::shared_ptr<Config>> configs;
-
   public:
     void SetType(Type type) { this->type = type; }
     Type GetType() const { return type; }
@@ -197,18 +194,6 @@ namespace RayGene3D
     }
   public:
     Device& GetDevice() { return device; }
-
-  public:
-    virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,
-      const std::string& source,
-      Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Config::IAState& ia_state,
-      const Config::RCState& rc_state,
-      const Config::DSState& ds_state,
-      const Config::OMState& om_state) = 0;
-    void VisitConfig(std::function<void(const std::shared_ptr<Config>&)> visitor) { for (const auto& config : configs) visitor(config); }
-    void DestroyConfig(const std::shared_ptr<Config>& config) { configs.remove(config); }
 
   public:
     void Initialize() override = 0;

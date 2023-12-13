@@ -37,7 +37,7 @@ namespace RayGene3D
   class Layout : public Usable //TODO Rename into Layout
   {
   protected:
-    Device& device;
+    Config& config;
 
   public:
     struct Sampler
@@ -115,7 +115,7 @@ namespace RayGene3D
     std::vector<RTXEntity> rtx_entities;
     
   public:
-    Device& GetDevice() { return device; }
+    Config& GetConfig() { return config; }
 
   public:
     void Initialize() override = 0;

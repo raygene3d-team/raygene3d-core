@@ -39,7 +39,7 @@ namespace RayGene3D
   class Config : public Usable
   {
   protected:
-    Device& device;
+    Pass& pass;
 
   public:
     enum Compilation
@@ -306,11 +306,27 @@ namespace RayGene3D
       uint32_t sample_mask{ 0xFFFFFFFF };
     };
 
-    protected:
-      OMState om_state;
+  protected:
+    OMState om_state;
+
+  protected:
+    std::list<std::shared_ptr<Layout>> layouts;
 
   public:
-    Device& GetDevice() { return device; }
+    Pass& GetPass() { return pass; }
+
+  public:
+    virtual const std::shared_ptr<Layout>& CreateLayout(const std::string& name,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+      const std::pair<const Layout::Sampler*, uint32_t>& samplers,
+      const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities) = 0;
+    void VisitLayout(std::function<void(const std::shared_ptr<Layout>&)> visitor) { for (const auto& layout : layouts) visitor(layout); }
+    void DestroyLayout(const std::shared_ptr<Layout>& layout) { layouts.remove(layout); }
   
   public:
     const IAState& GetIAState() const { return ia_state; }
@@ -325,7 +341,7 @@ namespace RayGene3D
 
   public:
     Config(const std::string& name,
-      Device& device,
+      Pass& pass,
       const std::string& source,
       Config::Compilation compilation, 
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,

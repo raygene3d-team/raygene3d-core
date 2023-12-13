@@ -4,46 +4,52 @@ set(NAME raygene3d)
 
 set(CORE_DIR ${CMAKE_SOURCE_DIR}/${NAME}-core/core)
 set(CORE_SOURCE
-	${CORE_DIR}/config.h
-	${CORE_DIR}/config.cpp
+	${CORE_DIR}/batch.h
+	${CORE_DIR}/batch.cpp
 	${CORE_DIR}/device.h
 	${CORE_DIR}/device.cpp
-	${CORE_DIR}/layout.h
-	${CORE_DIR}/layout.cpp
 	${CORE_DIR}/pass.h
 	${CORE_DIR}/pass.cpp
 	${CORE_DIR}/resource.h
 	${CORE_DIR}/resource.cpp
+	${CORE_DIR}/subset.h
+	${CORE_DIR}/subset.cpp
+	${CORE_DIR}/technique.h
+	${CORE_DIR}/technique.cpp
 	${CORE_DIR}/view.h
 	${CORE_DIR}/view.cpp
 )
 set(CORE_D11_DIR ${CORE_DIR}/d11)
 set(CORE_D11_SOURCE
-	${CORE_D11_DIR}/d11_config.h
-	${CORE_D11_DIR}/d11_config.cpp
+	${CORE_D11_DIR}/d11_batch.h
+	${CORE_D11_DIR}/d11_batch.cpp
 	${CORE_D11_DIR}/d11_device.h
 	${CORE_D11_DIR}/d11_device.cpp
-	${CORE_D11_DIR}/d11_layout.h
-	${CORE_D11_DIR}/d11_layout.cpp
 	${CORE_D11_DIR}/d11_pass.h
 	${CORE_D11_DIR}/d11_pass.cpp
 	${CORE_D11_DIR}/d11_resource.h
 	${CORE_D11_DIR}/d11_resource.cpp
+	${CORE_D11_DIR}/d11_subset.h
+	${CORE_D11_DIR}/d11_subset.cpp
+	${CORE_D11_DIR}/d11_technique.h
+	${CORE_D11_DIR}/d11_technique.cpp
 	${CORE_D11_DIR}/d11_view.h
 	${CORE_D11_DIR}/d11_view.cpp
 )
 set(CORE_VLK_DIR ${CORE_DIR}/vlk)
 set(CORE_VLK_SOURCE
-	${CORE_VLK_DIR}/vlk_config.h
-	${CORE_VLK_DIR}/vlk_config.cpp
+	${CORE_VLK_DIR}/vlk_batch.h
+	${CORE_VLK_DIR}/vlk_batch.cpp
 	${CORE_VLK_DIR}/vlk_device.h
 	${CORE_VLK_DIR}/vlk_device.cpp
-	${CORE_VLK_DIR}/vlk_layout.h
-	${CORE_VLK_DIR}/vlk_layout.cpp
 	${CORE_VLK_DIR}/vlk_pass.h
 	${CORE_VLK_DIR}/vlk_pass.cpp
 	${CORE_VLK_DIR}/vlk_resource.h
 	${CORE_VLK_DIR}/vlk_resource.cpp
+	${CORE_VLK_DIR}/vlk_subset.h
+	${CORE_VLK_DIR}/vlk_subset.cpp
+	${CORE_VLK_DIR}/vlk_technique.h
+	${CORE_VLK_DIR}/vlk_technique.cpp
 	${CORE_VLK_DIR}/vlk_view.h
 	${CORE_VLK_DIR}/vlk_view.cpp
 )
