@@ -191,4 +191,8 @@ namespace RayGene3D
       const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
     virtual ~Resource();
   };
+
+  typedef std::shared_ptr<RayGene3D::Resource> SPtrResource;
+  typedef std::weak_ptr<RayGene3D::Resource> WPtrResource;
+  typedef std::unique_ptr<RayGene3D::Resource> UPtrResource;
 }

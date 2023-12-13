@@ -149,8 +149,8 @@ namespace RayGene3D
           rt_attachment_descs[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
           rt_attachment_descs[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
           rt_attachment_descs[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-          rt_attachment_descs[i].initialLayout = rt_value ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
-          rt_attachment_descs[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+          rt_attachment_descs[i].initialBatch = rt_value ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
+          rt_attachment_descs[i].finalBatch = VK_IMAGE_LAYOUT_GENERAL;
 
           rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
           extent_x = std::max(extent_x, rt_view->GetResource().GetSizeX());
@@ -175,8 +175,8 @@ namespace RayGene3D
           ds_attachment_descs[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
           ds_attachment_descs[i].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
           ds_attachment_descs[i].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-          ds_attachment_descs[i].initialLayout = ds_value.first ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
-          ds_attachment_descs[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+          ds_attachment_descs[i].initialBatch = ds_value.first ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_GENERAL;
+          ds_attachment_descs[i].finalBatch = VK_IMAGE_LAYOUT_GENERAL;
 
           ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
           extent_x = std::max(extent_x, ds_view->GetResource().GetSizeX());
@@ -202,14 +202,14 @@ namespace RayGene3D
         for (size_t i = 0; i < rt_attachments.size(); ++i)
         {
           rt_attachment_refs[i].attachment = uint32_t(i);
-          rt_attachment_refs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+          rt_attachment_refs[i].batch = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         }
 
         std::vector<VkAttachmentReference> ds_attachment_refs(ds_attachments.size());
         for (size_t i = 0; i < ds_attachments.size(); ++i)
         {
           ds_attachment_refs[i].attachment = uint32_t(i + rt_attachment_refs.size());
-          ds_attachment_refs[i].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+          ds_attachment_refs[i].batch = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         }
 
         VkSubpassDescription subpass = {};
@@ -262,24 +262,24 @@ namespace RayGene3D
         const auto& subpass = subpasses[j];
         auto& subpass_proxy = subpass_proxies[j];
 
-        const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
-        const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
+        const auto technique = reinterpret_cast<const VLKTechnique*>(subpass.technique.get());
+        const auto batch = reinterpret_cast<const VLKBatch*>(subpass.batch.get());
 
         VkGraphicsPipelineCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         create_info.flags = 0;
-        create_info.stageCount = config->GetStageCount();
-        create_info.pStages = config->GetStageArray();
-        create_info.pVertexInputState = &config->GetInputState();
-        create_info.pInputAssemblyState = &config->GetAssemblyState();
-        create_info.pViewportState = &config->GetViewportState();
-        create_info.pRasterizationState = &config->GetRasterizationState();
-        create_info.pMultisampleState = &config->GetMultisampleState();
-        create_info.pDepthStencilState = &config->GetDepthstencilState();
-        create_info.pTessellationState = &config->GetTessellationState();
-        create_info.pColorBlendState = &config->GetColorblendState();
+        create_info.stageCount = technique->GetStageCount();
+        create_info.pStages = technique->GetStageArray();
+        create_info.pVertexInputState = &technique->GetInputState();
+        create_info.pInputAssemblyState = &technique->GetAssemblyState();
+        create_info.pViewportState = &technique->GetViewportState();
+        create_info.pRasterizationState = &technique->GetRasterizationState();
+        create_info.pMultisampleState = &technique->GetMultisampleState();
+        create_info.pDepthStencilState = &technique->GetDepthstencilState();
+        create_info.pTessellationState = &technique->GetTessellationState();
+        create_info.pColorBlendState = &technique->GetColorblendState();
         create_info.pDynamicState = nullptr;
-        create_info.layout = layout->GetLayout();
+        create_info.batch = batch->GetBatch();
         create_info.renderPass = renderpass;
         create_info.subpass = 0;
         create_info.basePipelineHandle = VK_NULL_HANDLE;
@@ -296,14 +296,14 @@ namespace RayGene3D
         const auto& subpass = subpasses[j];
         auto& subpass_proxy = subpass_proxies[j];
 
-        const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
-        const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
+        const auto technique = reinterpret_cast<const VLKTechnique*>(subpass.technique.get());
+        const auto batch = reinterpret_cast<const VLKBatch*>(subpass.batch.get());
 
         VkComputePipelineCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
         create_info.flags = 0;
-        create_info.stage = config->GetStageArray()[0];
-        create_info.layout = layout->GetLayout();
+        create_info.stage = technique->GetStageArray()[0];
+        create_info.batch = batch->GetBatch();
         create_info.basePipelineHandle = VK_NULL_HANDLE;
         create_info.basePipelineIndex = -1;
         BLAST_ASSERT(VK_SUCCESS == vkCreateComputePipelines(device->GetDevice(), VK_NULL_HANDLE, 1, &create_info, nullptr, &subpass_proxy.pipeline));
@@ -320,18 +320,18 @@ namespace RayGene3D
           const auto& subpass = subpasses[j];
           auto& subpass_proxy = subpass_proxies[j];
 
-          const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
-          const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
+          const auto technique = reinterpret_cast<const VLKTechnique*>(subpass.technique.get());
+          const auto batch = reinterpret_cast<const VLKBatch*>(subpass.batch.get());
 
           VkRayTracingPipelineCreateInfoKHR create_info = {};
           create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
           create_info.flags = 0;
-          create_info.stageCount = config->GetStageCount();
-          create_info.pStages = config->GetStageArray();
-          create_info.groupCount = config->GetGroupCount();
-          create_info.pGroups = config->GetGroupArray();
+          create_info.stageCount = technique->GetStageCount();
+          create_info.pStages = technique->GetStageArray();
+          create_info.groupCount = technique->GetGroupCount();
+          create_info.pGroups = technique->GetGroupArray();
           create_info.maxPipelineRayRecursionDepth = 1;
-          create_info.layout = layout->GetLayout();
+          create_info.batch = batch->GetBatch();
           create_info.basePipelineHandle = VK_NULL_HANDLE;
           BLAST_ASSERT(VK_SUCCESS == vkCreateRayTracingPipelinesKHR(device->GetDevice(), {}, VK_NULL_HANDLE, 1, &create_info, nullptr, &subpass_proxy.pipeline));
 
@@ -339,7 +339,7 @@ namespace RayGene3D
           const auto binding_align = device->GetRTXProperties().shaderGroupBaseAlignment;
 
           {
-            const auto size = config->GetGroupCount() * binding_align;
+            const auto size = technique->GetGroupCount() * binding_align;
             const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
             const auto buffer = device->CreateBuffer(size, usage);
             const auto requirements = device->GetRequirements(buffer);
@@ -353,12 +353,12 @@ namespace RayGene3D
             subpass_proxy.table_memory = memory;
           }
 
-          auto* binding_data = new uint8_t[config->GetGroupCount() * binding_align];
-          BLAST_ASSERT(VK_SUCCESS == vkGetRayTracingShaderGroupHandlesKHR(device->GetDevice(), subpass_proxy.pipeline, 0, config->GetGroupCount(), config->GetGroupCount() * binding_align, binding_data));
+          auto* binding_data = new uint8_t[technique->GetGroupCount() * binding_align];
+          BLAST_ASSERT(VK_SUCCESS == vkGetRayTracingShaderGroupHandlesKHR(device->GetDevice(), subpass_proxy.pipeline, 0, technique->GetGroupCount(), technique->GetGroupCount() * binding_align, binding_data));
 
           uint8_t* mapped = nullptr;
           BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), subpass_proxy.table_memory, 0, VK_WHOLE_SIZE, 0, (void**)&mapped));
-          for (uint32_t i = 0; i < config->GetGroupCount(); ++i)
+          for (uint32_t i = 0; i < technique->GetGroupCount(); ++i)
           {
             memcpy(mapped + i * binding_align, binding_data + i * binding_size, binding_size);
 
@@ -368,11 +368,11 @@ namespace RayGene3D
           vkUnmapMemory(device->GetDevice(), subpass_proxy.table_memory);
           delete [] binding_data;
 
-          if (config->GetGroupCount() > 0)
+          if (technique->GetGroupCount() > 0)
             subpass_proxy.rgen_region = { device->GetAddress(subpass_proxy.table_buffer) + 0 * binding_align, binding_align, binding_align };
-          if (config->GetGroupCount() > 1)
+          if (technique->GetGroupCount() > 1)
             subpass_proxy.miss_region = { device->GetAddress(subpass_proxy.table_buffer) + 1 * binding_align, binding_align, binding_align };
-          if (config->GetGroupCount() > 2)
+          if (technique->GetGroupCount() > 2)
             subpass_proxy.xhit_region = { device->GetAddress(subpass_proxy.table_buffer) + 2 * binding_align, binding_align, binding_align };
         }
       }
@@ -410,14 +410,14 @@ namespace RayGene3D
 
         if (subpass.commands.empty()) continue;
 
-        const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
-        const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
+        const auto technique = reinterpret_cast<const VLKTechnique*>(subpass.technique.get());
+        const auto batch = reinterpret_cast<const VLKBatch*>(subpass.batch.get());
 
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, subpass_proxy.pipeline);
 
-        const auto vk_layout = layout->GetLayout();
-        const auto set_items = layout->GetSetItems();
-        const auto set_count = layout->GetSetCount();
+        const auto vk_layout = batch->GetBatch();
+        const auto set_items = batch->GetSetItems();
+        const auto set_count = batch->GetSetCount();
         if (set_count > 0)
         {
           const auto offset_array = subpass.commands[0].offsets.data();
@@ -459,9 +459,9 @@ namespace RayGene3D
           {
             ia_items[k] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
             ia_offsets[k] = ia_view->GetCount().offset;            
-            ia_formats[k] = config->GetIAState().indexer
-              == Config::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
-              : Config::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
+            ia_formats[k] = technique->GetIAState().indexer
+              == Technique::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
+              : Technique::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
               : VK_INDEX_TYPE_MAX_ENUM;
           }
         }
@@ -502,14 +502,14 @@ namespace RayGene3D
 
         if (subpass.commands.empty()) continue;
 
-        const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
-        const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
+        const auto technique = reinterpret_cast<const VLKTechnique*>(subpass.technique.get());
+        const auto batch = reinterpret_cast<const VLKBatch*>(subpass.batch.get());
 
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, subpass_proxy.pipeline);
 
-        const auto vk_layout = layout->GetLayout();
-        const auto set_items = layout->GetSetItems();
-        const auto set_count = layout->GetSetCount();
+        const auto vk_layout = batch->GetBatch();
+        const auto set_items = batch->GetSetItems();
+        const auto set_count = batch->GetSetCount();
         if (set_count > 0)
         {
           const auto offset_array = subpass.commands[0].offsets.data();
@@ -546,13 +546,13 @@ namespace RayGene3D
           const auto& subpass = subpasses[j];
           auto& subpass_proxy = subpass_proxies[j];
 
-          const auto config = reinterpret_cast<const VLKConfig*>(subpass.config.get());
-          const auto layout = reinterpret_cast<const VLKLayout*>(subpass.layout.get());
+          const auto technique = reinterpret_cast<const VLKTechnique*>(subpass.technique.get());
+          const auto batch = reinterpret_cast<const VLKBatch*>(subpass.batch.get());
 
           vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, subpass_proxy.pipeline);
-          const auto vk_layout = layout->GetLayout();
-          const auto set_items = layout->GetSetItems();
-          const auto set_count = layout->GetSetCount();
+          const auto vk_layout = batch->GetBatch();
+          const auto set_items = batch->GetSetItems();
+          const auto set_count = batch->GetSetCount();
           if (set_count > 0)
           {
             vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, vk_layout, 0, set_count, set_items, 0, nullptr);

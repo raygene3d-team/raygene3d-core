@@ -28,14 +28,14 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../config.h"
+#include "../technique.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
 
 namespace RayGene3D
 {
-  class D11Config : public Config
+  class D11Technique : public Technique
   {
   protected:
     ID3D11VertexShader* vs_shader{ nullptr };
@@ -91,20 +91,34 @@ namespace RayGene3D
     const std::vector<uint32_t>& GetStrides() const { return strides; }
 
   public:
+    const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+      const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities) override
+    {
+      return layouts.emplace_back(new D11Batch(name, *this, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities));
+    }
+
+  public:
     void Initialize() override;
     void Use() override;
     void Discard() override;
 
   public:
-    D11Config(const std::string& name,
-      Device& device,
+    D11Technique(const std::string& name,
+      Pass& pass,
       const std::string& source,
-      Config::Compilation compilation,
+      Technique::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Config::IAState& ia_state,
-      const Config::RCState& rc_state,
-      const Config::DSState& ds_state,
-      const Config::OMState& om_state);
-    virtual ~D11Config();
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state);
+    virtual ~D11Technique();
   };
 }

@@ -27,22 +27,22 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "layout.h"
+#include "batch.h"
 
 namespace RayGene3D
 {
-  Layout::Layout(const std::string& name,
-    Device& device,
+  Batch::Batch(const std::string& name,
+    Technique& technique,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-    const std::pair<const Layout::Sampler*, uint32_t>& samplers,
-    const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities)
+    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+    const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities)
     : Usable(name)
-    , device(device)
+    , technique(technique)
     , ub_views(ub_views.first, ub_views.first + ub_views.second)
     , sb_views(sb_views.first, sb_views.first + sb_views.second)
     , ri_views(ri_views.first, ri_views.first + ri_views.second)
@@ -54,7 +54,7 @@ namespace RayGene3D
   {
   }
 
-  Layout::~Layout()
+  Batch::~Batch()
   {
   }
 }

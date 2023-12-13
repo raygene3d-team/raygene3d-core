@@ -28,8 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "config.h"
-#include "layout.h"
+#include "technique.h"
 
 namespace RayGene3D
 {
@@ -96,8 +95,8 @@ namespace RayGene3D
   public:
     struct Subpass
     {
-      std::shared_ptr<Config> config;
-      std::shared_ptr<Layout> layout;
+      std::shared_ptr<Technique> technique;
+      std::shared_ptr<Batch> batch;
 
       std::vector<Command> commands;
 
@@ -137,7 +136,7 @@ namespace RayGene3D
     Device& device;
 
   protected:
-    std::list<std::shared_ptr<Config>> configs;
+    std::list<std::shared_ptr<Technique>> configs;
 
   public:
     void SetType(Type type) { this->type = type; }
@@ -181,8 +180,8 @@ namespace RayGene3D
     void SetSubpassCount(uint32_t count) { subpasses.resize(count); }
     uint32_t GetSubpassCount() const { return uint32_t(subpasses.size()); }
 
-    void SetSubpassConfig(uint32_t subpass, const std::shared_ptr<Config>& config) { subpasses.at(subpass).config = config; }
-    void SetSubpassLayout(uint32_t subpass, const std::shared_ptr<Layout>& layout) { subpasses.at(subpass).layout = layout; }
+    void SetSubpassTechnique(uint32_t subpass, const std::shared_ptr<Technique>& technique) { subpasses.at(subpass).technique = technique; }
+    void SetSubpassBatch(uint32_t subpass, const std::shared_ptr<Batch>& batch) { subpasses.at(subpass).batch = batch; }
 
     void UpdateSubpassCommands(uint32_t subpass, std::pair<const Command*, uint32_t> commands) {
       subpasses.at(subpass).commands.assign(commands.first, commands.first + commands.second);
@@ -199,16 +198,16 @@ namespace RayGene3D
     Device& GetDevice() { return device; }
 
   public:
-    virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,
+    virtual const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
       const std::string& source,
-      Config::Compilation compilation,
+      Technique::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Config::IAState& ia_state,
-      const Config::RCState& rc_state,
-      const Config::DSState& ds_state,
-      const Config::OMState& om_state) = 0;
-    void VisitConfig(std::function<void(const std::shared_ptr<Config>&)> visitor) { for (const auto& config : configs) visitor(config); }
-    void DestroyConfig(const std::shared_ptr<Config>& config) { configs.remove(config); }
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state) = 0;
+    void VisitTechnique(std::function<void(const std::shared_ptr<Technique>&)> visitor) { for (const auto& technique : configs) visitor(technique); }
+    void DestroyTechnique(const std::shared_ptr<Technique>& technique) { configs.remove(technique); }
 
   public:
     void Initialize() override = 0;
@@ -224,4 +223,8 @@ namespace RayGene3D
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
     virtual ~Pass();
   };
+
+  typedef std::shared_ptr<RayGene3D::Pass> SPtrPass;
+  typedef std::weak_ptr<RayGene3D::Pass> WPtrPass;
+  typedef std::unique_ptr<RayGene3D::Pass> UPtrPass;
 }

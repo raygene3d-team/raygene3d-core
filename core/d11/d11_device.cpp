@@ -111,14 +111,14 @@ namespace RayGene3D
       if (resource) { resource->Initialize(); }
     }
 
-    for (auto& layout : layouts)
+    for (auto& batch : layouts)
     {
-      if (layout) { layout->Initialize(); }
+      if (batch) { batch->Initialize(); }
     }
 
-    for (auto& config : configs)
+    for (auto& technique : configs)
     {
-      if (config) { config->Initialize(); }
+      if (technique) { technique->Initialize(); }
     }
 
     for (auto& pass : passes)
@@ -202,14 +202,14 @@ namespace RayGene3D
       if (pass) { pass->Discard(); }
     }
 
-    for (auto& config : configs)
+    for (auto& technique : configs)
     {
-      if (config) { config->Discard(); }
+      if (technique) { technique->Discard(); }
     }
 
-    for (auto& layout : layouts)
+    for (auto& batch : layouts)
     {
-      if (layout) { layout->Discard(); }
+      if (batch) { batch->Discard(); }
     }
 
     for (auto& resource : resources)

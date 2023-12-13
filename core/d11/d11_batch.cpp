@@ -28,7 +28,9 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "d11_layout.h"
+#include "d11_batch.h"
+#include "d11_technique.h"
+#include "d11_pass.h"
 #include "d11_device.h"
 #include "d11_resource.h"
 #include "d11_view.h"
@@ -38,9 +40,11 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  void D11Layout::Initialize()
+  void D11Batch::Initialize()
   {
-    auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto technique = reinterpret_cast<D11Technique*>(&this->GetTechnique());
+    auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
+    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
 
     const auto get_filter = [this](Sampler::Filtering filtering)
     {
@@ -158,12 +162,14 @@ namespace RayGene3D
     }
   }
 
-  void D11Layout::Use()
+  void D11Batch::Use()
   {
-    auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto technique = reinterpret_cast<D11Technique*>(&this->GetTechnique());
+    auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
+    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
   }
 
-  void D11Layout::Discard()
+  void D11Batch::Discard()
   {
     for (uint32_t i = 0; i < sampler_states.size(); ++i)
     {
@@ -175,23 +181,23 @@ namespace RayGene3D
     }
   }
 
-  D11Layout::D11Layout(const std::string& name,
-    Device& device,
+  D11Batch::D11Batch(const std::string& name,
+    Technique& technique,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-    const std::pair<const Layout::Sampler*, uint32_t>& samplers,
-    const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities)
-    : Layout(name, device, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities)
+    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+    const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities)
+    : Batch(name, technique, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities)
   {
-    D11Layout::Initialize();
+    D11Batch::Initialize();
   }
 
-  D11Layout::~D11Layout()
+  D11Batch::~D11Batch()
   {
-    D11Layout::Discard();
+    D11Batch::Discard();
   }
 }

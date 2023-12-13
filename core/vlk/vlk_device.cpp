@@ -480,8 +480,8 @@ namespace RayGene3D
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.oldBatch = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newBatch = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = dst_image;
@@ -498,8 +498,8 @@ namespace RayGene3D
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.oldBatch = VK_IMAGE_LAYOUT_GENERAL;
+        barrier.newBatch = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = src_image;
@@ -527,8 +527,8 @@ namespace RayGene3D
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = 0;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        barrier.oldBatch = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newBatch = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = dst_image;
@@ -545,8 +545,8 @@ namespace RayGene3D
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         barrier.dstAccessMask = 0;
-        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+        barrier.oldBatch = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        barrier.newBatch = VK_IMAGE_LAYOUT_GENERAL;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = src_image;
@@ -752,7 +752,7 @@ namespace RayGene3D
     info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
     info.queueFamilyIndexCount  = 0;
     info.pQueueFamilyIndices    = nullptr;
-    info.initialLayout          = VK_IMAGE_LAYOUT_UNDEFINED; //properties.empty() ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_PREINITIALIZED;
+    info.initialBatch          = VK_IMAGE_LAYOUT_UNDEFINED; //properties.empty() ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_PREINITIALIZED;
     BLAST_ASSERT(VK_SUCCESS == vkCreateImage(device, &info, nullptr, &image));
 
     return image;
@@ -818,14 +818,14 @@ namespace RayGene3D
       if (pass) { /*BLAST_LOG("Discarding queue [%s]", name.c_str());*/ pass->Discard(); }
     }
 
-    for (auto& config : configs)
+    for (auto& technique : configs)
     {
-      if (config) { /*BLAST_LOG("Discarding shader [%s]", name.c_str());*/ config->Discard(); }
+      if (technique) { /*BLAST_LOG("Discarding shader [%s]", name.c_str());*/ technique->Discard(); }
     }
 
-    for (auto& layout : layouts)
+    for (auto& batch : layouts)
     {
-      if (layout) { /*BLAST_LOG("Discarding layout [%s]", name.c_str());*/ layout->Discard(); }
+      if (batch) { /*BLAST_LOG("Discarding batch [%s]", name.c_str());*/ batch->Discard(); }
     }
 
     for (auto& resource : resources)

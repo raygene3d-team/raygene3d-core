@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../pass.h"
+#include "d11_technique.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
@@ -46,6 +47,19 @@ namespace RayGene3D
     void Initialize() override;
     void Use() override;
     void Discard() override;
+
+  public:
+    const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
+      const std::string& source,
+      Technique::Compilation compilation,
+      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state) override
+    {
+      return configs.emplace_back(new D11Technique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+    }
 
   public:
     D11Pass(const std::string& name,

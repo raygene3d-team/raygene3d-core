@@ -28,6 +28,9 @@ THE SOFTWARE.
 
 
 #pragma once
+#include "d11_subset.h"
+#include "d11_batch.h"
+#include "d11_technique.h"
 #include "d11_pass.h"
 #include "d11_device.h"
 
@@ -36,15 +39,18 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  void D11Pass::Initialize()
+  void D11Subset::Initialize()
   {
   }
 
-  void D11Pass::Use()
+  void D11Subset::Use()
   {
     if (!enabled) return;
 
-    auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto batch = reinterpret_cast<D11Batch*>(&this->GetBatch());
+    auto technique = reinterpret_cast<D11Technique*>(&batch->GetTechnique());
+    auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
+    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
 
     if (type == TYPE_GRAPHIC)
     {
@@ -110,49 +116,49 @@ namespace RayGene3D
       {
         const auto& subpass = subpasses[j];
 
-        const auto config = reinterpret_cast<const D11Config*>(subpass.config.get());
-        const auto layout = reinterpret_cast<const D11Layout*>(subpass.layout.get());
+        const auto technique = reinterpret_cast<const D11Technique*>(subpass.technique.get());
+        const auto batch = reinterpret_cast<const D11Batch*>(subpass.batch.get());
 
-        device->GetContext()->VSSetShader(config->GetVSShader(), nullptr, 0);
-        device->GetContext()->HSSetShader(config->GetHSShader(), nullptr, 0);
-        device->GetContext()->DSSetShader(config->GetDSShader(), nullptr, 0);
-        device->GetContext()->GSSetShader(config->GetGSShader(), nullptr, 0);
-        device->GetContext()->PSSetShader(config->GetPSShader(), nullptr, 0);
+        device->GetContext()->VSSetShader(technique->GetVSShader(), nullptr, 0);
+        device->GetContext()->HSSetShader(technique->GetHSShader(), nullptr, 0);
+        device->GetContext()->DSSetShader(technique->GetDSShader(), nullptr, 0);
+        device->GetContext()->GSSetShader(technique->GetGSShader(), nullptr, 0);
+        device->GetContext()->PSSetShader(technique->GetPSShader(), nullptr, 0);
 
 
-        device->GetContext()->IASetInputLayout(config->GetInputLayout());
-        device->GetContext()->IASetPrimitiveTopology(config->GetPrimitiveTopology());
+        device->GetContext()->IASetInputLayout(technique->GetInputLayout());
+        device->GetContext()->IASetPrimitiveTopology(technique->GetPrimitiveTopology());
 
-        device->GetContext()->RSSetState(config->GetRasterState());
+        device->GetContext()->RSSetState(technique->GetRasterState());
 
         uint32_t stencil_reference = 0xFFFFFFFF;
-        device->GetContext()->OMSetDepthStencilState(config->GetDepthState(), stencil_reference);
+        device->GetContext()->OMSetDepthStencilState(technique->GetDepthState(), stencil_reference);
 
         float blend_factors[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
         uint32_t sample_mask = 0xFFFFFFFF;
-        device->GetContext()->OMSetBlendState(config->GetBlendState(), blend_factors, sample_mask);
+        device->GetContext()->OMSetBlendState(technique->GetBlendState(), blend_factors, sample_mask);
 
-        device->GetContext()->RSSetViewports(config->GetViewportCount(), config->GetViewportItems());
+        device->GetContext()->RSSetViewports(technique->GetViewportCount(), technique->GetViewportItems());
 
-        device->GetContext()->VSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
-        device->GetContext()->VSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        device->GetContext()->VSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
+        device->GetContext()->VSSetShaderResources(0, batch->GetRRCount(), batch->GetRRItems());
+        device->GetContext()->VSSetConstantBuffers(0, batch->GetUBCount(), batch->GetUBItems());
+        device->GetContext()->VSSetSamplers(0, batch->GetSamplerCount(), batch->GetSamplerItems());
 
-        device->GetContext()->HSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
-        device->GetContext()->HSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        device->GetContext()->HSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
+        device->GetContext()->HSSetShaderResources(0, batch->GetRRCount(), batch->GetRRItems());
+        device->GetContext()->HSSetConstantBuffers(0, batch->GetUBCount(), batch->GetUBItems());
+        device->GetContext()->HSSetSamplers(0, batch->GetSamplerCount(), batch->GetSamplerItems());
 
-        device->GetContext()->DSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
-        device->GetContext()->DSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        device->GetContext()->DSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
+        device->GetContext()->DSSetShaderResources(0, batch->GetRRCount(), batch->GetRRItems());
+        device->GetContext()->DSSetConstantBuffers(0, batch->GetUBCount(), batch->GetUBItems());
+        device->GetContext()->DSSetSamplers(0, batch->GetSamplerCount(), batch->GetSamplerItems());
 
-        device->GetContext()->GSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
-        device->GetContext()->GSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        device->GetContext()->GSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
+        device->GetContext()->GSSetShaderResources(0, batch->GetRRCount(), batch->GetRRItems());
+        device->GetContext()->GSSetConstantBuffers(0, batch->GetUBCount(), batch->GetUBItems());
+        device->GetContext()->GSSetSamplers(0, batch->GetSamplerCount(), batch->GetSamplerItems());
 
-        device->GetContext()->PSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
-        device->GetContext()->PSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        device->GetContext()->PSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
+        device->GetContext()->PSSetShaderResources(0, batch->GetRRCount(), batch->GetRRItems());
+        device->GetContext()->PSSetConstantBuffers(0, batch->GetUBCount(), batch->GetUBItems());
+        device->GetContext()->PSSetSamplers(0, batch->GetSamplerCount(), batch->GetSamplerItems());
 
 
         const uint32_t va_limit = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
@@ -167,7 +173,7 @@ namespace RayGene3D
           {
             va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
             va_offsets[i] = va_view->GetCount().offset;
-            va_strides[i] = config->GetStrides().at(i);
+            va_strides[i] = technique->GetStrides().at(i);
           }
         }
         device->GetContext()->IASetVertexBuffers(0, va_count, va_items, va_strides, va_offsets);
@@ -184,9 +190,9 @@ namespace RayGene3D
           {
             ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
             ia_offsets[i] = ia_view->GetCount().offset;
-            ia_formats[i] = config->GetIAState().indexer
-              == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT 
-               : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
+            ia_formats[i] = technique->GetIAState().indexer
+              == Technique::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT 
+               : Technique::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
                : DXGI_FORMAT_UNKNOWN;
           }
         }
@@ -203,16 +209,16 @@ namespace RayGene3D
             std::array<uint32_t, offset_limit> offset_range;
             for (uint32_t i = 0; i < offset_count; ++i) { offset_range[i] = 256 / 16; }
             
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(layout->GetUBCount(),
-              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(layout->GetUBCount(),
-              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(layout->GetUBCount(),
-              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(layout->GetUBCount(),
-              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(layout->GetUBCount(),
-              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(batch->GetUBCount(),
+              batch->GetSBCount(), batch->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(batch->GetUBCount(),
+              batch->GetSBCount(), batch->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(batch->GetUBCount(),
+              batch->GetSBCount(), batch->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(batch->GetUBCount(),
+              batch->GetSBCount(), batch->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(batch->GetUBCount(),
+              batch->GetSBCount(), batch->GetSBItems(), offset_array.data(), offset_range.data());
           }
 
           if (command.view)
@@ -234,16 +240,16 @@ namespace RayGene3D
       {
         const auto& subpass = subpasses[j];
 
-        const auto config = reinterpret_cast<const D11Config*>(subpass.config.get());
-        const auto layout = reinterpret_cast<const D11Layout*>(subpass.layout.get());
+        const auto technique = reinterpret_cast<const D11Technique*>(subpass.technique.get());
+        const auto batch = reinterpret_cast<const D11Batch*>(subpass.batch.get());
 
-        device->GetContext()->CSSetShader(config->GetCSShader(), nullptr, 0);
+        device->GetContext()->CSSetShader(technique->GetCSShader(), nullptr, 0);
 
         uint32_t wr_initials[8] = { 0 };
-        device->GetContext()->CSSetUnorderedAccessViews(0, layout->GetWRCount(), layout->GetWRItems(), wr_initials);
-        device->GetContext()->CSSetShaderResources(0, layout->GetRRCount(), layout->GetRRItems());
-        device->GetContext()->CSSetConstantBuffers(0, layout->GetUBCount(), layout->GetUBItems());
-        device->GetContext()->CSSetSamplers(0, layout->GetSamplerCount(), layout->GetSamplerItems());
+        device->GetContext()->CSSetUnorderedAccessViews(0, batch->GetWRCount(), batch->GetWRItems(), wr_initials);
+        device->GetContext()->CSSetShaderResources(0, batch->GetRRCount(), batch->GetRRItems());
+        device->GetContext()->CSSetConstantBuffers(0, batch->GetUBCount(), batch->GetUBItems());
+        device->GetContext()->CSSetSamplers(0, batch->GetSamplerCount(), batch->GetSamplerItems());
 
         for (const auto& command : subpass.commands)
         {
@@ -257,8 +263,8 @@ namespace RayGene3D
             std::array<uint32_t, offset_limit> offset_range;
             for (uint32_t i = 0; i < offset_count; ++i) { offset_range[i] = 256 / 16; }
 
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->CSSetConstantBuffers1(layout->GetUBCount(),
-              layout->GetSBCount(), layout->GetSBItems(), offset_array.data(), offset_range.data());
+            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->CSSetConstantBuffers1(batch->GetUBCount(),
+              batch->GetSBCount(), batch->GetSBItems(), offset_array.data(), offset_range.data());
           }
 
           if (command.view)
@@ -276,7 +282,7 @@ namespace RayGene3D
     device->GetContext()->ClearState();
   }
 
-  void D11Pass::Discard()
+  void D11Subset::Discard()
   {
     //if (context)
     //{
@@ -291,19 +297,15 @@ namespace RayGene3D
     //}
   }
 
-  D11Pass::D11Pass(const std::string& name,
-    Device& device,
-    Pass::Type type,
-    const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
-    const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
-    : Pass(name, device, type, subpasses, rt_attachments, ds_attachments)
+  D11Subset::D11Subset(const std::string& name,
+    Batch& batch)
+    : Subset(name, batch)
   {
-    D11Pass::Initialize();
+    D11Subset::Initialize();
   }
 
-  D11Pass::~D11Pass()
+  D11Subset::~D11Subset()
   {
-    D11Pass::Discard();
+    D11Subset::Discard();
   }
 }

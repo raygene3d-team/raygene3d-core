@@ -96,4 +96,8 @@ namespace RayGene3D
       const View::Range& layers = Range{ 0, uint32_t(-1) });
     virtual ~View();
   };
+
+  typedef std::shared_ptr<RayGene3D::View> SPtrView;
+  typedef std::weak_ptr<RayGene3D::View> WPtrView;
+  typedef std::unique_ptr<RayGene3D::View> UPtrView;
 }

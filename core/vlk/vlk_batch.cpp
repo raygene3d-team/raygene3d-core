@@ -27,14 +27,17 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "vlk_layout.h"
+#include "vlk_batch.h"
+#include "vlk_technique.h"
 #include "vlk_device.h"
 
 namespace RayGene3D
 {
-  void VLKLayout::Initialize()
+  void VLKBatch::Initialize()
   {
-    auto device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
+    auto technique = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
+    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
     if (device->GetRTXSupported())
     {
@@ -393,7 +396,7 @@ namespace RayGene3D
     }
 
     {
-      tables.resize(1, nullptr); //Currently only one descriptor set layout (table)
+      tables.resize(1, nullptr); //Currently only one descriptor set batch (table)
       auto& table = tables[0];
       table = {};
 
@@ -753,18 +756,20 @@ namespace RayGene3D
     BLAST_LOG("Binding count: %d [%s]", write_offset, name.c_str());
   }
 
-  void VLKLayout::Use()
+  void VLKBatch::Use()
   {
   }
 
-  void VLKLayout::Discard()
+  void VLKBatch::Discard()
   {
     //for (auto& command : commands)
     //{
     //  command->Discard();
     //}
 
-    auto device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
+    auto technique = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
+    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
     for (auto& sampler_state : sampler_states)
     {
@@ -853,23 +858,23 @@ namespace RayGene3D
     }
   }
 
-  VLKLayout::VLKLayout(const std::string& name,
-    Device& device,
+  VLKBatch::VLKBatch(const std::string& name,
+    Technique& technique,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-    const std::pair<const Layout::Sampler*, uint32_t>& samplers,
-    const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities)
-    : Layout(name, device, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities)
+    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+    const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities)
+    : Batch(name, technique, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities)
   {
-    VLKLayout::Initialize();
+    VLKBatch::Initialize();
   }
 
-  VLKLayout::~VLKLayout()
+  VLKBatch::~VLKBatch()
   {
-    VLKLayout::Discard();
+    VLKBatch::Discard();
   }
 }

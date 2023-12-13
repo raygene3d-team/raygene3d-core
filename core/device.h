@@ -30,8 +30,6 @@ THE SOFTWARE.
 
 #pragma once
 #include "resource.h"
-#include "layout.h"
-#include "config.h"
 #include "pass.h"
 
 namespace RayGene3D
@@ -123,4 +121,8 @@ namespace RayGene3D
     Device(const std::string& name);
     virtual ~Device();
   };
+
+  typedef std::shared_ptr<RayGene3D::Device> SPtrDevice;
+  typedef std::weak_ptr<RayGene3D::Device> WPtrDevice;
+  typedef std::unique_ptr<RayGene3D::Device> UPtrDevice;
 }

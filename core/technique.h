@@ -28,15 +28,15 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "view.h"
+#include "batch.h"
 
 namespace RayGene3D
 {
-  class Device;
+  class Pass;
 
   typedef void(*DefineVisitor)(const std::string&, const std::string&);
 
-  class Config : public Usable
+  class Technique : public Usable
   {
   protected:
     Pass& pass;
@@ -310,23 +310,23 @@ namespace RayGene3D
     OMState om_state;
 
   protected:
-    std::list<std::shared_ptr<Layout>> layouts;
+    std::list<std::shared_ptr<Batch>> layouts;
 
   public:
     Pass& GetPass() { return pass; }
 
   public:
-    virtual const std::shared_ptr<Layout>& CreateLayout(const std::string& name,
+    virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Layout::Sampler*, uint32_t>& samplers,
-      const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities) = 0;
-    void VisitLayout(std::function<void(const std::shared_ptr<Layout>&)> visitor) { for (const auto& layout : layouts) visitor(layout); }
-    void DestroyLayout(const std::shared_ptr<Layout>& layout) { layouts.remove(layout); }
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+      const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities) = 0;
+    void VisitBatch(std::function<void(const std::shared_ptr<Batch>&)> visitor) { for (const auto& batch : layouts) visitor(batch); }
+    void DestroyBatch(const std::shared_ptr<Batch>& batch) { layouts.remove(batch); }
   
   public:
     const IAState& GetIAState() const { return ia_state; }
@@ -340,15 +340,19 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    Config(const std::string& name,
+    Technique(const std::string& name,
       Pass& pass,
       const std::string& source,
-      Config::Compilation compilation, 
+      Technique::Compilation compilation, 
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Config::IAState& ia_state,
-      const Config::RCState& rc_state,
-      const Config::DSState& ds_state,
-      const Config::OMState& om_state);
-    virtual ~Config();
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state);
+    virtual ~Technique();
   };
+
+  typedef std::shared_ptr<RayGene3D::Technique> SPtrTechnique;
+  typedef std::weak_ptr<RayGene3D::Technique> WPtrTechnique;
+  typedef std::unique_ptr<RayGene3D::Technique> UPtrTechnique;
 }

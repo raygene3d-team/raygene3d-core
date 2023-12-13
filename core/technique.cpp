@@ -27,21 +27,21 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "config.h"
+#include "technique.h"
 
 namespace RayGene3D
 {
-  Config::Config(const std::string& name,
-    Device& device,
+  Technique::Technique(const std::string& name,
+    Pass& pass,
     const std::string& source,
-    Config::Compilation compilation, 
+    Technique::Compilation compilation, 
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Config::IAState& ia_state,
-    const Config::RCState& rc_state,
-    const Config::DSState& ds_state,
-    const Config::OMState& om_state)
+    const Technique::IAState& ia_state,
+    const Technique::RCState& rc_state,
+    const Technique::DSState& ds_state,
+    const Technique::OMState& om_state)
     : Usable(name)
-    , device(device)
+    , pass(pass)
     , source(source)
     , compilation(compilation)
     , defines(defines.first, defines.first + defines.second)
@@ -52,7 +52,7 @@ namespace RayGene3D
   {
   }
 
-  Config::~Config()
+  Technique::~Technique()
   {
   }
 }

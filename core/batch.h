@@ -28,16 +28,16 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "view.h"
+#include "subset.h"
 
 namespace RayGene3D
 {
-  class Device;
+  class Technique;
 
-  class Layout : public Usable //TODO Rename into Layout
+  class Batch : public Usable //TODO Rename into Batch
   {
   protected:
-    Config& config;
+    Technique& technique;
 
   public:
     struct Sampler
@@ -115,7 +115,7 @@ namespace RayGene3D
     std::vector<RTXEntity> rtx_entities;
     
   public:
-    Config& GetConfig() { return config; }
+    Technique& GetTechnique() { return technique; }
 
   public:
     void Initialize() override = 0;
@@ -123,16 +123,20 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    Layout(const std::string& name,
-      Device& device,
+    Batch(const std::string& name,
+      Technique& technique,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Layout::Sampler*, uint32_t>& samplers = {},
-      const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities = {});
-    virtual ~Layout();
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities = {});
+    virtual ~Batch();
   };
+
+  typedef std::shared_ptr<RayGene3D::Batch> SPtrBatch;
+  typedef std::weak_ptr<RayGene3D::Batch> WPtrBatch;
+  typedef std::unique_ptr<RayGene3D::Batch> UPtrBatch;
 }

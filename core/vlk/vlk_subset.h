@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../pass.h"
+#include "../subset.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -42,7 +42,7 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class VLKPass : public Pass
+  class VLKSubset : public Subset
   {
   protected:
     VkCommandBuffer command_buffer{ nullptr };
@@ -86,12 +86,8 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    VLKPass(const std::string& name,
-      Device& device,
-      Pass::Type type,
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
-    virtual ~VLKPass();
+    VLKSubset(const std::string& name,
+      Batch& batch);
+    virtual ~VLKSubset();
   };
 }

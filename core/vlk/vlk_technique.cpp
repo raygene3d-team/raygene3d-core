@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "vlk_config.h"
+#include "vlk_technique.h"
 #include "vlk_device.h"
 
 #define ENABLE_HLSL
@@ -306,9 +306,11 @@ namespace RayGene3D
     glslang::FinalizeProcess();
   }
 
-  void VLKConfig::Initialize()
+  void VLKTechnique::Initialize()
   {
-    auto device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
+    auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
+    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
+
     const auto path = device->GetPath();
 
     if (compilation != COMPILATION_UNKNOWN)
@@ -940,13 +942,14 @@ namespace RayGene3D
     }
   }
 
-  void VLKConfig::Use()
+  void VLKTechnique::Use()
   {
   }
 
-  void VLKConfig::Discard()
+  void VLKTechnique::Discard()
   {
-    auto device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
+    auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
+    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
     stages.clear();
     
@@ -1012,22 +1015,22 @@ namespace RayGene3D
     }
   }
 
-  VLKConfig::VLKConfig(const std::string& name,
-    Device& device,
+  VLKTechnique::VLKTechnique(const std::string& name,
+    Pass& pass,
     const std::string& source,
-    Config::Compilation compilation,
+    Technique::Compilation compilation,
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Config::IAState& ia_state,
-    const Config::RCState& rc_state,
-    const Config::DSState& ds_state,
-    const Config::OMState& om_state)
-    : Config(name, device, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
+    const Technique::IAState& ia_state,
+    const Technique::RCState& rc_state,
+    const Technique::DSState& ds_state,
+    const Technique::OMState& om_state)
+    : Technique(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
-    VLKConfig::Initialize();
+    VLKTechnique::Initialize();
   }
 
-  VLKConfig::~VLKConfig()
+  VLKTechnique::~VLKTechnique()
   {
-    VLKConfig::Discard();
+    VLKTechnique::Discard();
   }
 }

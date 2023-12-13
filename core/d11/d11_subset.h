@@ -28,14 +28,14 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../pass.h"
+#include "../subset.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
 
 namespace RayGene3D
 {
-  class D11Pass : public Pass
+  class D11Subset : public Subset
   {
 
   protected:
@@ -48,12 +48,8 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11Pass(const std::string& name,
-      Device& device,
-      Pass::Type type,
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
-    virtual ~D11Pass();
+    D11Subset(const std::string& name,
+      Batch& batch);
+    virtual ~D11Subset();
   };
 }

@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "d11_config.h"
+#include "d11_technique.h"
 #include "d11_device.h"
 
 #pragma comment (lib, "dxgi.lib")
@@ -179,9 +179,11 @@ namespace RayGene3D
     }
   }
 
-  void D11Config::Initialize()
+  void D11Technique::Initialize()
   {
-    auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto pass = reinterpret_cast<D11Pass*>(&this->GetPass());
+    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
+
     const auto path = device->GetPath();
 
     if (compilation != COMPILATION_UNKNOWN)
@@ -335,7 +337,8 @@ namespace RayGene3D
             strides[stride_item.first] = stride_item.second;
           }
 
-          BLAST_ASSERT(S_OK == device->GetDevice()->CreateInputLayout(element_descs.data(), uint32_t(element_descs.size()), vs_bytecode.data(), vs_bytecode.size(), &input_layout));
+          BLAST_ASSERT(S_OK == device->GetDevice()->CreateInputLayout(element_descs.data(), uint32_t(element_descs.size()),
+            vs_bytecode.data(), vs_bytecode.size(), &input_layout));
         }
 
         const auto get_fill = [](Fill fill)
@@ -542,12 +545,13 @@ namespace RayGene3D
     }
   }
 
-  void D11Config::Use()
+  void D11Technique::Use()
   {
-    auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto pass = reinterpret_cast<D11Pass*>(&this->GetPass());
+    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
   }
 
-  void D11Config::Discard()
+  void D11Technique::Discard()
   {
     if (raster_state)
     {
@@ -610,21 +614,21 @@ namespace RayGene3D
     }
   }
 
-  D11Config::D11Config(const std::string& name,
-    Device& device,
-    const std::string& source, Config::Compilation compilation,
+  D11Technique::D11Technique(const std::string& name,
+    Pass& pass,
+    const std::string& source, Technique::Compilation compilation,
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Config::IAState& ia_state,
-    const Config::RCState& rc_state,
-    const Config::DSState& ds_state,
-    const Config::OMState& om_state)
-    : Config(name, device, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
+    const Technique::IAState& ia_state,
+    const Technique::RCState& rc_state,
+    const Technique::DSState& ds_state,
+    const Technique::OMState& om_state)
+    : Technique(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
-    D11Config::Initialize();
+    D11Technique::Initialize();
   }
 
-  D11Config::~D11Config()
+  D11Technique::~D11Technique()
   {
-    D11Config::Discard();
+    D11Technique::Discard();
   }
 }

@@ -28,14 +28,13 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "config.h"
-#include "layout.h"
+#include "view.h"
 
 namespace RayGene3D
 {
-  class Device;
+  class Batch;
 
-  class Pass : public Usable
+  class Subset : public Usable
   {
   public:
     using RTValue = std::optional<std::array<float, 4>>;
@@ -96,9 +95,6 @@ namespace RayGene3D
   public:
     struct Subpass
     {
-      std::shared_ptr<Config> config;
-      std::shared_ptr<Layout> layout;
-
       std::vector<Command> commands;
 
       std::vector<std::shared_ptr<View>> va_views;
@@ -134,7 +130,7 @@ namespace RayGene3D
     bool enabled{ false };
 
   protected:
-    Device& device;
+    Batch& batch;
 
   public:
     void SetType(Type type) { this->type = type; }
@@ -178,9 +174,6 @@ namespace RayGene3D
     void SetSubpassCount(uint32_t count) { subpasses.resize(count); }
     uint32_t GetSubpassCount() const { return uint32_t(subpasses.size()); }
 
-    void SetSubpassConfig(uint32_t subpass, const std::shared_ptr<Config>& config) { subpasses.at(subpass).config = config; }
-    void SetSubpassLayout(uint32_t subpass, const std::shared_ptr<Layout>& layout) { subpasses.at(subpass).layout = layout; }
-
     void UpdateSubpassCommands(uint32_t subpass, std::pair<const Command*, uint32_t> commands) {
       subpasses.at(subpass).commands.assign(commands.first, commands.first + commands.second);
     }
@@ -193,7 +186,7 @@ namespace RayGene3D
       subpasses.at(subpass).ia_views.assign(ia_views.first, ia_views.first + ia_views.second); 
     }
   public:
-    Device& GetDevice() { return device; }
+    Batch& GetBatch() { return batch; }
 
   public:
     void Initialize() override = 0;
@@ -201,12 +194,12 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    Pass(const std::string& name,
-      Device& device,
-      Pass::Type type, 
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
-    virtual ~Pass();
+    Subset(const std::string& name,
+      Batch& batch);
+    virtual ~Subset();
   };
+
+  typedef std::shared_ptr<RayGene3D::Subset> SPtrSubset;
+  typedef std::weak_ptr<RayGene3D::Subset> WPtrSubset;
+  typedef std::unique_ptr<RayGene3D::Subset> UPtrSubset;
 }

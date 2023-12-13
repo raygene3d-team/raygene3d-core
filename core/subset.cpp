@@ -27,26 +27,18 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "pass.h"
+#include "subset.h"
 
 namespace RayGene3D
 {
-  Pass::Pass(const std::string& name,
-    Device& device,
-    Pass::Type type,
-    const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
-    const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
+  Subset::Subset(const std::string& name,
+    Batch& batch)
     : Usable(name)
-    , device(device)
-    , type(type)
-    , subpasses(subpasses.first, subpasses.first + subpasses.second)
-    , rt_attachments(rt_attachments.first, rt_attachments.first + rt_attachments.second)
-    , ds_attachments(ds_attachments.first, ds_attachments.first + ds_attachments.second)
+    , batch(batch)
   {
   }
   
-  Pass::~Pass()
+  Subset::~Subset()
   {
   }
 }
