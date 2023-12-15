@@ -192,7 +192,7 @@ namespace RayGene3D
     virtual ~Resource();
   };
 
-  typedef std::shared_ptr<RayGene3D::Resource> SPtrResource;
-  typedef std::weak_ptr<RayGene3D::Resource> WPtrResource;
-  typedef std::unique_ptr<RayGene3D::Resource> UPtrResource;
+  typedef std::shared_ptr<Resource> SPtrResource;
+  typedef std::weak_ptr<Resource> WPtrResource;
+  typedef std::unique_ptr<Resource> UPtrResource;
 }

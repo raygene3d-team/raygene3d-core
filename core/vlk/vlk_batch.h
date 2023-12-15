@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../batch.h"
+#include "vlk_mesh.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -47,6 +48,17 @@ namespace RayGene3D
   protected:
     VkDescriptorPool pool{ nullptr };
     VkPipelineLayout layout{ nullptr };
+
+  protected:
+    VkPipeline pipeline{ nullptr };
+
+  protected:
+    VkDeviceMemory table_memory{ nullptr };
+    VkBuffer table_buffer{ nullptr };
+    VkStridedDeviceAddressRegionKHR rgen_region{};
+    VkStridedDeviceAddressRegionKHR miss_region{};
+    VkStridedDeviceAddressRegionKHR xhit_region{};
+    VkStridedDeviceAddressRegionKHR call_region{};
 
   protected:
     std::vector<VkSampler> sampler_states;
@@ -84,17 +96,23 @@ namespace RayGene3D
 
   protected:
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
-    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
     PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
     PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };
     PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR{ nullptr };
+    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
+
+  protected:
+    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
+    PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR{ nullptr };
+    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR{ nullptr };
+    PFN_vkCmdTraceRaysIndirectKHR vkCmdTraceRaysIndirectKHR{ nullptr };
 
   public:
-    const VkPipelineLayout& GetLayout() const { return layout; }
+    //const VkPipelineLayout& GetLayout() const { return layout; }
 
   public:
-    const VkDescriptorSet* GetSetItems() const { return sets.data(); }
-    uint32_t GetSetCount() const { return 1u; }
+    //const VkDescriptorSet* GetSetItems() const { return sets.data(); }
+    //uint32_t GetSetCount() const { return 1u; }
 
   public:
     void Initialize() override;
@@ -102,16 +120,46 @@ namespace RayGene3D
     void Discard() override;
 
   public:
+    const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
+      uint32_t va_count,
+      uint32_t va_offset,
+      uint32_t ia_count,
+      uint32_t ia_offset) override
+    {
+      return meshes.emplace_back(new VLKMesh(name, *this, va_views, ia_views, va_count, va_offset, ia_count, ia_offset));
+    }
+    const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views) override
+    {
+      return meshes.emplace_back(new VLKMesh(name, *this, va_views, ia_views));
+    }
+
+  public:
     VLKBatch(const std::string& name,
       Technique& technique,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
-      const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities = {});
+      const std::shared_ptr<View>& aa_view);
+    VLKBatch(const std::string& name,
+      Technique& technique,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+      uint32_t grid_x,
+      uint32_t grid_y,
+      uint32_t grid_z);
     virtual ~VLKBatch();
   };
 }

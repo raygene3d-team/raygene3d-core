@@ -93,29 +93,11 @@ namespace RayGene3D
       uint32_t va_count,
       uint32_t va_offset,
       uint32_t ia_count,
-      uint32_t ia_offset,
-      const std::pair<const uint32_t*, uint32_t>& sb_offsets = {});
+      uint32_t ia_offset);
     VLKMesh(const std::string& name,
       Batch& batch,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-      const std::shared_ptr<View>& aa_view,
-      const std::pair<const uint32_t*, uint32_t>& sb_offsets = {});
-    VLKMesh(const std::string& name,
-      Batch& batch,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-      uint32_t va_count,
-      uint32_t va_offset,
-      uint32_t ia_count,
-      uint32_t ia_offset,
-      const std::pair<const float* [16], uint32_t>& transforms);
-    VLKMesh(const std::string& name,
-      Batch& batch,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-      const std::shared_ptr<View>& aa_view,
-      const std::pair<const float* [16], uint32_t>& transforms);
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views);
     virtual ~VLKMesh();
   };
 }

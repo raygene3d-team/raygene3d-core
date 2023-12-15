@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../technique.h"
+#include "d11_batch.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
@@ -92,16 +93,31 @@ namespace RayGene3D
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-      const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities) override
+      const std::shared_ptr<View>& aa_view) override
     {
-      return layouts.emplace_back(new D11Batch(name, *this, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities));
+      return batches.emplace_back(new D11Batch(name, *this, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, aa_view));
+    }
+
+    const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+      uint32_t grid_x,
+      uint32_t grid_y,
+      uint32_t grid_z) override
+    {
+      return batches.emplace_back(new D11Batch(name, *this, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, grid_x, grid_y, grid_z));
     }
 
   public:

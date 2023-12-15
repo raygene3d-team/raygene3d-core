@@ -183,15 +183,32 @@ namespace RayGene3D
 
   D11Batch::D11Batch(const std::string& name,
     Technique& technique,
+    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+    const std::shared_ptr<View>& aa_view)
+    : Batch(name, technique, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, aa_view)
+  {
+    D11Batch::Initialize();
+  }
+
+  D11Batch::D11Batch(const std::string& name,
+    Technique& technique,
     const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-    const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities)
-    : Batch(name, technique, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities)
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+    uint32_t grid_x,
+    uint32_t grid_y,
+    uint32_t grid_z)
+    : Batch(name, technique, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, grid_x, grid_y, grid_z)
   {
     D11Batch::Initialize();
   }

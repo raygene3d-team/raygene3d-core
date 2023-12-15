@@ -52,7 +52,8 @@ namespace RayGene3D
     auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
 
-    if (type == TYPE_GRAPHIC)
+    if (
+      type == TYPE_GRAPHIC)
     {
       const uint32_t rt_limit = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
       ID3D11RenderTargetView* rt_items[rt_limit]{ nullptr };
@@ -297,37 +298,14 @@ namespace RayGene3D
     //}
   }
 
-  D11Mesh::D11Mesh(const std::string& name,
-    Batch& batch,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-    uint32_t va_count, uint32_t va_offset,
-    uint32_t ia_count, uint32_t ia_offset,
-    const std::pair<const uint32_t*, uint32_t>& sb_offsets)
-    : Mesh(name, batch, va_views, ia_views, va_count, va_offset, ia_count, ia_offset, sb_offsets)
-  {
-    D11Mesh::Initialize();
-  }
-
-  D11Mesh::D11Mesh(const std::string& name,
-    Batch& batch,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-    const std::shared_ptr<View>& aa_view,
-    const std::pair<const uint32_t*, uint32_t>& sb_offsets)
-    : Mesh(name, batch, va_views, ia_views, aa_view, sb_offsets)
-  {
-    D11Mesh::Initialize();
-  }
 
   D11Mesh::D11Mesh(const std::string& name,
     Batch& batch,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
     uint32_t va_count, uint32_t va_offset,
-    uint32_t ia_count, uint32_t ia_offset,
-    const std::pair<const float* [16], uint32_t>& transforms)
-    : Mesh(name, batch, va_views, ia_views, va_count, va_offset, ia_count, ia_offset, transforms)
+    uint32_t ia_count, uint32_t ia_offset)
+    : Mesh(name, batch, va_views, ia_views, va_count, va_offset, ia_count, ia_offset)
   {
     D11Mesh::Initialize();
   }
@@ -335,10 +313,8 @@ namespace RayGene3D
   D11Mesh::D11Mesh(const std::string& name,
     Batch& batch,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-    const std::shared_ptr<View>& aa_view,
-    const std::pair<const float* [16], uint32_t>& transforms)
-    : Mesh(name, batch, va_views, ia_views, aa_view, transforms)
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views)
+    : Mesh(name, batch, va_views, ia_views)
   {
     D11Mesh::Initialize();
   }

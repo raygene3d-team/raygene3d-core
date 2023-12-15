@@ -101,12 +101,8 @@ namespace RayGene3D
     void VisitResource(std::function<void(const std::shared_ptr<Resource>&)> visitor) { for (const auto& resource : resources) visitor(resource); }
     void DestroyResource(const std::shared_ptr<Resource>& resource) { resources.remove(resource); }
 
-
-
-
     virtual const std::shared_ptr<Pass>& CreatePass(const std::string& name,
       Pass::Type type, 
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {}) = 0;
     void VisitPass(std::function<void(const std::shared_ptr<Pass>&)> visitor) { for (const auto& pass : passes) visitor(pass); }
@@ -122,7 +118,7 @@ namespace RayGene3D
     virtual ~Device();
   };
 
-  typedef std::shared_ptr<RayGene3D::Device> SPtrDevice;
-  typedef std::weak_ptr<RayGene3D::Device> WPtrDevice;
-  typedef std::unique_ptr<RayGene3D::Device> UPtrDevice;
+  typedef std::shared_ptr<Device> SPtrDevice;
+  typedef std::weak_ptr<Device> WPtrDevice;
+  typedef std::unique_ptr<Device> UPtrDevice;
 }

@@ -97,7 +97,7 @@ namespace RayGene3D
     virtual ~View();
   };
 
-  typedef std::shared_ptr<RayGene3D::View> SPtrView;
-  typedef std::weak_ptr<RayGene3D::View> WPtrView;
-  typedef std::unique_ptr<RayGene3D::View> UPtrView;
+  typedef std::shared_ptr<View> SPtrView;
+  typedef std::weak_ptr<View> WPtrView;
+  typedef std::unique_ptr<View> UPtrView;
 }

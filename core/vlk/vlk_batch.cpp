@@ -29,7 +29,9 @@ THE SOFTWARE.
 
 #include "vlk_batch.h"
 #include "vlk_technique.h"
+#include "vlk_pass.h"
 #include "vlk_device.h"
+#include "vlk_view.h"
 
 namespace RayGene3D
 {
@@ -39,13 +41,18 @@ namespace RayGene3D
     auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
-    if (device->GetRTXSupported())
+    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
     {
       vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateAccelerationStructureKHR"));
-      vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkDestroyAccelerationStructureKHR"));
       vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureDeviceAddressKHR"));
       vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureBuildSizesKHR"));
       vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdBuildAccelerationStructuresKHR"));
+      vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkDestroyAccelerationStructureKHR"));
+
+      vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateRayTracingPipelinesKHR"));
+      vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetRayTracingShaderGroupHandlesKHR"));
+      vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdTraceRaysKHR"));
+      vkCmdTraceRaysIndirectKHR = reinterpret_cast<PFN_vkCmdTraceRaysIndirectKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdTraceRaysIndirectKHR"));
     }
 
     {
@@ -754,10 +761,214 @@ namespace RayGene3D
     }
 
     BLAST_LOG("Binding count: %d [%s]", write_offset, name.c_str());
+
+    if (pass->GetType() == Pass::TYPE_GRAPHIC)
+    {
+      VkGraphicsPipelineCreateInfo create_info = {};
+      create_info.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+      create_info.flags               = 0;
+      create_info.stageCount          = technique->GetStageCount();
+      create_info.pStages             = technique->GetStageArray();
+      create_info.pVertexInputState   = &technique->GetInputState();
+      create_info.pInputAssemblyState = &technique->GetAssemblyState();
+      create_info.pViewportState      = &technique->GetViewportState();
+      create_info.pRasterizationState = &technique->GetRasterizationState();
+      create_info.pMultisampleState   = &technique->GetMultisampleState();
+      create_info.pDepthStencilState  = &technique->GetDepthstencilState();
+      create_info.pTessellationState  = &technique->GetTessellationState();
+      create_info.pColorBlendState    = &technique->GetColorblendState();
+      create_info.pDynamicState       = nullptr;
+      create_info.layout              = layout;
+      create_info.renderPass          = pass->GetRenderPass();
+      create_info.subpass             = 0;
+      create_info.basePipelineHandle  = VK_NULL_HANDLE;
+      create_info.basePipelineIndex   = -1;
+      BLAST_ASSERT(VK_SUCCESS == vkCreateGraphicsPipelines(device->GetDevice(), VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
+    }
+
+    if (pass->GetType() == Pass::TYPE_COMPUTE)
+    {
+      VkComputePipelineCreateInfo create_info = {};
+      create_info.sType               = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+      create_info.flags               = 0;
+      create_info.stage               = technique->GetStageArray()[0];
+      create_info.layout              = layout;
+      create_info.basePipelineHandle  = VK_NULL_HANDLE;
+      create_info.basePipelineIndex   = -1;
+      BLAST_ASSERT(VK_SUCCESS == vkCreateComputePipelines(device->GetDevice(), VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
+    }
+
+    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
+    {
+      VkRayTracingPipelineCreateInfoKHR create_info = {};
+      create_info.sType                         = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+      create_info.flags                         = 0;
+      create_info.stageCount                    = technique->GetStageCount();
+      create_info.pStages                       = technique->GetStageArray();
+      create_info.groupCount                    = technique->GetGroupCount();
+      create_info.pGroups                       = technique->GetGroupArray();
+      create_info.maxPipelineRayRecursionDepth  = 1;
+      create_info.layout                        = layout;
+      create_info.basePipelineHandle            = VK_NULL_HANDLE;
+      BLAST_ASSERT(VK_SUCCESS == vkCreateRayTracingPipelinesKHR(device->GetDevice(), {}, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
+
+      const auto binding_size = device->GetRTXProperties().shaderGroupHandleSize;
+      const auto binding_align = device->GetRTXProperties().shaderGroupBaseAlignment;
+
+      {
+        const auto size = technique->GetGroupCount() * binding_align;
+        const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+        const auto buffer = device->CreateBuffer(size, usage);
+        const auto requirements = device->GetRequirements(buffer);
+        const auto property = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
+        const auto memory = device->AllocateMemory(requirements.size, index, true);
+
+        BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
+
+        table_buffer = buffer;
+        table_memory = memory;
+      }
+
+      auto* binding_data = new uint8_t[technique->GetGroupCount() * binding_align];
+      BLAST_ASSERT(VK_SUCCESS == vkGetRayTracingShaderGroupHandlesKHR(device->GetDevice(), pipeline, 0, 
+        technique->GetGroupCount(), technique->GetGroupCount() * binding_align, binding_data));
+
+      uint8_t* mapped = nullptr;
+      BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), table_memory, 0, VK_WHOLE_SIZE, 0, (void**)&mapped));
+      for (uint32_t i = 0; i < technique->GetGroupCount(); ++i)
+      {
+        memcpy(mapped + i * binding_align, binding_data + i * binding_size, binding_size);
+
+        const auto temp = reinterpret_cast<const uint64_t*>(mapped + i * binding_align);
+        BLAST_LOG("RTX shader handle %d: %ld %ld %ld %ld", i, temp[0], temp[1], temp[2], temp[3]);
+      }
+      vkUnmapMemory(device->GetDevice(), table_memory);
+      delete[] binding_data;
+
+      if (technique->GetGroupCount() > 0)
+        rgen_region = { device->GetAddress(table_buffer) + 0 * binding_align, binding_align, binding_align };
+      if (technique->GetGroupCount() > 1)
+        miss_region = { device->GetAddress(table_buffer) + 1 * binding_align, binding_align, binding_align };
+      if (technique->GetGroupCount() > 2)
+        xhit_region = { device->GetAddress(table_buffer) + 2 * binding_align, binding_align, binding_align };
+    }
   }
 
   void VLKBatch::Use()
   {
+    auto technique = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
+    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
+
+    if (pass->GetType() == Pass::TYPE_GRAPHIC)
+    {
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+        const auto offset_limit = 4u;
+        std::array<uint32_t, offset_limit> offset_array{ 0 };
+
+        const auto offset_count = std::min(offset_limit, uint32_t(sb_views.size()));
+        for (uint32_t i = 0; i < offset_count; ++i)
+        {
+          const auto& sb_view = sb_views[i];
+          if (sb_view)
+          {
+            const auto sb_resource = reinterpret_cast<VLKResource*>(&sb_view->GetResource());
+            offset_array[i] = sb_resource->GetStride();
+          }
+        }
+
+        auto index = 0u;
+        for(const auto& mesh : meshes)
+        {
+
+        if (!sets.empty())
+        {
+          const uint32_t offset_data[offset_limit] = {
+            offset_array[0] * index,
+            offset_array[1] * index,
+            offset_array[2] * index,
+            offset_array[3] * index,
+          };
+
+          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), offset_count, offset_data);
+        }
+
+        mesh->Use(); //Put code for setting va/ia buffers here
+
+        if (aa_view)
+        {
+          const auto aa_buffer = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
+          const auto aa_stride = uint32_t(sizeof(Argument));
+          const auto aa_count = 1;
+          const auto aa_offset = (index + aa_view->GetCount().offset) * aa_stride + 0u * 4u;
+          vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_count, aa_stride);
+        }
+        else
+        {
+          const auto va_count = mesh->GetVACount();
+          const auto va_offset = mesh->GetVAOffset();
+          const auto ia_count = mesh->GetIACount();
+          const auto ia_offset = mesh->GetIAOffset();
+          const auto inst_count = 1;
+          const auto inst_offset = 0;
+          vkCmdDrawIndexed(command_buffer, ia_count, inst_count, ia_offset, va_offset, inst_offset);
+        }
+
+        ++index;
+      }
+    }
+
+
+    if (pass->GetType() == Pass::TYPE_COMPUTE)
+    {
+      vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+
+      if (!sets.empty())
+      {
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, sets.size(), sets.data(), 0, nullptr);
+      }
+
+      if (aa_view)
+      {
+        const auto aa_buffer = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
+        const auto aa_stride = uint32_t(sizeof(Argument));
+        const auto aa_offset = (0 + aa_view->GetCount().offset) * aa_stride + 5u * 4u;
+        vkCmdDispatchIndirect(command_buffer, aa_buffer, aa_offset);
+      }
+      else
+      {
+        vkCmdDispatch(command_buffer, grid_x, grid_y, grid_z);
+      }
+    }
+
+
+    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
+    {
+      vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+
+      if (!sets.empty())
+      {
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, layout, 0, sets.size(), sets.data(), 0, nullptr);
+      }
+
+      const auto extent_x = device->GetExtentX();
+      const auto extent_y = device->GetExtentY();
+
+      if (aa_view)
+      {
+        const auto aa_buffer = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
+        const auto aa_stride = uint32_t(sizeof(Argument));
+        const auto aa_offset = (0 + aa_view->GetCount().offset) * aa_stride + 5u * 4u;
+        VkDeviceAddress aa_address = 0;
+        //vkCmdTraceRaysIndirectKHR(command_buffer, &rgen_region, &miss_region, &xhit_region, &call_region, aa_address);
+      }
+      else
+      {
+        vkCmdTraceRaysKHR(command_buffer, &rgen_region, &miss_region, &xhit_region, &call_region, extent_x, extent_y, 1);
+      }
+    }
   }
 
   void VLKBatch::Discard()
@@ -860,15 +1071,32 @@ namespace RayGene3D
 
   VLKBatch::VLKBatch(const std::string& name,
     Technique& technique,
+    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+    const std::shared_ptr<View>& aa_view)
+    : Batch(name, technique, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, aa_view)
+  {
+    VLKBatch::Initialize();
+  }
+
+  VLKBatch::VLKBatch(const std::string& name,
+    Technique& technique,
     const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-    const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities)
-    : Batch(name, technique, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities)
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+    uint32_t grid_x,
+    uint32_t grid_y,
+    uint32_t grid_z)
+    : Batch(name, technique, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, grid_x, grid_y, grid_z)
   {
     VLKBatch::Initialize();
   }

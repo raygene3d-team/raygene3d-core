@@ -944,6 +944,10 @@ namespace RayGene3D
 
   void VLKTechnique::Use()
   {
+    for (const auto& batch : batches)
+    {
+      batch->Use();
+    }
   }
 
   void VLKTechnique::Discard()

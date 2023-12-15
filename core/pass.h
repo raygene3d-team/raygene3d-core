@@ -51,62 +51,6 @@ namespace RayGene3D
   protected:
     Type type{ TYPE_UNKNOWN };
 
-    //struct Graphic
-    //{
-    //  uint32_t idx_count{ 0 };
-    //  uint32_t ins_count{ 0 };
-    //  uint32_t idx_offset{ 0 };
-    //  uint32_t vtx_offset{ 0 };
-    //  uint32_t ins_offset{ 0 };
-    //  uint32_t padding[3]{ uint32_t(-1), uint32_t(-1), uint32_t(-1) };
-    //};
-
-    //struct Compute
-    //{
-    //  uint32_t grid_x{ 0 };
-    //  uint32_t grid_y{ 0 };
-    //  uint32_t grid_z{ 0 };
-    //  uint32_t padding{ uint32_t(-1) };
-    //};
-
-    //uint32_t extent_x{ 0 };
-    //uint32_t extent_y{ 0 };
-
-  public:
-    struct Argument
-    {
-      uint32_t idx_count{ 0 };
-      uint32_t ins_count{ 0 };
-      uint32_t idx_offset{ 0 };
-      uint32_t vtx_offset{ 0 };
-      uint32_t ins_offset{ 0 };
-      uint32_t grid_x{ 0 };
-      uint32_t grid_y{ 0 };
-      uint32_t grid_z{ 0 };
-    };
-
-    struct Command
-    {
-      std::shared_ptr<View> view;
-      Argument argument;
-      std::vector<uint32_t> offsets;
-    };
-
-  public:
-    struct Subpass
-    {
-      std::shared_ptr<Technique> technique;
-      std::shared_ptr<Batch> batch;
-
-      std::vector<Command> commands;
-
-      std::vector<std::shared_ptr<View>> va_views;
-      std::vector<std::shared_ptr<View>> ia_views;
-    };
-
-  protected:
-    std::vector<Subpass> subpasses;
-
   public:
     struct RTAttachment
     {
@@ -124,11 +68,6 @@ namespace RayGene3D
     std::vector<RTAttachment> rt_attachments;
     std::vector<DSAttachment> ds_attachments;
 
-    //std::vector<std::shared_ptr<View>> rt_views;
-    //std::vector<std::shared_ptr<View>> ds_views;
-    //std::vector<RTValue> rt_values;
-    //std::vector<DSValue> ds_values;
-
   protected:
     bool enabled{ false };
 
@@ -136,7 +75,7 @@ namespace RayGene3D
     Device& device;
 
   protected:
-    std::list<std::shared_ptr<Technique>> configs;
+    std::list<std::shared_ptr<Technique>> techniques;
 
   public:
     void SetType(Type type) { this->type = type; }
@@ -152,49 +91,6 @@ namespace RayGene3D
     //uint32_t GetExtentY() { return extent_y; }
 
   public:
-    void UpdateRTAttachments(std::pair<const RTAttachment*, uint32_t> attachments) {
-      this->rt_attachments.assign(attachments.first, attachments.first + attachments.second);
-    }
-    void UpdateDSAttachments(std::pair<const DSAttachment*, uint32_t> attachments) {
-      this->ds_attachments.assign(attachments.first, attachments.first + attachments.second);
-    }
-  //public:
-  //  void UpdateRTViews(std::pair<const std::shared_ptr<View>*, uint32_t> rt_views) { 
-  //    this->rt_views.assign(rt_views.first, rt_views.first + rt_views.second);
-  //  }
-  //  void UpdateDSViews(std::pair<const std::shared_ptr<View>*, uint32_t> ds_views) {
-  //    this-> ds_views.assign(ds_views.first, ds_views.first + ds_views.second); 
-  //  }
-  //  void UpdateRTValues(std::pair<const RTValue*, uint32_t> rt_values) { 
-  //    this->rt_values.assign(rt_values.first, rt_values.first + rt_values.second);
-  //  }
-  //  void UpdateDSValues(std::pair<const DSValue*, uint32_t> ds_values) { 
-  //    this->ds_values.assign(ds_values.first, ds_values.first + ds_values.second);
-  //  }
-
-  public:
-    void UpdateSubpasses(std::pair<const Subpass*, uint32_t> subpasses) {
-      this->subpasses.assign(subpasses.first, subpasses.first + subpasses.second);
-    }
-  public:
-    void SetSubpassCount(uint32_t count) { subpasses.resize(count); }
-    uint32_t GetSubpassCount() const { return uint32_t(subpasses.size()); }
-
-    void SetSubpassTechnique(uint32_t subpass, const std::shared_ptr<Technique>& technique) { subpasses.at(subpass).technique = technique; }
-    void SetSubpassBatch(uint32_t subpass, const std::shared_ptr<Batch>& batch) { subpasses.at(subpass).batch = batch; }
-
-    void UpdateSubpassCommands(uint32_t subpass, std::pair<const Command*, uint32_t> commands) {
-      subpasses.at(subpass).commands.assign(commands.first, commands.first + commands.second);
-    }
-
-  public:
-    void UpdateSubpassVAViews(uint32_t subpass, std::pair<const std::shared_ptr<View>*, uint32_t> va_views) {
-      subpasses.at(subpass).va_views.assign(va_views.first, va_views.first + va_views.second); 
-    }
-    void UpdateSubpassIAViews(uint32_t subpass, std::pair<const std::shared_ptr<View>*, uint32_t> ia_views) { 
-      subpasses.at(subpass).ia_views.assign(ia_views.first, ia_views.first + ia_views.second); 
-    }
-  public:
     Device& GetDevice() { return device; }
 
   public:
@@ -206,8 +102,8 @@ namespace RayGene3D
       const Technique::RCState& rc_state,
       const Technique::DSState& ds_state,
       const Technique::OMState& om_state) = 0;
-    void VisitTechnique(std::function<void(const std::shared_ptr<Technique>&)> visitor) { for (const auto& technique : configs) visitor(technique); }
-    void DestroyTechnique(const std::shared_ptr<Technique>& technique) { configs.remove(technique); }
+    void VisitTechnique(std::function<void(const std::shared_ptr<Technique>&)> visitor) { for (const auto& technique : techniques) visitor(technique); }
+    void DestroyTechnique(const std::shared_ptr<Technique>& technique) { techniques.remove(technique); }
 
   public:
     void Initialize() override = 0;
@@ -217,14 +113,13 @@ namespace RayGene3D
   public:
     Pass(const std::string& name,
       Device& device,
-      Pass::Type type, 
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
+      Pass::Type type,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
     virtual ~Pass();
   };
 
-  typedef std::shared_ptr<RayGene3D::Pass> SPtrPass;
-  typedef std::weak_ptr<RayGene3D::Pass> WPtrPass;
-  typedef std::unique_ptr<RayGene3D::Pass> UPtrPass;
+  typedef std::shared_ptr<Pass> SPtrPass;
+  typedef std::weak_ptr<Pass> WPtrPass;
+  typedef std::unique_ptr<Pass> UPtrPass;
 }

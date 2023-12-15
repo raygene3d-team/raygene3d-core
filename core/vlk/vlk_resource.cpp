@@ -450,8 +450,8 @@ namespace RayGene3D
               barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
               barrier.srcAccessMask = 0;
               barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-              barrier.oldBatch = VK_IMAGE_LAYOUT_UNDEFINED;
-              barrier.newBatch = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+              barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+              barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
               barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
               barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
               barrier.image = image;
@@ -485,8 +485,8 @@ namespace RayGene3D
               barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
               barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
               barrier.dstAccessMask = 0;
-              barrier.oldBatch = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-              barrier.newBatch = VK_IMAGE_LAYOUT_GENERAL;
+              barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+              barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
               barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
               barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
               barrier.image = image;

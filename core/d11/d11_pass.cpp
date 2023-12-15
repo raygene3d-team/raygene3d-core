@@ -294,10 +294,9 @@ namespace RayGene3D
   D11Pass::D11Pass(const std::string& name,
     Device& device,
     Pass::Type type,
-    const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
     const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
     const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
-    : Pass(name, device, type, subpasses, rt_attachments, ds_attachments)
+    : Pass(name, device, type, rt_attachments, ds_attachments)
   {
     D11Pass::Initialize();
   }

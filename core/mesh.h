@@ -36,19 +36,7 @@ namespace RayGene3D
 
   class Mesh : public Usable
   {
-  public:
-    struct Argument
-    {
-      uint32_t idx_count{ 0 };
-      uint32_t ins_count{ 0 };
-      uint32_t idx_offset{ 0 };
-      uint32_t vtx_offset{ 0 };
-      uint32_t ins_offset{ 0 };
-      uint32_t grid_x{ 0 };
-      uint32_t grid_y{ 0 };
-      uint32_t grid_z{ 0 };
-    };
-
+  protected:
     std::vector<std::shared_ptr<View>> va_views;
     std::vector<std::shared_ptr<View>> ia_views;
 
@@ -56,11 +44,6 @@ namespace RayGene3D
     uint32_t va_offset{ 0 };
     uint32_t ia_count{ 0 };
     uint32_t ia_offset{ 0 };
-
-    std::shared_ptr<View> aa_view;
-
-    std::vector<float[16]> transforms;
-    std::vector<uint32_t> sb_offsets;
 
   protected:
     bool enabled{ false };
@@ -71,6 +54,16 @@ namespace RayGene3D
   public:
     void SetEnabled(bool enabled) { this->enabled = enabled; }
     bool GetEnabled() const { return enabled; }
+
+  public:
+    const std::shared_ptr<View>& GetVAView() const { return va_views.at(0); }
+    const std::shared_ptr<View>& GetIAView() const { return ia_views.at(0); }
+
+  public:
+    uint32_t GetVACount() const { return va_count; }
+    uint32_t GetVAOffset() const { return va_offset; }
+    uint32_t GetIACount() const { return ia_count; }
+    uint32_t GetIAOffset() const { return ia_offset; }
 
   public:
     Batch& GetBatch() { return batch; }
@@ -87,34 +80,16 @@ namespace RayGene3D
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
       uint32_t va_count,
       uint32_t va_offset,
-      uint32_t ia_count, 
-      uint32_t ia_offset,
-      const std::pair<const uint32_t*, uint32_t>& sb_offsets = {});
-    Mesh(const std::string& name,
-      Batch& batch,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-      const std::shared_ptr<View>& aa_view,
-      const std::pair<const uint32_t*, uint32_t>& sb_offsets = {});
-    Mesh(const std::string& name,
-      Batch& batch,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-      uint32_t va_count,
-      uint32_t va_offset,
       uint32_t ia_count,
-      uint32_t ia_offset,
-      const std::pair<const float* [16], uint32_t>& transforms);
+      uint32_t ia_offset);
     Mesh(const std::string& name,
       Batch& batch,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
-      const std::shared_ptr<View>& aa_view,
-      const std::pair<const float* [16], uint32_t>& transforms);
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views);
     virtual ~Mesh();
   };
 
-  typedef std::shared_ptr<RayGene3D::Mesh> SPtrMesh;
-  typedef std::weak_ptr<RayGene3D::Mesh> WPtrMesh;
-  typedef std::unique_ptr<RayGene3D::Mesh> UPtrMesh;
+  typedef std::shared_ptr<Mesh> SPtrMesh;
+  typedef std::weak_ptr<Mesh> WPtrMesh;
+  typedef std::unique_ptr<Mesh> UPtrMesh;
 }

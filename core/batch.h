@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "subset.h"
+#include "mesh.h"
 
 namespace RayGene3D
 {
@@ -38,6 +38,19 @@ namespace RayGene3D
   {
   protected:
     Technique& technique;
+
+  public:
+    struct Argument
+    {
+      uint32_t idx_count{ 0 };
+      uint32_t ins_count{ 0 };
+      uint32_t idx_offset{ 0 };
+      uint32_t vtx_offset{ 0 };
+      uint32_t ins_offset{ 0 };
+      uint32_t grid_x{ 0 };
+      uint32_t grid_y{ 0 };
+      uint32_t grid_z{ 0 };
+    };
 
   public:
     struct Sampler
@@ -112,10 +125,35 @@ namespace RayGene3D
     std::vector<Sampler> samplers;
 
   protected:
+    std::shared_ptr<View> aa_view;
+
+  protected:
+    uint32_t grid_x{ 0 };
+    uint32_t grid_y{ 0 };
+    uint32_t grid_z{ 0 };
+
+  protected:
     std::vector<RTXEntity> rtx_entities;
+
+  protected:
+    std::list<std::shared_ptr<Mesh>> meshes;
     
   public:
     Technique& GetTechnique() { return technique; }
+
+  public:
+    virtual const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
+      uint32_t va_count,
+      uint32_t va_offset,
+      uint32_t ia_count,
+      uint32_t ia_offset) = 0;
+    virtual const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views) = 0;
+    void VisitMesh(std::function<void(const std::shared_ptr<Mesh>&)> visitor) { for (const auto& mesh : meshes) visitor(mesh); }
+    void DestroyMesh(const std::shared_ptr<Mesh>& mesh) { meshes.remove(mesh); }
 
   public:
     void Initialize() override = 0;
@@ -125,18 +163,30 @@ namespace RayGene3D
   public:
     Batch(const std::string& name,
       Technique& technique,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
-      const std::pair<const Batch::RTXEntity*, uint32_t>& rtx_entities = {});
+      const std::shared_ptr<View>& aa_view);
+    Batch(const std::string& name,
+      Technique& technique,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
+      uint32_t grid_x,
+      uint32_t grid_y,
+      uint32_t grid_z);
     virtual ~Batch();
   };
 
-  typedef std::shared_ptr<RayGene3D::Batch> SPtrBatch;
-  typedef std::weak_ptr<RayGene3D::Batch> WPtrBatch;
-  typedef std::unique_ptr<RayGene3D::Batch> UPtrBatch;
+  typedef std::shared_ptr<Batch> SPtrBatch;
+  typedef std::weak_ptr<Batch> WPtrBatch;
+  typedef std::unique_ptr<Batch> UPtrBatch;
 }

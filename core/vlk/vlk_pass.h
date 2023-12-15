@@ -49,21 +49,10 @@ namespace RayGene3D
     VkCommandBuffer command_buffer{ nullptr };
     VkFence fence{ nullptr };
 
-  protected:
-    struct SubpassProxy
-    {
-      VkPipeline pipeline{ nullptr };
-      VkDeviceMemory table_memory{ nullptr };
-      VkBuffer table_buffer{ nullptr };
-      VkStridedDeviceAddressRegionKHR rgen_region{};
-      VkStridedDeviceAddressRegionKHR miss_region{};
-      VkStridedDeviceAddressRegionKHR xhit_region{};
-    };
-    std::vector<SubpassProxy> subpass_proxies;
-
     std::vector<VkImageView> attachment_views;
     std::vector<VkClearValue> attachment_values;
     std::vector<VkAttachmentDescription> attachment_descs;
+
     VkFramebuffer framebuffer{ nullptr };
     VkRenderPass renderpass{ nullptr };
 
@@ -74,12 +63,11 @@ namespace RayGene3D
     // Perhaps we should set these parameters externally and validate during initialize
 
   protected:
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
-    PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR{ nullptr };
-    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR{ nullptr };
+    
 
   public:
     VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
+    VkRenderPass GetRenderPass() const { return renderpass; }
 
   public:
     const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
@@ -91,7 +79,7 @@ namespace RayGene3D
       const Technique::DSState& ds_state,
       const Technique::OMState& om_state) override
     {
-      return configs.emplace_back(new VLKTechnique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+      return techniques.emplace_back(new VLKTechnique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:
@@ -103,7 +91,6 @@ namespace RayGene3D
     VLKPass(const std::string& name,
       Device& device,
       Pass::Type type,
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
     virtual ~VLKPass();

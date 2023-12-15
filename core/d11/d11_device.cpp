@@ -106,25 +106,15 @@ namespace RayGene3D
       BLAST_ASSERT(S_OK == swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backbuffer));
     }
 
-    for (auto& resource : resources)
-    {
-      if (resource) { resource->Initialize(); }
-    }
+    //for (auto& resource : resources)
+    //{
+    //  if (resource) { resource->Initialize(); }
+    //}
 
-    for (auto& batch : layouts)
-    {
-      if (batch) { batch->Initialize(); }
-    }
-
-    for (auto& technique : configs)
-    {
-      if (technique) { technique->Initialize(); }
-    }
-
-    for (auto& pass : passes)
-    {
-      if (pass) { pass->Initialize(); }
-    }
+    //for (auto& pass : passes)
+    //{
+    //  if (pass) { pass->Initialize(); }
+    //}
   }
 
 
@@ -197,25 +187,15 @@ namespace RayGene3D
 
   void D11Device::Discard()
   {
-    for (auto& pass : passes)
-    {
-      if (pass) { pass->Discard(); }
-    }
+    //for (auto& pass : passes)
+    //{
+    //  if (pass) { pass->Discard(); }
+    //}
 
-    for (auto& technique : configs)
-    {
-      if (technique) { technique->Discard(); }
-    }
-
-    for (auto& batch : layouts)
-    {
-      if (batch) { batch->Discard(); }
-    }
-
-    for (auto& resource : resources)
-    {
-      if (resource) { resource->Discard(); }
-    }
+    //for (auto& resource : resources)
+    //{
+    //  if (resource) { resource->Discard(); }
+    //}
 
     if (backbuffer)
     {

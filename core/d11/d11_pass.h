@@ -58,14 +58,13 @@ namespace RayGene3D
       const Technique::DSState& ds_state,
       const Technique::OMState& om_state) override
     {
-      return configs.emplace_back(new D11Technique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+      return techniques.emplace_back(new D11Technique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:
     D11Pass(const std::string& name,
       Device& device,
       Pass::Type type,
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
     virtual ~D11Pass();
