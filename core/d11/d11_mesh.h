@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../subset.h"
+#include "../mesh.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>

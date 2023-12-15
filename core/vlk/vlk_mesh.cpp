@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "vlk_subset.h"
+#include "vlk_mesh.h"
 #include "vlk_batch.h"
 #include "vlk_technique.h"
 #include "vlk_pass.h"

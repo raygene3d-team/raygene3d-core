@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../subset.h"
+#include "../mesh.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR

@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "subset.h"
+#include "mesh.h"
 
 namespace RayGene3D
 {
