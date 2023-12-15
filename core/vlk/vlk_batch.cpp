@@ -41,20 +41,6 @@ namespace RayGene3D
     auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
-    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
-    {
-      vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateAccelerationStructureKHR"));
-      vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureDeviceAddressKHR"));
-      vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureBuildSizesKHR"));
-      vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdBuildAccelerationStructuresKHR"));
-      vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkDestroyAccelerationStructureKHR"));
-
-      vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateRayTracingPipelinesKHR"));
-      vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetRayTracingShaderGroupHandlesKHR"));
-      vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdTraceRaysKHR"));
-      vkCmdTraceRaysIndirectKHR = reinterpret_cast<PFN_vkCmdTraceRaysIndirectKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdTraceRaysIndirectKHR"));
-    }
-
     {
       const auto get_image_filter = [this](Sampler::Filtering filtering)
       {
@@ -133,9 +119,22 @@ namespace RayGene3D
       }
     }
 
-    if (device->GetRTXSupported() && !rtx_entities.empty())
+    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
     {
-      BLAST_LOG("RTX Instances count: %d", rtx_entities.size());
+      BLAST_LOG("RTX Instances count: %d", meshes.size());
+
+      {
+        vkCreateAccelerationStructureKHR = reinterpret_cast<PFN_vkCreateAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateAccelerationStructureKHR"));
+        vkGetAccelerationStructureDeviceAddressKHR = reinterpret_cast<PFN_vkGetAccelerationStructureDeviceAddressKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureDeviceAddressKHR"));
+        vkGetAccelerationStructureBuildSizesKHR = reinterpret_cast<PFN_vkGetAccelerationStructureBuildSizesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetAccelerationStructureBuildSizesKHR"));
+        vkCmdBuildAccelerationStructuresKHR = reinterpret_cast<PFN_vkCmdBuildAccelerationStructuresKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdBuildAccelerationStructuresKHR"));
+        vkDestroyAccelerationStructureKHR = reinterpret_cast<PFN_vkDestroyAccelerationStructureKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkDestroyAccelerationStructureKHR"));
+
+        vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateRayTracingPipelinesKHR"));
+        vkGetRayTracingShaderGroupHandlesKHR = reinterpret_cast<PFN_vkGetRayTracingShaderGroupHandlesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkGetRayTracingShaderGroupHandlesKHR"));
+        vkCmdTraceRaysKHR = reinterpret_cast<PFN_vkCmdTraceRaysKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdTraceRaysKHR"));
+        vkCmdTraceRaysIndirectKHR = reinterpret_cast<PFN_vkCmdTraceRaysIndirectKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdTraceRaysIndirectKHR"));
+      }
 
       {
         VkCommandBufferAllocateInfo allocate_info = {};
@@ -156,28 +155,27 @@ namespace RayGene3D
       BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(command_buffer, &beginInfo));
 
       {
-        blas_memories.resize(rtx_entities.size());
-        blas_buffers.resize(rtx_entities.size());
-        blas_items.resize(rtx_entities.size());
+        blas_memories.resize(meshes.size());
+        blas_buffers.resize(meshes.size());
+        blas_items.resize(meshes.size());
 
-        for (uint32_t i = 0; i < uint32_t(rtx_entities.size()); ++i)
+        auto index = 0u;
+        for (const auto& mesh : meshes)
         {
-          auto& blas_memory = blas_memories[i];
-          auto& blas_buffer = blas_buffers[i];
-          auto& blas_item = blas_items[i];
+          auto& blas_memory = blas_memories[index];
+          auto& blas_buffer = blas_buffers[index];
+          auto& blas_item = blas_items[index];
 
-          const auto& rtx_entity = rtx_entities[i];
-
-          const auto va_resource = reinterpret_cast<VLKResource*>(&rtx_entity.va_view->GetResource());
+          const auto va_resource = reinterpret_cast<VLKResource*>(&mesh->GetVAViewItem(0)->GetResource());
           const auto va_stride = va_resource->GetStride();
-          const auto va_count = rtx_entity.va_count;
-          const auto va_offset = rtx_entity.va_offset;
+          const auto va_count = mesh->GetVACount();
+          const auto va_offset = mesh->GetVAOffset();
           const auto va_address = device->GetAddress(va_resource->GetBuffer());
 
-          const auto ia_resource = reinterpret_cast<VLKResource*>(&rtx_entity.ia_view->GetResource());
+          const auto ia_resource = reinterpret_cast<VLKResource*>(&mesh->GetIAViewItem(0)->GetResource());
           const auto ia_stride = ia_resource->GetStride();
-          const auto ia_count = rtx_entity.ia_count;
-          const auto ia_offset = rtx_entity.ia_offset;
+          const auto ia_count = mesh->GetIACount();
+          const auto ia_offset = mesh->GetIAOffset();
           const auto ia_address = device->GetAddress(ia_resource->GetBuffer());
 
           //BLAST_LOG("Vertices and Triangles count/offset: %d/%d, %d/%d", va_count, va_offset, ia_count, ia_offset);
@@ -253,29 +251,32 @@ namespace RayGene3D
             VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
             VK_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD_BIT_KHR,
             0, 1, &memory_barrier, 0, nullptr, 0, nullptr);
+
+          ++index;
         }
       }
 
       
       {
-        std::vector<VkAccelerationStructureInstanceKHR> instances(rtx_entities.size());
+        std::vector<VkAccelerationStructureInstanceKHR> instances(meshes.size());
 
-        for (uint32_t i = 0; i < uint32_t(instances.size()); ++i)
+        auto index = 0u;
+        for (const auto& mesh : meshes)
         {
-          const auto& rtx_entity = rtx_entities[i];
-
           VkAccelerationStructureDeviceAddressInfoKHR address_info{};
           address_info.sType                  = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-          address_info.accelerationStructure  = blas_items[i];
+          address_info.accelerationStructure  = blas_items[index];
           const auto blas_address = vkGetAccelerationStructureDeviceAddressKHR(device->GetDevice(), &address_info);
 
           VkTransformMatrixKHR transformMatrix = {
-            rtx_entity.transform[0 + 0], rtx_entity.transform[0 + 1], rtx_entity.transform[0 + 2], rtx_entity.transform[0 + 3],
-            rtx_entity.transform[4 + 0], rtx_entity.transform[4 + 1], rtx_entity.transform[4 + 2], rtx_entity.transform[4 + 3],
-            rtx_entity.transform[8 + 0], rtx_entity.transform[8 + 1], rtx_entity.transform[8 + 2], rtx_entity.transform[8 + 3]
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f
           };
 
-          instances[i] = { transformMatrix, i, 0xFF, 0, VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR, blas_address }; 
+          instances[index] = { transformMatrix, index, 0xFF, 0, VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR, blas_address };
+
+          ++index;
         } 
 
         {
@@ -863,26 +864,25 @@ namespace RayGene3D
 
     if (pass->GetType() == Pass::TYPE_GRAPHIC)
     {
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+      vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-        const auto offset_limit = 4u;
-        std::array<uint32_t, offset_limit> offset_array{ 0 };
+      const auto offset_limit = 4u;
+      std::array<uint32_t, offset_limit> offset_array{ 0 };
 
-        const auto offset_count = std::min(offset_limit, uint32_t(sb_views.size()));
-        for (uint32_t i = 0; i < offset_count; ++i)
+      const auto offset_count = std::min(offset_limit, uint32_t(sb_views.size()));
+      for (uint32_t i = 0; i < offset_count; ++i)
+      {
+        const auto& sb_view = sb_views[i];
+        if (sb_view)
         {
-          const auto& sb_view = sb_views[i];
-          if (sb_view)
-          {
-            const auto sb_resource = reinterpret_cast<VLKResource*>(&sb_view->GetResource());
-            offset_array[i] = sb_resource->GetStride();
-          }
+          const auto sb_resource = reinterpret_cast<VLKResource*>(&sb_view->GetResource());
+          offset_array[i] = sb_resource->GetStride();
         }
+      }
 
-        auto index = 0u;
-        for(const auto& mesh : meshes)
-        {
-
+      auto index = 0u;
+      for (const auto& mesh : meshes)
+      {
         if (!sets.empty())
         {
           const uint32_t offset_data[offset_limit] = {
@@ -895,7 +895,55 @@ namespace RayGene3D
           vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), offset_count, offset_data);
         }
 
-        mesh->Use(); //Put code for setting va/ia buffers here
+        {
+          const auto va_limit = 16u;
+          std::array<uint32_t, va_limit> va_strides;
+          std::array<VkDeviceSize, va_limit> va_offsets;
+          std::array<VkBuffer, va_limit> va_items;
+
+          const auto va_count = std::min(va_limit, uint32_t(mesh->GetIAViewCount()));
+          for (uint32_t i = 0; i < va_count; ++i)
+          {
+            const auto& va_view = mesh->GetIAViewItem(i);
+            if (va_view)
+            {
+              va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
+              va_offsets[i] = va_view->GetCount().offset;
+            }
+          }
+
+          if (va_count > 0)
+          {
+            vkCmdBindVertexBuffers(command_buffer, 0, va_count, va_items.data(), va_offsets.data());
+          }
+        }
+
+        {
+          const auto ia_limit = 1u;
+          std::array<VkIndexType, ia_limit> ia_formats;
+          std::array<VkDeviceSize, ia_limit> ia_offsets;
+          std::array<VkBuffer, ia_limit> ia_items;
+
+          const auto ia_count = std::min(ia_limit, uint32_t(mesh->GetIAViewCount()));
+          for (uint32_t i = 0; i < ia_count; ++i)
+          {
+            const auto& ia_view = mesh->GetIAViewItem(i);
+            if (ia_view)
+            {
+              ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
+              ia_offsets[i] = ia_view->GetCount().offset;
+              ia_formats[i] = technique->GetIAState().indexer
+                == Technique::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
+                : Technique::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
+                : VK_INDEX_TYPE_MAX_ENUM;
+            }
+          }
+
+          if (ia_count > 0)
+          {
+            vkCmdBindIndexBuffer(command_buffer, ia_items[0], ia_offsets[0], ia_formats[0]);
+          }
+        }
 
         if (aa_view)
         {

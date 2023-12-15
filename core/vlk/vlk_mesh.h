@@ -44,42 +44,6 @@ namespace RayGene3D
 {
   class VLKMesh : public Mesh
   {
-  protected:
-    VkCommandBuffer command_buffer{ nullptr };
-    VkFence fence{ nullptr };
-
-  protected:
-    struct SubpassProxy
-    {
-      VkPipeline pipeline{ nullptr };
-      VkDeviceMemory table_memory{ nullptr };
-      VkBuffer table_buffer{ nullptr };
-      VkStridedDeviceAddressRegionKHR rgen_region{};
-      VkStridedDeviceAddressRegionKHR miss_region{};
-      VkStridedDeviceAddressRegionKHR xhit_region{};
-    };
-    std::vector<SubpassProxy> subpass_proxies;
-
-    std::vector<VkImageView> attachment_views;
-    std::vector<VkClearValue> attachment_values;
-    std::vector<VkAttachmentDescription> attachment_descs;
-    VkFramebuffer framebuffer{ nullptr };
-    VkRenderPass renderpass{ nullptr };
-
-  protected:
-    uint32_t extent_x{ 0 };
-    uint32_t extent_y{ 0 };
-    uint32_t layers{ 1 };
-    // Perhaps we should set these parameters externally and validate during initialize
-
-  protected:
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
-    PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR{ nullptr };
-    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR{ nullptr };
-
-  public:
-    VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
-
   public:
     void Initialize() override;
     void Use() override;

@@ -56,8 +56,10 @@ namespace RayGene3D
     bool GetEnabled() const { return enabled; }
 
   public:
-    const std::shared_ptr<View>& GetVAView() const { return va_views.at(0); }
-    const std::shared_ptr<View>& GetIAView() const { return ia_views.at(0); }
+    const std::shared_ptr<View>& GetVAViewItem(uint32_t index) const { return va_views.at(index); }
+    uint32_t GetVAViewCount() const { return uint32_t(va_views.size()); }
+    const std::shared_ptr<View>& GetIAViewItem(uint32_t index) const { return ia_views.at(index); }
+    uint32_t GetIAViewCount() const { return uint32_t(ia_views.size()); }
 
   public:
     uint32_t GetVACount() const { return va_count; }

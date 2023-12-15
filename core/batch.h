@@ -95,20 +95,6 @@ namespace RayGene3D
       float bias_lod{ 0.0f };
     };
 
-  public:
-    struct RTXEntity
-    {
-      float transform[12];
-
-      std::shared_ptr<View> va_view;
-      uint32_t va_offset;
-      uint32_t va_count;
-
-      std::shared_ptr<View> ia_view;
-      uint32_t ia_offset;
-      uint32_t ia_count;
-    };
-
   protected:
     std::vector<std::shared_ptr<View>> ub_views; //uniform buffers
     std::vector<std::shared_ptr<View>> sb_views; //shifted buffers
@@ -131,9 +117,6 @@ namespace RayGene3D
     uint32_t grid_x{ 0 };
     uint32_t grid_y{ 0 };
     uint32_t grid_z{ 0 };
-
-  protected:
-    std::vector<RTXEntity> rtx_entities;
 
   protected:
     std::list<std::shared_ptr<Mesh>> meshes;
