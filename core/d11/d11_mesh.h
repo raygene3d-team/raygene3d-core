@@ -30,55 +30,17 @@ THE SOFTWARE.
 #pragma once
 #include "../subset.h"
 
-#ifdef __linux__
-#define VK_USE_PLATFORM_XLIB_KHR
-#elif _WIN32
-#define VK_USE_PLATFORM_WIN32_KHR
-#elif __OBJC__
-#define VK_USE_PLATFORM_METAL_EXT
-#endif
-#define VK_ENABLE_BETA_EXTENSIONS
-#include <vulkan/vulkan.h>
+#include <dxgi.h>
+#include <d3d11_1.h>
 
 namespace RayGene3D
 {
-  class VLKSubset : public Subset
+  class D11Mesh : public Mesh
   {
-  protected:
-    VkCommandBuffer command_buffer{ nullptr };
-    VkFence fence{ nullptr };
 
   protected:
-    struct SubpassProxy
-    {
-      VkPipeline pipeline{ nullptr };
-      VkDeviceMemory table_memory{ nullptr };
-      VkBuffer table_buffer{ nullptr };
-      VkStridedDeviceAddressRegionKHR rgen_region{};
-      VkStridedDeviceAddressRegionKHR miss_region{};
-      VkStridedDeviceAddressRegionKHR xhit_region{};
-    };
-    std::vector<SubpassProxy> subpass_proxies;
-
-    std::vector<VkImageView> attachment_views;
-    std::vector<VkClearValue> attachment_values;
-    std::vector<VkAttachmentDescription> attachment_descs;
-    VkFramebuffer framebuffer{ nullptr };
-    VkRenderPass renderpass{ nullptr };
-
-  protected:
-    uint32_t extent_x{ 0 };
-    uint32_t extent_y{ 0 };
-    uint32_t layers{ 1 };
-    // Perhaps we should set these parameters externally and validate during initialize
-
-  protected:
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
-    PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR{ nullptr };
-    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR{ nullptr };
-
-  public:
-    VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
+    //ID3D11DeviceContext* context{ nullptr };
+    //ID3D11CommandList* command_list{ nullptr };
 
   public:
     void Initialize() override;
@@ -86,8 +48,36 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    VLKSubset(const std::string& name,
-      Batch& batch);
-    virtual ~VLKSubset();
+    D11Mesh(const std::string& name,
+      Batch& batch,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
+      uint32_t va_count,
+      uint32_t va_offset,
+      uint32_t ia_count,
+      uint32_t ia_offset,
+      const std::pair<const uint32_t*, uint32_t>& sb_offsets = {});
+    D11Mesh(const std::string& name,
+      Batch& batch,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
+      const std::shared_ptr<View>& aa_view,
+      const std::pair<const uint32_t*, uint32_t>& sb_offsets = {});
+    D11Mesh(const std::string& name,
+      Batch& batch,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
+      uint32_t va_count,
+      uint32_t va_offset,
+      uint32_t ia_count,
+      uint32_t ia_offset,
+      const std::pair<const float* [16], uint32_t>& transforms);
+    D11Mesh(const std::string& name,
+      Batch& batch,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
+      const std::shared_ptr<View>& aa_view,
+      const std::pair<const float* [16], uint32_t>& transforms);
+    virtual ~D11Mesh();
   };
 }
