@@ -867,7 +867,7 @@ namespace RayGene3D
       vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
       const auto offset_limit = 4u;
-      std::array<uint32_t, offset_limit> offset_array{ 0 };
+      uint32_t offset_strides[offset_limit] = { 0 };
 
       const auto offset_count = std::min(offset_limit, uint32_t(sb_views.size()));
       for (uint32_t i = 0; i < offset_count; ++i)
@@ -876,7 +876,7 @@ namespace RayGene3D
         if (sb_view)
         {
           const auto sb_resource = reinterpret_cast<VLKResource*>(&sb_view->GetResource());
-          offset_array[i] = sb_resource->GetStride();
+          offset_strides[i] = sb_resource->GetStride();
         }
       }
 
@@ -885,14 +885,14 @@ namespace RayGene3D
       {
         if (!sets.empty())
         {
-          const uint32_t offset_data[offset_limit] = {
-            offset_array[0] * index,
-            offset_array[1] * index,
-            offset_array[2] * index,
-            offset_array[3] * index,
+          const uint32_t offset_array[offset_limit] = {
+            offset_strides[0] * index,
+            offset_strides[1] * index,
+            offset_strides[2] * index,
+            offset_strides[3] * index,
           };
 
-          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), offset_count, offset_data);
+          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), offset_count, offset_array);
         }
 
         {
@@ -949,9 +949,9 @@ namespace RayGene3D
         {
           const auto aa_buffer = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Argument));
-          const auto aa_count = 1;
+          const auto aa_draws = 1u;
           const auto aa_offset = (index + aa_view->GetCount().offset) * aa_stride + 0u * 4u;
-          vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_count, aa_stride);
+          vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
         }
         else
         {
@@ -959,8 +959,8 @@ namespace RayGene3D
           const auto va_offset = mesh->GetVAOffset();
           const auto ia_count = mesh->GetIACount();
           const auto ia_offset = mesh->GetIAOffset();
-          const auto inst_count = 1;
-          const auto inst_offset = 0;
+          const auto inst_count = 1u;
+          const auto inst_offset = 0u;
           vkCmdDrawIndexed(command_buffer, ia_count, inst_count, ia_offset, va_offset, inst_offset);
         }
 
@@ -982,7 +982,7 @@ namespace RayGene3D
       {
         const auto aa_buffer = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
         const auto aa_stride = uint32_t(sizeof(Argument));
-        const auto aa_offset = (0 + aa_view->GetCount().offset) * aa_stride + 5u * 4u;
+        const auto aa_offset = (0u + aa_view->GetCount().offset) * aa_stride + 5u * 4u;
         vkCmdDispatchIndirect(command_buffer, aa_buffer, aa_offset);
       }
       else

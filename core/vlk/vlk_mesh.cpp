@@ -39,26 +39,14 @@ namespace RayGene3D
 {
   void VLKMesh::Initialize()
   {
-    auto batch = reinterpret_cast<VLKBatch*>(&this->GetBatch());
-    auto technique = reinterpret_cast<VLKTechnique*>(&batch->GetTechnique());
-    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
-    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
   }
 
   void VLKMesh::Use()
   {
-    auto batch = reinterpret_cast<VLKBatch*>(&this->GetBatch());
-    auto technique = reinterpret_cast<VLKTechnique*>(&batch->GetTechnique());
-    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
-    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
   }
 
   void VLKMesh::Discard()
   {
-    auto batch = reinterpret_cast<VLKBatch*>(&this->GetBatch());
-    auto technique = reinterpret_cast<VLKTechnique*>(&batch->GetTechnique());
-    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
-    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
   }
 
   VLKMesh::VLKMesh(const std::string& name,

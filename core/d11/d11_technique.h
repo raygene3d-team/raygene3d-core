@@ -66,27 +66,10 @@ namespace RayGene3D
     std::vector<D3D11_VIEWPORT> vp_items;
 
   protected:
-    std::vector<uint32_t> strides;
+    std::vector<uint32_t> strides; //TODO: Remove
 
   protected:
     D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
-
-  public:
-    ID3D11VertexShader* GetVSShader() const { return vs_shader; }
-    ID3D11HullShader* GetHSShader() const { return hs_shader; }
-    ID3D11DomainShader* GetDSShader() const { return ds_shader; }
-    ID3D11GeometryShader* GetGSShader() const { return gs_shader; }
-    ID3D11PixelShader* GetPSShader() const { return ps_shader; }
-    ID3D11ComputeShader* GetCSShader() const { return cs_shader; }
-
-  public:
-    D3D_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const { return primitive_topology; }
-    ID3D11InputLayout* GetInputLayout() const { return input_layout; }
-    ID3D11RasterizerState* GetRasterState() const { return raster_state; }
-    ID3D11DepthStencilState* GetDepthState() const { return depth_state; }
-    ID3D11BlendState* GetBlendState() const { return blend_state; }
-    const D3D11_VIEWPORT* GetViewportItems() const { return vp_items.data(); }
-    uint32_t GetViewportCount() const { return uint32_t(vp_items.size()); }
 
   public:
     const std::vector<uint32_t>& GetStrides() const { return strides; }

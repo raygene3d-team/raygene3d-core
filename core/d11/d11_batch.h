@@ -48,18 +48,6 @@ namespace RayGene3D
     std::vector<ID3D11UnorderedAccessView*> wr_items;
 
   public:
-    ID3D11Buffer* const* GetUBItems() const {return ub_items.data(); }
-    uint32_t GetUBCount() const { return uint32_t(ub_items.size()); }
-    ID3D11Buffer* const* GetSBItems() const { return sb_items.data(); }
-    uint32_t GetSBCount() const { return uint32_t(sb_items.size()); }
-    ID3D11ShaderResourceView* const* GetRRItems() const { return rr_items.data(); }
-    uint32_t GetRRCount() const { return uint32_t(rr_items.size()); }
-    ID3D11UnorderedAccessView* const* GetWRItems() const { return wr_items.data(); }
-    uint32_t GetWRCount() const { return uint32_t(wr_items.size()); }
-    ID3D11SamplerState* const* GetSamplerItems() const { return sampler_states.data(); }
-    uint32_t GetSamplerCount() const { return uint32_t(sampler_states.size()); }
-
-  public:
     const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,

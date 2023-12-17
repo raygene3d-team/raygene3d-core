@@ -262,9 +262,7 @@ namespace RayGene3D
 
     auto device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
 
-
     const auto command_buffer = device->GetCommadBuffer();
-
 
     if (type == TYPE_GRAPHIC)
     {

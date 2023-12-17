@@ -108,13 +108,6 @@ namespace RayGene3D
     PFN_vkCmdTraceRaysIndirectKHR vkCmdTraceRaysIndirectKHR{ nullptr };
 
   public:
-    //const VkPipelineLayout& GetLayout() const { return layout; }
-
-  public:
-    //const VkDescriptorSet* GetSetItems() const { return sets.data(); }
-    //uint32_t GetSetCount() const { return 1u; }
-
-  public:
     void Initialize() override;
     void Use() override;
     void Discard() override;

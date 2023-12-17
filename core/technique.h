@@ -142,7 +142,7 @@ namespace RayGene3D
     struct IAState
     {
       Topology topology{ TOPOLOGY_UNKNOWN };
-      Indexer indexer{ INDEXER_UNKNOWN };
+      Indexer indexer{ INDEXER_UNKNOWN };  //TODO: Remove
       std::vector<Attribute> attributes;
     };
 

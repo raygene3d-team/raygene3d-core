@@ -549,6 +549,41 @@ namespace RayGene3D
   {
     auto pass = reinterpret_cast<D11Pass*>(&this->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
+    
+     
+    if (pass->GetType() == Pass::TYPE_GRAPHIC)
+    {
+
+      device->GetContext()->VSSetShader(vs_shader, nullptr, 0);
+      device->GetContext()->HSSetShader(hs_shader, nullptr, 0);
+      device->GetContext()->DSSetShader(ds_shader, nullptr, 0);
+      device->GetContext()->GSSetShader(gs_shader, nullptr, 0);
+      device->GetContext()->PSSetShader(ps_shader, nullptr, 0);
+
+      device->GetContext()->IASetPrimitiveTopology(primitive_topology);
+      device->GetContext()->IASetInputLayout(input_layout);
+
+      device->GetContext()->RSSetState(raster_state);
+
+      uint32_t stencil_reference = 0xFFFFFFFF;
+      device->GetContext()->OMSetDepthStencilState(depth_state, stencil_reference);
+
+      float blend_factors[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+      uint32_t sample_mask = 0xFFFFFFFF;
+      device->GetContext()->OMSetBlendState(blend_state, blend_factors, sample_mask);
+
+      device->GetContext()->RSSetViewports(vp_items.size(), vp_items.data());
+    }
+
+    if (pass->GetType() == Pass::TYPE_COMPUTE)
+    {
+      device->GetContext()->CSSetShader(cs_shader, nullptr, 0);
+    }
+
+    for (const auto& batch : batches)
+    {
+      batch->Use();
+    }
   }
 
   void D11Technique::Discard()
