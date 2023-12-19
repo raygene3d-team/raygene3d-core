@@ -33,16 +33,23 @@ namespace RayGene3D
 {
   Batch::Batch(const std::string& name,
     Technique& technique,
+    const std::pair<const std::shared_ptr<View>*, uint32_t> ce_views,
+    const std::pair<const Batch::Command*, uint32_t>& commands,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
     const std::pair<const Batch::Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-    const std::shared_ptr<View>& aa_view)
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views)
     : Usable(name)
     , technique(technique)
+    , ce_views(ce_views.first, ce_views.first + ce_views.second)
+    , commands(commands.first, commands.first + commands.second)
+    , va_views(va_views.first, va_views.first + va_views.second)
+    , ia_views(ia_views.first, ia_views.first + ia_views.second)
     , samplers(samplers.first, samplers.first + samplers.second)
     , ub_views(ub_views.first, ub_views.first + ub_views.second)
     , sb_views(sb_views.first, sb_views.first + sb_views.second)
@@ -50,34 +57,6 @@ namespace RayGene3D
     , wi_views(wi_views.first, wi_views.first + wi_views.second)
     , rb_views(rb_views.first, rb_views.first + rb_views.second)
     , wb_views(wb_views.first, wb_views.first + wb_views.second)
-    , aa_view(aa_view)
-  {
-  }
-
-  Batch::Batch(const std::string& name,
-    Technique& technique,
-    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-    uint32_t grid_x,
-    uint32_t grid_y,
-    uint32_t grid_z)
-    : Usable(name)
-    , technique(technique)
-    , samplers(samplers.first, samplers.first + samplers.second)
-    , ub_views(ub_views.first, ub_views.first + ub_views.second)
-    , sb_views(sb_views.first, sb_views.first + sb_views.second)
-    , ri_views(ri_views.first, ri_views.first + ri_views.second)
-    , wi_views(wi_views.first, wi_views.first + wi_views.second)
-    , rb_views(rb_views.first, rb_views.first + rb_views.second)
-    , wb_views(wb_views.first, wb_views.first + wb_views.second)
-    , grid_x(grid_x)
-    , grid_y(grid_y)
-    , grid_z(grid_z)
   {
   }
 

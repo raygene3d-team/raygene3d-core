@@ -37,9 +37,6 @@ namespace RayGene3D
   class Mesh : public Usable
   {
   protected:
-    std::vector<std::shared_ptr<View>> va_views;
-    std::vector<std::shared_ptr<View>> ia_views;
-
     uint32_t va_count{ 0 };
     uint32_t va_offset{ 0 };
     uint32_t ia_count{ 0 };
@@ -54,12 +51,6 @@ namespace RayGene3D
   public:
     void SetEnabled(bool enabled) { this->enabled = enabled; }
     bool GetEnabled() const { return enabled; }
-
-  public:
-    const std::shared_ptr<View>& GetVAViewItem(uint32_t index) const { return va_views.at(index); }
-    uint32_t GetVAViewCount() const { return uint32_t(va_views.size()); }
-    const std::shared_ptr<View>& GetIAViewItem(uint32_t index) const { return ia_views.at(index); }
-    uint32_t GetIAViewCount() const { return uint32_t(ia_views.size()); }
 
   public:
     uint32_t GetVACount() const { return va_count; }
@@ -78,16 +69,10 @@ namespace RayGene3D
   public:
     Mesh(const std::string& name,
       Batch& batch,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
       uint32_t va_count,
       uint32_t va_offset,
       uint32_t ia_count,
       uint32_t ia_offset);
-    Mesh(const std::string& name,
-      Batch& batch,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views);
     virtual ~Mesh();
   };
 

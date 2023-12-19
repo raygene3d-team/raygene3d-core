@@ -166,13 +166,13 @@ namespace RayGene3D
           auto& blas_buffer = blas_buffers[index];
           auto& blas_item = blas_items[index];
 
-          const auto va_resource = reinterpret_cast<VLKResource*>(&mesh->GetVAViewItem(0)->GetResource());
+          const auto va_resource = reinterpret_cast<VLKResource*>(&va_views[0]->GetResource());
           const auto va_stride = va_resource->GetStride();
           const auto va_count = mesh->GetVACount();
           const auto va_offset = mesh->GetVAOffset();
           const auto va_address = device->GetAddress(va_resource->GetBuffer());
 
-          const auto ia_resource = reinterpret_cast<VLKResource*>(&mesh->GetIAViewItem(0)->GetResource());
+          const auto ia_resource = reinterpret_cast<VLKResource*>(&ia_views[0]->GetResource());
           const auto ia_stride = ia_resource->GetStride();
           const auto ia_count = mesh->GetIACount();
           const auto ia_offset = mesh->GetIAOffset();
@@ -880,91 +880,99 @@ namespace RayGene3D
         }
       }
 
-      auto index = 0u;
-      for (const auto& mesh : meshes)
+      {
+        const auto va_limit = 16u;
+        std::array<uint32_t, va_limit> va_strides;
+        std::array<VkDeviceSize, va_limit> va_offsets;
+        std::array<VkBuffer, va_limit> va_items;
+
+        const auto va_count = std::min(va_limit, uint32_t(va_views.size()));
+        for (uint32_t i = 0; i < va_count; ++i)
+        {
+          const auto& va_view = va_views[i];
+          if (va_view)
+          {
+            va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
+            va_offsets[i] = va_view->GetCount().offset;
+          }
+        }
+
+        if (va_count > 0)
+        {
+          vkCmdBindVertexBuffers(command_buffer, 0, va_count, va_items.data(), va_offsets.data());
+        }
+      }
+
+      {
+        const auto ia_limit = 1u;
+        std::array<VkIndexType, ia_limit> ia_formats;
+        std::array<VkDeviceSize, ia_limit> ia_offsets;
+        std::array<VkBuffer, ia_limit> ia_items;
+
+        const auto ia_count = std::min(ia_limit, uint32_t(ia_views.size()));
+        for (uint32_t i = 0; i < ia_count; ++i)
+        {
+          const auto& ia_view = ia_views[i];
+          if (ia_view)
+          {
+            ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
+            ia_offsets[i] = ia_view->GetCount().offset;
+            ia_formats[i] = technique->GetIAState().indexer
+              == Technique::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
+              : Technique::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
+              : VK_INDEX_TYPE_MAX_ENUM;
+          }
+        }
+
+        if (ia_count > 0)
+        {
+          vkCmdBindIndexBuffer(command_buffer, ia_items[0], ia_offsets[0], ia_formats[0]);
+        }
+      }
+
+
+      for (auto i = 0u; i < uint32_t(commands.size()); ++i)
       {
         if (!sets.empty())
         {
           const uint32_t offset_array[offset_limit] = {
-            offset_strides[0] * index,
-            offset_strides[1] * index,
-            offset_strides[2] * index,
-            offset_strides[3] * index,
+            offset_strides[0] * i,
+            offset_strides[1] * i,
+            offset_strides[2] * i,
+            offset_strides[3] * i,
           };
 
           vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), offset_count, offset_array);
         }
 
+        const auto va_count = commands[i].vtx_count;
+        const auto va_offset = commands[i].vtx_offset;
+        const auto ia_count = commands[i].idx_count;
+        const auto ia_offset = commands[i].idx_offset;
+        const auto inst_count = va_count; // ACtually hack!
+        const auto inst_offset = 0u;
+        vkCmdDrawIndexed(command_buffer, ia_count, inst_count, ia_offset, va_offset, inst_offset);
+      }
+
+      for(auto i = 0u; i < uint32_t(ce_views.size()); ++i)
+      {
+        if (!sets.empty())
         {
-          const auto va_limit = 16u;
-          std::array<uint32_t, va_limit> va_strides;
-          std::array<VkDeviceSize, va_limit> va_offsets;
-          std::array<VkBuffer, va_limit> va_items;
+          const uint32_t offset_array[offset_limit] = {
+            offset_strides[0] * i,
+            offset_strides[1] * i,
+            offset_strides[2] * i,
+            offset_strides[3] * i,
+          };
 
-          const auto va_count = std::min(va_limit, uint32_t(mesh->GetIAViewCount()));
-          for (uint32_t i = 0; i < va_count; ++i)
-          {
-            const auto& va_view = mesh->GetIAViewItem(i);
-            if (va_view)
-            {
-              va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
-              va_offsets[i] = va_view->GetCount().offset;
-            }
-          }
-
-          if (va_count > 0)
-          {
-            vkCmdBindVertexBuffers(command_buffer, 0, va_count, va_items.data(), va_offsets.data());
-          }
+          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), offset_count, offset_array);
         }
 
-        {
-          const auto ia_limit = 1u;
-          std::array<VkIndexType, ia_limit> ia_formats;
-          std::array<VkDeviceSize, ia_limit> ia_offsets;
-          std::array<VkBuffer, ia_limit> ia_items;
-
-          const auto ia_count = std::min(ia_limit, uint32_t(mesh->GetIAViewCount()));
-          for (uint32_t i = 0; i < ia_count; ++i)
-          {
-            const auto& ia_view = mesh->GetIAViewItem(i);
-            if (ia_view)
-            {
-              ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
-              ia_offsets[i] = ia_view->GetCount().offset;
-              ia_formats[i] = technique->GetIAState().indexer
-                == Technique::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
-                : Technique::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
-                : VK_INDEX_TYPE_MAX_ENUM;
-            }
-          }
-
-          if (ia_count > 0)
-          {
-            vkCmdBindIndexBuffer(command_buffer, ia_items[0], ia_offsets[0], ia_formats[0]);
-          }
-        }
-
-        if (aa_view)
-        {
-          const auto aa_buffer = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
-          const auto aa_stride = uint32_t(sizeof(Argument));
-          const auto aa_draws = 1u;
-          const auto aa_offset = (index + aa_view->GetCount().offset) * aa_stride + 0u * 4u;
-          vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
-        }
-        else
-        {
-          const auto va_count = mesh->GetVACount();
-          const auto va_offset = mesh->GetVAOffset();
-          const auto ia_count = mesh->GetIACount();
-          const auto ia_offset = mesh->GetIAOffset();
-          const auto inst_count = 1u;
-          const auto inst_offset = 0u;
-          vkCmdDrawIndexed(command_buffer, ia_count, inst_count, ia_offset, va_offset, inst_offset);
-        }
-
-        ++index;
+        const auto aa_buffer = (reinterpret_cast<VLKResource*>(&ce_views[i]->GetResource()))->GetBuffer();
+        const auto aa_stride = uint32_t(sizeof(Command));
+        const auto aa_draws = 1u;
+        const auto aa_offset = ce_views[i]->GetCount().offset + 0u * 4u;
+        vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
       }
     }
 
@@ -978,16 +986,20 @@ namespace RayGene3D
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, sets.size(), sets.data(), 0, nullptr);
       }
 
-      if (aa_view)
+      for (auto i = 0u; i < uint32_t(commands.size()); ++i)
       {
-        const auto aa_buffer = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
-        const auto aa_stride = uint32_t(sizeof(Argument));
-        const auto aa_offset = (0u + aa_view->GetCount().offset) * aa_stride + 5u * 4u;
-        vkCmdDispatchIndirect(command_buffer, aa_buffer, aa_offset);
+        const auto size_x = commands[i].grid_x;
+        const auto size_y = commands[i].grid_y;
+        const auto size_z = commands[i].grid_z;
+        vkCmdDispatch(command_buffer, size_x, size_y, size_z);
       }
-      else
+
+      for (auto i = 0u; i < uint32_t(ce_views.size()); ++i)
       {
-        vkCmdDispatch(command_buffer, grid_x, grid_y, grid_z);
+        const auto aa_buffer = (reinterpret_cast<VLKResource*>(&ce_views[i]->GetResource()))->GetBuffer();
+        const auto aa_stride = uint32_t(sizeof(Command));
+        const auto aa_offset = ce_views[i]->GetCount().offset + 5u * 4u;
+        vkCmdDispatchIndirect(command_buffer, aa_buffer, aa_offset);
       }
     }
 
@@ -1003,19 +1015,7 @@ namespace RayGene3D
 
       const auto extent_x = device->GetExtentX();
       const auto extent_y = device->GetExtentY();
-
-      if (aa_view)
-      {
-        const auto aa_buffer = (reinterpret_cast<VLKResource*>(&aa_view->GetResource()))->GetBuffer();
-        const auto aa_stride = uint32_t(sizeof(Argument));
-        const auto aa_offset = (0 + aa_view->GetCount().offset) * aa_stride + 5u * 4u;
-        VkDeviceAddress aa_address = 0;
-        //vkCmdTraceRaysIndirectKHR(command_buffer, &rgen_region, &miss_region, &xhit_region, &call_region, aa_address);
-      }
-      else
-      {
-        vkCmdTraceRaysKHR(command_buffer, &rgen_region, &miss_region, &xhit_region, &call_region, extent_x, extent_y, 1);
-      }
+      vkCmdTraceRaysKHR(command_buffer, &rgen_region, &miss_region, &xhit_region, &call_region, extent_x, extent_y, 1);
     }
   }
 
@@ -1119,32 +1119,19 @@ namespace RayGene3D
 
   VLKBatch::VLKBatch(const std::string& name,
     Technique& technique,
+    const std::pair<const std::shared_ptr<View>*, uint32_t> ce_views,
+    const std::pair<const Batch::Command*, uint32_t>& commands,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
     const std::pair<const Batch::Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-    const std::shared_ptr<View>& aa_view)
-    : Batch(name, technique, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, aa_view)
-  {
-    VLKBatch::Initialize();
-  }
-
-  VLKBatch::VLKBatch(const std::string& name,
-    Technique& technique,
-    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-    uint32_t grid_x,
-    uint32_t grid_y,
-    uint32_t grid_z)
-    : Batch(name, technique, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, grid_x, grid_y, grid_z)
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
+  )
+    : Batch(name, technique, ce_views, commands, va_views, ia_views, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
   {
     VLKBatch::Initialize();
   }

@@ -317,25 +317,33 @@ namespace RayGene3D
 
   public:
     virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::shared_ptr<View>& aa_view) = 0;
+      const std::shared_ptr<View>& aa_view,
+      const std::pair<const Batch::Subset*, uint32_t>& subsets = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views = {},
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+    ) = 0;
     virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
       uint32_t grid_x,
       uint32_t grid_y,
-      uint32_t grid_z) = 0;
+      uint32_t grid_z,
+      const std::pair<const Batch::Subset*, uint32_t>& subsets = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views = {},
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+    ) = 0;
     void VisitBatch(std::function<void(const std::shared_ptr<Batch>&)> visitor) { for (const auto& batch : batches) visitor(batch); }
     void DestroyBatch(const std::shared_ptr<Batch>& batch) { batches.remove(batch); }
   

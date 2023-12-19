@@ -114,45 +114,29 @@ namespace RayGene3D
 
   public:
     const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
       uint32_t va_count,
       uint32_t va_offset,
       uint32_t ia_count,
       uint32_t ia_offset) override
     {
-      return meshes.emplace_back(new VLKMesh(name, *this, va_views, ia_views, va_count, va_offset, ia_count, ia_offset));
-    }
-    const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views) override
-    {
-      return meshes.emplace_back(new VLKMesh(name, *this, va_views, ia_views));
+      return meshes.emplace_back(new VLKMesh(name, *this, va_count, va_offset, ia_count, ia_offset));
     }
 
   public:
     VLKBatch(const std::string& name,
       Technique& technique,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::shared_ptr<View>& aa_view);
-    VLKBatch(const std::string& name,
-      Technique& technique,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      uint32_t grid_x,
-      uint32_t grid_y,
-      uint32_t grid_z);
+      const std::pair<const std::shared_ptr<View>*, uint32_t> ce_views,
+      const std::pair<const Batch::Command*, uint32_t>& commands,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views = {},
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+    );
     virtual ~VLKBatch();
   };
 }

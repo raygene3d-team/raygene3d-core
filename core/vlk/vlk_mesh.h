@@ -52,16 +52,10 @@ namespace RayGene3D
   public:
     VLKMesh(const std::string& name,
       Batch& batch,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
       uint32_t va_count,
       uint32_t va_offset,
       uint32_t ia_count,
       uint32_t ia_offset);
-    VLKMesh(const std::string& name,
-      Batch& batch,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views);
     virtual ~VLKMesh();
   };
 }

@@ -87,7 +87,7 @@ namespace RayGene3D
     View(const std::string& name,
       Resource& resource,
       Usage usage,
-      const View::Range& bytes = Range{0, uint32_t(-1)});
+      const View::Range& bytes = Range{ 0, uint32_t(-1) });
     View(const std::string& name,
       Resource& resource,
       Usage usage,
