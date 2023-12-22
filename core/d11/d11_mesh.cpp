@@ -45,6 +45,51 @@ namespace RayGene3D
 
   void D11Mesh::Use()
   {
+    auto batch = reinterpret_cast<D11Batch*>(&this->GetBatch());
+    auto technique = reinterpret_cast<D11Technique*>(&batch->GetTechnique());
+    auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
+    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
+
+
+    if (pass->GetType() == Pass::TYPE_GRAPHIC)
+    {
+      const uint32_t va_limit = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+      uint32_t va_strides[va_limit]{ 0 };
+      uint32_t va_offsets[va_limit]{ 0 };
+      ID3D11Buffer* va_items[va_limit]{ nullptr };
+      const uint32_t va_count = std::min(va_limit, uint32_t(vtx_views.size()));
+      for (uint32_t i = 0; i < va_count; ++i)
+      {
+        const auto& va_view = vtx_views[i];
+        if (va_view)
+        {
+          va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
+          va_offsets[i] = va_view->GetCount().offset;
+          va_strides[i] = technique->GetStrides().at(i);
+        }
+      }
+      device->GetContext()->IASetVertexBuffers(0, va_count, va_items, va_strides, va_offsets);
+
+      const uint32_t ia_limit = 1;
+      uint32_t ia_offsets[ia_limit]{ 0 };
+      DXGI_FORMAT ia_formats[ia_limit]{ DXGI_FORMAT_UNKNOWN };
+      ID3D11Buffer* ia_items[ia_limit]{ nullptr };
+      const uint32_t ia_count = std::min(ia_limit, uint32_t(idx_views.size()));
+      for (uint32_t i = 0; i < ia_count; ++i)
+      {
+        const auto& ia_view = idx_views[i];
+        if (ia_view)
+        {
+          ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
+          ia_offsets[i] = ia_view->GetCount().offset;
+          ia_formats[i] = technique->GetIAState().indexer
+            == Technique::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
+            : Technique::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
+            : DXGI_FORMAT_UNKNOWN;
+        }
+      }
+      device->GetContext()->IASetIndexBuffer(ia_items[0], ia_formats[0], ia_offsets[0]);
+    }
   }
 
   void D11Mesh::Discard()
@@ -53,11 +98,10 @@ namespace RayGene3D
 
   D11Mesh::D11Mesh(const std::string& name,
     Batch& batch,
-    uint32_t va_count,
-    uint32_t va_offset,
-    uint32_t ia_count,
-    uint32_t ia_offset)
-    : Mesh(name, batch, va_count, va_offset, ia_count, ia_offset)
+    const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views)
+    : Mesh(name, batch, subsets, vtx_views, idx_views)
   {
     D11Mesh::Initialize();
   }

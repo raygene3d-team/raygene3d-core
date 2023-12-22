@@ -128,7 +128,7 @@ namespace RayGene3D
 
     switch (usage)
     {
-    case USAGE_SHADER_RESOURCE:
+    case USAGE_SHADER_READ:
     {
       D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
       switch (resource->GetType())
@@ -353,7 +353,7 @@ namespace RayGene3D
       break;
     }
 
-    case USAGE_UNORDERED_ACCESS:
+    case USAGE_SHADER_WRITE:
     {
       auto uav = reinterpret_cast<ID3D11UnorderedAccessView*>(view);
       BLAST_ASSERT(S_OK == device->GetDevice()->CreateUnorderedAccessView(resource->GetResource(), nullptr, reinterpret_cast<ID3D11UnorderedAccessView**>(&view)));

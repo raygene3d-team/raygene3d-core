@@ -40,19 +40,6 @@ namespace RayGene3D
     Technique& technique;
 
   public:
-    struct Command
-    {
-      uint32_t idx_count{ 0 };
-      uint32_t vtx_count{ 0 };
-      uint32_t idx_offset{ 0 };
-      uint32_t vtx_offset{ 0 };
-      uint32_t padding{ 0 };
-      uint32_t grid_x{ 0 };
-      uint32_t grid_y{ 0 };
-      uint32_t grid_z{ 0 };
-    };
-
-  public:
     struct Sampler
     {
       enum Filtering
@@ -96,16 +83,6 @@ namespace RayGene3D
     };
 
   protected:
-    std::vector<std::shared_ptr<View>> ec_views; //entitiy commands 
-
-  protected:
-    std::vector<Command> commands;
-
-  protected:
-    std::vector<std::shared_ptr<View>> va_views; //vertex arrays
-    std::vector<std::shared_ptr<View>> ia_views; //index arrays
-
-  protected:
     std::vector<Sampler> samplers;
 
   protected:
@@ -128,10 +105,10 @@ namespace RayGene3D
 
   public:
     virtual const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
-      uint32_t va_count,
-      uint32_t va_offset,
-      uint32_t ia_count,
-      uint32_t ia_offset) = 0;
+      const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+    ) = 0;
     void VisitMesh(std::function<void(const std::shared_ptr<Mesh>&)> visitor) { for (const auto& mesh : meshes) visitor(mesh); }
     void DestroyMesh(const std::shared_ptr<Mesh>& mesh) { meshes.remove(mesh); }
 
@@ -143,10 +120,6 @@ namespace RayGene3D
   public:
     Batch(const std::string& name,
       Technique& technique,
-      const std::pair<const std::shared_ptr<View>*, uint32_t> ce_views,
-      const std::pair<const Batch::Command*, uint32_t>& commands,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views = {},
       const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},

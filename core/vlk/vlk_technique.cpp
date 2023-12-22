@@ -767,22 +767,22 @@ namespace RayGene3D
     multisample_state.alphaToOneEnable = VK_FALSE;
 
     // color blend
-    const auto get_argument = [](Argument argument)
+    const auto get_operand = [](Operand operand)
     {
-      switch (argument)
+      switch (operand)
       {
-      default:                          return VK_BLEND_FACTOR_ZERO;
-      case ARGUMENT_ZERO:               return VK_BLEND_FACTOR_ZERO;
-      case ARGUMENT_ONE:                return VK_BLEND_FACTOR_ONE;
-      case ARGUMENT_SRC_COLOR:          return VK_BLEND_FACTOR_SRC_COLOR;
-      case ARGUMENT_INV_SRC_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-      case ARGUMENT_SRC_ALPHA:          return VK_BLEND_FACTOR_SRC_ALPHA;
-      case ARGUMENT_INV_SRC_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-      case ARGUMENT_DEST_ALPHA:         return VK_BLEND_FACTOR_DST_ALPHA;
-      case ARGUMENT_INV_DEST_ALPHA:     return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-      case ARGUMENT_DEST_COLOR:         return VK_BLEND_FACTOR_DST_COLOR;
-      case ARGUMENT_INV_DEST_COLOR:     return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-      case ARGUMENT_SRC_ALPHA_SAT:      return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+      default:                         return VK_BLEND_FACTOR_ZERO;
+      case OPERAND_ZERO:               return VK_BLEND_FACTOR_ZERO;
+      case OPERAND_ONE:                return VK_BLEND_FACTOR_ONE;
+      case OPERAND_SRC_COLOR:          return VK_BLEND_FACTOR_SRC_COLOR;
+      case OPERAND_INV_SRC_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+      case OPERAND_SRC_ALPHA:          return VK_BLEND_FACTOR_SRC_ALPHA;
+      case OPERAND_INV_SRC_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      case OPERAND_DEST_ALPHA:         return VK_BLEND_FACTOR_DST_ALPHA;
+      case OPERAND_INV_DEST_ALPHA:     return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+      case OPERAND_DEST_COLOR:         return VK_BLEND_FACTOR_DST_COLOR;
+      case OPERAND_INV_DEST_COLOR:     return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+      case OPERAND_SRC_ALPHA_SAT:      return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
       }
     };
 
@@ -805,11 +805,11 @@ namespace RayGene3D
     {
       colorblend_attachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
       colorblend_attachments[i].blendEnable = om_state.target_blends[i].blend_enabled ? VK_TRUE : VK_FALSE;
-      colorblend_attachments[i].srcColorBlendFactor = get_argument(om_state.target_blends[i].src_color);
-      colorblend_attachments[i].dstColorBlendFactor = get_argument(om_state.target_blends[i].dst_color);
+      colorblend_attachments[i].srcColorBlendFactor = get_operand(om_state.target_blends[i].src_color);
+      colorblend_attachments[i].dstColorBlendFactor = get_operand(om_state.target_blends[i].dst_color);
       colorblend_attachments[i].colorBlendOp = get_operation(om_state.target_blends[i].blend_color);
-      colorblend_attachments[i].srcAlphaBlendFactor = get_argument(om_state.target_blends[i].src_alpha);
-      colorblend_attachments[i].dstAlphaBlendFactor = get_argument(om_state.target_blends[i].dst_alpha);
+      colorblend_attachments[i].srcAlphaBlendFactor = get_operand(om_state.target_blends[i].src_alpha);
+      colorblend_attachments[i].dstAlphaBlendFactor = get_operand(om_state.target_blends[i].dst_alpha);
       colorblend_attachments[i].alphaBlendOp = get_operation(om_state.target_blends[i].blend_alpha);
     }
 

@@ -33,10 +33,6 @@ namespace RayGene3D
 {
   Batch::Batch(const std::string& name,
     Technique& technique,
-    const std::pair<const std::shared_ptr<View>*, uint32_t> ce_views,
-    const std::pair<const Batch::Command*, uint32_t>& commands,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views,
     const std::pair<const Batch::Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
@@ -46,10 +42,6 @@ namespace RayGene3D
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views)
     : Usable(name)
     , technique(technique)
-    , ce_views(ce_views.first, ce_views.first + ce_views.second)
-    , commands(commands.first, commands.first + commands.second)
-    , va_views(va_views.first, va_views.first + va_views.second)
-    , ia_views(ia_views.first, ia_views.first + ia_views.second)
     , samplers(samplers.first, samplers.first + samplers.second)
     , ub_views(ub_views.first, ub_views.first + ub_views.second)
     , sb_views(sb_views.first, sb_views.first + sb_views.second)

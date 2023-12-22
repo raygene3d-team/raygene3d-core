@@ -256,22 +256,22 @@ namespace RayGene3D
     DSState ds_state;
     
   public:
-    enum Argument
+    enum Operand
     {
-      ARGUMENT_UNKNOWN = 0,
-      ARGUMENT_ZERO = 1,
-      ARGUMENT_ONE = 2,
-      ARGUMENT_SRC_COLOR = 3,
-      ARGUMENT_INV_SRC_COLOR = 4,
-      ARGUMENT_SRC_ALPHA = 5,
-      ARGUMENT_INV_SRC_ALPHA = 6,
-      ARGUMENT_DEST_ALPHA = 7,
-      ARGUMENT_INV_DEST_ALPHA = 8,
-      ARGUMENT_DEST_COLOR = 9,
-      ARGUMENT_INV_DEST_COLOR = 10,
-      ARGUMENT_SRC_ALPHA_SAT = 11,
-      ARGUMENT_BLEND_FACTOR = 14,
-      ARGUMENT_INV_BLEND_FACTOR = 15,
+      OPERAND_UNKNOWN = 0,
+      OPERAND_ZERO = 1,
+      OPERAND_ONE = 2,
+      OPERAND_SRC_COLOR = 3,
+      OPERAND_INV_SRC_COLOR = 4,
+      OPERAND_SRC_ALPHA = 5,
+      OPERAND_INV_SRC_ALPHA = 6,
+      OPERAND_DEST_ALPHA = 7,
+      OPERAND_INV_DEST_ALPHA = 8,
+      OPERAND_DEST_COLOR = 9,
+      OPERAND_INV_DEST_COLOR = 10,
+      OPERAND_SRC_ALPHA_SAT = 11,
+      OPERAND_BLEND_FACTOR = 14,
+      OPERAND_INV_BLEND_FACTOR = 15,
     };
 
     enum Operation
@@ -287,11 +287,11 @@ namespace RayGene3D
     struct Blend
     {
       bool blend_enabled{ false };
-      Argument src_color{ ARGUMENT_ONE };
-      Argument dst_color{ ARGUMENT_ZERO };
+      Operand src_color{ OPERAND_ONE };
+      Operand dst_color{ OPERAND_ZERO };
       Operation blend_color{ OPERATION_ADD };
-      Argument src_alpha{ ARGUMENT_ONE };
-      Argument dst_alpha{ ARGUMENT_ZERO };
+      Operand src_alpha{ OPERAND_ONE };
+      Operand dst_alpha{ OPERAND_ZERO };
       Operation blend_alpha{ OPERATION_ADD };
       uint8_t write_mask{ 0xF };
     };
@@ -317,25 +317,6 @@ namespace RayGene3D
 
   public:
     virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
-      const std::shared_ptr<View>& aa_view,
-      const std::pair<const Batch::Subset*, uint32_t>& subsets = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views = {},
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
-    ) = 0;
-    virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
-      uint32_t grid_x,
-      uint32_t grid_y,
-      uint32_t grid_z,
-      const std::pair<const Batch::Subset*, uint32_t>& subsets = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views = {},
       const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},

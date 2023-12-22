@@ -36,11 +36,61 @@ namespace RayGene3D
 
   class Mesh : public Usable
   {
+  public:
+    using SBOffset = std::optional<std::array<uint32_t, 4>>;
+    using PushData = std::optional<std::array<uint8_t, 128>>;
+
+  public:
+    //struct Indirect
+    //{
+    //  uint32_t idx_count{ 0 };
+    //  uint32_t ins_count{ 0 };
+    //  uint32_t idx_offset{ 0 };
+    //  uint32_t vtx_offset{ 0 };
+    //  uint32_t padding{ 0 };
+    //  uint32_t grid_x{ 0 };
+    //  uint32_t grid_y{ 0 };
+    //  uint32_t grid_z{ 0 };
+    //};
+
+  public:
+    struct Graphic
+    {
+      uint32_t vtx_offset{ 0 };
+      uint32_t vtx_count{ 0 };
+      uint32_t idx_offset{ 0 };
+      uint32_t idx_count{ 0 };
+    };
+
+    struct Compute
+    {
+      uint32_t grid_x{ 0 };
+      uint32_t grid_y{ 0 };
+      uint32_t grid_z{ 0 };
+      uint32_t padding{ 0 };
+    };
+
+  public:
+    union Arguments
+    {
+      Graphic graphic;
+      Compute compute;
+    };
+
+  public:
+    struct Subset
+    {
+      std::shared_ptr<View> arg_view;
+      Arguments argument;
+      SBOffset sb_offset;
+      PushData push_data;
+    };
+
   protected:
-    uint32_t va_count{ 0 };
-    uint32_t va_offset{ 0 };
-    uint32_t ia_count{ 0 };
-    uint32_t ia_offset{ 0 };
+    std::vector<std::shared_ptr<View>> vtx_views;
+    std::vector<std::shared_ptr<View>> idx_views;
+
+    std::vector<Subset> subsets;
 
   protected:
     bool enabled{ false };
@@ -53,10 +103,7 @@ namespace RayGene3D
     bool GetEnabled() const { return enabled; }
 
   public:
-    uint32_t GetVACount() const { return va_count; }
-    uint32_t GetVAOffset() const { return va_offset; }
-    uint32_t GetIACount() const { return ia_count; }
-    uint32_t GetIAOffset() const { return ia_offset; }
+    std::pair<const Subset*, uint32_t> GetSubsets() const { return { subsets.data(), uint32_t(subsets.size()) }; }
 
   public:
     Batch& GetBatch() { return batch; }
@@ -69,10 +116,10 @@ namespace RayGene3D
   public:
     Mesh(const std::string& name,
       Batch& batch,
-      uint32_t va_count,
-      uint32_t va_offset,
-      uint32_t ia_count,
-      uint32_t ia_offset);
+      const std::pair<const Subset*, uint32_t>& subsets,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+    );
     virtual ~Mesh();
   };
 

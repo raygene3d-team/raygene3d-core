@@ -33,14 +33,14 @@ namespace RayGene3D
 {
   Mesh::Mesh(const std::string& name,
     Batch& batch,
-    uint32_t va_count, uint32_t va_offset,
-    uint32_t ia_count, uint32_t ia_offset)
+    const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views)
     : Usable(name)
     , batch(batch)
-    , va_count(va_count)
-    , va_offset(va_offset)
-    , ia_count(ia_count)
-    , ia_offset(ia_offset)
+    , subsets(subsets.first, subsets.first + subsets.second)
+    , vtx_views(vtx_views.first, vtx_views.first + vtx_views.second)
+    , idx_views(idx_views.first, idx_views.first + idx_views.second)
   {
   }
   

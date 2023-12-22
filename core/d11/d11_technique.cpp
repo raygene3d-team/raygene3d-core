@@ -431,24 +431,24 @@ namespace RayGene3D
 
 
 
-        const auto get_argument = [](Argument argument)
+        const auto get_operand = [](Operand operand)
         {
-          switch (argument)
+          switch (operand)
           {
           default:                          return D3D11_BLEND_ZERO;
-          case ARGUMENT_ZERO:               return D3D11_BLEND_ZERO;
-          case ARGUMENT_ONE:                return D3D11_BLEND_ONE;
-          case ARGUMENT_SRC_COLOR:          return D3D11_BLEND_SRC_COLOR;
-          case ARGUMENT_INV_SRC_COLOR:      return D3D11_BLEND_INV_SRC_COLOR;
-          case ARGUMENT_SRC_ALPHA:          return D3D11_BLEND_SRC_ALPHA;
-          case ARGUMENT_INV_SRC_ALPHA:      return D3D11_BLEND_INV_SRC_ALPHA;
-          case ARGUMENT_DEST_ALPHA:         return D3D11_BLEND_DEST_ALPHA;
-          case ARGUMENT_INV_DEST_ALPHA:     return D3D11_BLEND_INV_DEST_ALPHA;
-          case ARGUMENT_DEST_COLOR:         return D3D11_BLEND_DEST_COLOR;
-          case ARGUMENT_INV_DEST_COLOR:     return D3D11_BLEND_INV_DEST_COLOR;
-          case ARGUMENT_SRC_ALPHA_SAT:      return D3D11_BLEND_SRC_ALPHA_SAT;
-          case ARGUMENT_BLEND_FACTOR:       return D3D11_BLEND_BLEND_FACTOR;
-          case ARGUMENT_INV_BLEND_FACTOR:   return D3D11_BLEND_INV_BLEND_FACTOR;
+          case OPERAND_ZERO:               return D3D11_BLEND_ZERO;
+          case OPERAND_ONE:                return D3D11_BLEND_ONE;
+          case OPERAND_SRC_COLOR:          return D3D11_BLEND_SRC_COLOR;
+          case OPERAND_INV_SRC_COLOR:      return D3D11_BLEND_INV_SRC_COLOR;
+          case OPERAND_SRC_ALPHA:          return D3D11_BLEND_SRC_ALPHA;
+          case OPERAND_INV_SRC_ALPHA:      return D3D11_BLEND_INV_SRC_ALPHA;
+          case OPERAND_DEST_ALPHA:         return D3D11_BLEND_DEST_ALPHA;
+          case OPERAND_INV_DEST_ALPHA:     return D3D11_BLEND_INV_DEST_ALPHA;
+          case OPERAND_DEST_COLOR:         return D3D11_BLEND_DEST_COLOR;
+          case OPERAND_INV_DEST_COLOR:     return D3D11_BLEND_INV_DEST_COLOR;
+          case OPERAND_SRC_ALPHA_SAT:      return D3D11_BLEND_SRC_ALPHA_SAT;
+          case OPERAND_BLEND_FACTOR:       return D3D11_BLEND_BLEND_FACTOR;
+          case OPERAND_INV_BLEND_FACTOR:   return D3D11_BLEND_INV_BLEND_FACTOR;
           }
         };
 
@@ -472,11 +472,11 @@ namespace RayGene3D
         for (uint32_t i = 0; i < std::min(uint32_t(om_state.target_blends.size()), 8u); ++i)
         {
           blend_desc.RenderTarget[i].BlendEnable = om_state.target_blends[i].blend_enabled;
-          blend_desc.RenderTarget[i].SrcBlend = get_argument(om_state.target_blends[i].src_color);
-          blend_desc.RenderTarget[i].DestBlend = get_argument(om_state.target_blends[i].dst_color);
+          blend_desc.RenderTarget[i].SrcBlend = get_operand(om_state.target_blends[i].src_color);
+          blend_desc.RenderTarget[i].DestBlend = get_operand(om_state.target_blends[i].dst_color);
           blend_desc.RenderTarget[i].BlendOp = get_operation(om_state.target_blends[i].blend_color);
-          blend_desc.RenderTarget[i].SrcBlendAlpha = get_argument(om_state.target_blends[i].src_alpha);
-          blend_desc.RenderTarget[i].DestBlendAlpha = get_argument(om_state.target_blends[i].dst_alpha);
+          blend_desc.RenderTarget[i].SrcBlendAlpha = get_operand(om_state.target_blends[i].src_alpha);
+          blend_desc.RenderTarget[i].DestBlendAlpha = get_operand(om_state.target_blends[i].dst_alpha);
           blend_desc.RenderTarget[i].BlendOpAlpha = get_operation(om_state.target_blends[i].blend_alpha);
           blend_desc.RenderTarget[i].RenderTargetWriteMask = om_state.target_blends[i].write_mask;
         }

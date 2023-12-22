@@ -49,12 +49,12 @@ namespace RayGene3D
 
   public:
     const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
-      uint32_t va_count,
-      uint32_t va_offset,
-      uint32_t ia_count,
-      uint32_t ia_offset) override
+      const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+    ) override
     {
-      return meshes.emplace_back(new D11Mesh(name, *this, va_count, va_offset, ia_count, ia_offset));
+      return meshes.emplace_back(new D11Mesh(name, *this, subsets, vtx_views, idx_views));
     }
 
   public:
@@ -65,10 +65,6 @@ namespace RayGene3D
   public:
     D11Batch(const std::string& name,
       Technique& technique,
-      const std::pair<const std::shared_ptr<View>*, uint32_t> ce_views,
-      const std::pair<const Batch::Command*, uint32_t>& commands,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views = {},
       const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},

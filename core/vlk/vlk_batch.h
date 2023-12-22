@@ -67,39 +67,11 @@ namespace RayGene3D
     std::array<VkDescriptorSet, 1> sets;
 
   protected:
+    std::vector<VkAccelerationStructureKHR> as_items;
+
+  protected:
     std::vector<VkPushConstantRange> constants; //TODO: ???
     std::vector<VkDescriptorSetLayout> tables;
-
-  protected:
-    //struct RTXItem
-    //{
-    //  VkDeviceMemory memory{ nullptr };
-    //  VkBuffer buffer{ nullptr };
-    //  VkAccelerationStructureKHR{ nullptr };
-    //};
-    //std::vector<RTXItem> blas_items;
-    //std::vector<RTXItem> tlas_items;
-
-    std::vector<VkDeviceMemory> blas_memories;
-    std::vector<VkBuffer> blas_buffers;
-    std::vector<VkAccelerationStructureKHR> blas_items;
-
-    VkDeviceMemory tlas_memory{ nullptr };
-    VkBuffer tlas_buffer{ nullptr };
-    VkAccelerationStructureKHR tlas_item{ nullptr };
-
-    VkDeviceMemory instances_memory{ nullptr };
-    VkBuffer instances_buffer{ nullptr };
-
-    VkCommandBuffer command_buffer{ nullptr };
-    VkFence fence{ nullptr };
-
-  protected:
-    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
-    PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
-    PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };
-    PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR{ nullptr };
-    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
 
   protected:
     PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
@@ -114,21 +86,17 @@ namespace RayGene3D
 
   public:
     const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
-      uint32_t va_count,
-      uint32_t va_offset,
-      uint32_t ia_count,
-      uint32_t ia_offset) override
+      const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+    ) override
     {
-      return meshes.emplace_back(new VLKMesh(name, *this, va_count, va_offset, ia_count, ia_offset));
+      return meshes.emplace_back(new VLKMesh(name, *this, subsets, vtx_views, idx_views));
     }
 
   public:
     VLKBatch(const std::string& name,
       Technique& technique,
-      const std::pair<const std::shared_ptr<View>*, uint32_t> ce_views,
-      const std::pair<const Batch::Command*, uint32_t>& commands,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& va_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ia_views = {},
       const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},

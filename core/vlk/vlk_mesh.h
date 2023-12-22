@@ -44,6 +44,40 @@ namespace RayGene3D
 {
   class VLKMesh : public Mesh
   {
+  protected:
+    //struct RTXItem
+    //{
+    //  VkDeviceMemory memory{ nullptr };
+    //  VkBuffer buffer{ nullptr };
+    //  VkAccelerationStructureKHR{ nullptr };
+    //};
+    //std::vector<RTXItem> blas_items;
+    //std::vector<RTXItem> tlas_items;
+
+    std::vector<VkDeviceMemory> blas_memories;
+    std::vector<VkBuffer> blas_buffers;
+    std::vector<VkAccelerationStructureKHR> blas_items;
+
+    VkDeviceMemory tlas_memory{ nullptr };
+    VkBuffer tlas_buffer{ nullptr };
+    VkAccelerationStructureKHR tlas_item{ nullptr };
+
+    VkDeviceMemory instances_memory{ nullptr };
+    VkBuffer instances_buffer{ nullptr };
+
+    VkCommandBuffer command_buffer{ nullptr };
+    VkFence fence{ nullptr };
+
+  protected:
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
+    PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
+    PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };
+    PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR{ nullptr };
+    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
+
+  public:
+    VkAccelerationStructureKHR GetTLAS() const { return tlas_item; }
+
   public:
     void Initialize() override;
     void Use() override;
@@ -52,10 +86,10 @@ namespace RayGene3D
   public:
     VLKMesh(const std::string& name,
       Batch& batch,
-      uint32_t va_count,
-      uint32_t va_offset,
-      uint32_t ia_count,
-      uint32_t ia_offset);
+      const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+    );
     virtual ~VLKMesh();
   };
 }
