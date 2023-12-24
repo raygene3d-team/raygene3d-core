@@ -639,9 +639,15 @@ namespace RayGene3D
 
           if (!sb_views.empty())
           {
-            const auto& dummy = std::array<uint32_t, 4>{};
-            const auto& offsets = subset.sb_offset ? subset.sb_offset.value() : dummy;
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), offsets.size(), offsets.data());
+            const auto sb_limit = 4u;
+            const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
+
+            uint32_t sb_offsets[sb_limit] = {};
+            for (uint32_t i = 0; i < sb_count; ++i)
+            {
+              sb_offsets[i] = subset.sb_offset ? subset.sb_offset.value()[i] : 0u;
+            }
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), sb_count, sb_offsets);
           }
 
           if (subset.arg_view)
@@ -685,9 +691,15 @@ namespace RayGene3D
 
           if (!sb_views.empty())
           {
-            const auto& dummy = std::array<uint32_t, 4>{};
-            const auto& offsets = subset.sb_offset ? subset.sb_offset.value() : dummy;
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, sets.size(), sets.data(), offsets.size(), offsets.data());
+            const auto sb_limit = 4u;
+            const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
+
+            uint32_t sb_offsets[sb_limit] = {};
+            for (uint32_t i = 0; i < sb_count; ++i)
+            {
+              sb_offsets[i] = subset.sb_offset ? subset.sb_offset.value()[i] : 0u;
+            }
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, sets.size(), sets.data(), sb_count, sb_offsets);
           }
 
           if (subset.arg_view)
@@ -745,6 +757,12 @@ namespace RayGene3D
     { 
       vkDestroyPipelineLayout(device->GetDevice(), layout, nullptr);
       layout = nullptr;
+    }
+
+    if (pipeline)
+    {
+      vkDestroyPipeline(device->GetDevice(), pipeline, nullptr);
+      pipeline = nullptr;
     }
 
     for (auto& table : tables)
