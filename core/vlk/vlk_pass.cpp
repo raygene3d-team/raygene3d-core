@@ -118,13 +118,6 @@ namespace RayGene3D
   {
     auto device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
 
-    if (techniques.empty()) return;
-
-  	if (device->GetRTXSupported())
-    {
-      
-    }
-
     if (type == TYPE_GRAPHIC)
     {
       {
@@ -151,8 +144,8 @@ namespace RayGene3D
           rt_attachment_descs[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
           rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
-          extent_x = std::max(extent_x, rt_view->GetResource().GetSizeX());
-          extent_y = std::max(extent_y, rt_view->GetResource().GetSizeY());
+          //extent_x = std::max(extent_x, rt_view->GetResource().GetSizeX());
+          //extent_y = std::max(extent_y, rt_view->GetResource().GetSizeY());
           layers = std::max(rt_view->GetCount().length == -1 ? 1 : rt_view->GetCount().length, layers);
         }
 
@@ -177,8 +170,8 @@ namespace RayGene3D
           ds_attachment_descs[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
           ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
-          extent_x = std::max(extent_x, ds_view->GetResource().GetSizeX());
-          extent_y = std::max(extent_y, ds_view->GetResource().GetSizeY());
+          //extent_x = std::max(extent_x, ds_view->GetResource().GetSizeX());
+          //extent_y = std::max(extent_y, ds_view->GetResource().GetSizeY());
           layers = std::max(ds_view->GetCount().length == -1 ? 1 : ds_view->GetCount().length, layers);
         }
 
@@ -329,9 +322,12 @@ namespace RayGene3D
   VLKPass::VLKPass(const std::string& name,
     Device& device,
     Pass::Type type,
+    uint32_t extent_x,
+    uint32_t extent_y,
+    uint32_t extent_z,
     const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
     const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
-    : Pass(name, device, type, rt_attachments, ds_attachments)
+    : Pass(name, device, type, extent_x, extent_y, extent_z, rt_attachments, ds_attachments)
   {
     VLKPass:Initialize();
   }

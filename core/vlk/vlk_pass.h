@@ -57,8 +57,8 @@ namespace RayGene3D
     VkRenderPass renderpass{ nullptr };
 
   protected:
-    uint32_t extent_x{ 0 };
-    uint32_t extent_y{ 0 };
+    //uint32_t extent_x{ 0 };
+    //uint32_t extent_y{ 0 };
     uint32_t layers{ 1 };
     // Perhaps we should set these parameters externally and validate during initialize
 
@@ -91,6 +91,9 @@ namespace RayGene3D
     VLKPass(const std::string& name,
       Device& device,
       Pass::Type type,
+      uint32_t extent_x,
+      uint32_t extent_y,
+      uint32_t extent_z,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
     virtual ~VLKPass();

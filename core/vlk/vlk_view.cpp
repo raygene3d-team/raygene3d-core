@@ -50,7 +50,7 @@ namespace RayGene3D
 
       if (resource->GetType() == Resource::TYPE_TEX2D)
       {
-        if (usage == USAGE_SHADER_READ)
+        if (usage == USAGE_SHADER_RESOURCE)
         {
           if(bind == BIND_CUBEMAP_LAYER) return VK_IMAGE_VIEW_TYPE_CUBE;
           if(bind == BIND_CUBEMAP_ARRAY) return VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
@@ -155,8 +155,8 @@ namespace RayGene3D
 
       switch (usage)
       {
-      case USAGE_SHADER_WRITE: return format == FORMAT_D32_FLOAT || format == FORMAT_D16_UNORM ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-      case USAGE_SHADER_READ: return format == FORMAT_D32_FLOAT || format == FORMAT_D16_UNORM ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+      case USAGE_UNORDERED_ACCESS: return format == FORMAT_D32_FLOAT || format == FORMAT_D16_UNORM ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+      case USAGE_SHADER_RESOURCE: return format == FORMAT_D32_FLOAT || format == FORMAT_D16_UNORM ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
       case USAGE_RENDER_TARGET: return VK_IMAGE_ASPECT_COLOR_BIT;
       case USAGE_DEPTH_STENCIL: return VK_IMAGE_ASPECT_DEPTH_BIT;
       }

@@ -102,7 +102,10 @@ namespace RayGene3D
     void DestroyResource(const std::shared_ptr<Resource>& resource) { resources.remove(resource); }
 
     virtual const std::shared_ptr<Pass>& CreatePass(const std::string& name,
-      Pass::Type type, 
+      Pass::Type type,
+      uint32_t extent_x,
+      uint32_t extent_y,
+      uint32_t extent_z,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {}) = 0;
     void VisitPass(std::function<void(const std::shared_ptr<Pass>&)> visitor) { for (const auto& pass : passes) visitor(pass); }

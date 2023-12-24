@@ -69,6 +69,11 @@ namespace RayGene3D
     std::vector<DSAttachment> ds_attachments;
 
   protected:
+    uint32_t extent_x{ 0u };
+    uint32_t extent_y{ 0u };
+    uint32_t extent_z{ 0u };
+
+  protected:
     bool enabled{ false };
 
   protected:
@@ -114,6 +119,9 @@ namespace RayGene3D
     Pass(const std::string& name,
       Device& device,
       Pass::Type type,
+      uint32_t extent_x,
+      uint32_t extent_y,
+      uint32_t extent_z,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
     virtual ~Pass();

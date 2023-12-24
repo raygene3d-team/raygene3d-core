@@ -34,11 +34,17 @@ namespace RayGene3D
   Pass::Pass(const std::string& name,
     Device& device,
     Pass::Type type,
+    uint32_t extent_x,
+    uint32_t extent_y,
+    uint32_t extent_z,
     const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
     const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
     : Usable(name)
     , device(device)
     , type(type)
+    , extent_x(extent_x)
+    , extent_y(extent_y)
+    , extent_z(extent_z)
     , rt_attachments(rt_attachments.first, rt_attachments.first + rt_attachments.second)
     , ds_attachments(ds_attachments.first, ds_attachments.first + ds_attachments.second)
   {

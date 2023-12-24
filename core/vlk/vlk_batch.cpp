@@ -647,17 +647,17 @@ namespace RayGene3D
           if (subset.arg_view)
           {
             const auto aa_buffer = (reinterpret_cast<VLKResource*>(&subset.arg_view->GetResource()))->GetBuffer();
-            const auto aa_stride = 5u;
+            const auto aa_stride = uint32_t(sizeof(Mesh::Graphic));
             const auto aa_draws = 1u;
             const auto aa_offset = subset.arg_view->GetCount().offset;
             vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
           }
           else
           {
-            const auto vtx_count = subset.argument.graphic.vtx_count;
-            const auto vtx_offset = subset.argument.graphic.vtx_offset;
-            const auto idx_count = subset.argument.graphic.idx_count;
-            const auto idx_offset = subset.argument.graphic.idx_offset;
+            const auto vtx_count = subset.vtx_range.length;
+            const auto vtx_offset = subset.vtx_range.offset;
+            const auto idx_count = subset.idx_range.length;
+            const auto idx_offset = subset.idx_range.offset;
             const auto ins_count = 1u;
             const auto ins_offset = 0u;
             vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
@@ -693,15 +693,15 @@ namespace RayGene3D
           if (subset.arg_view)
           {
             const auto aa_buffer = (reinterpret_cast<VLKResource*>(&subset.arg_view->GetResource()))->GetBuffer();
-            const auto aa_stride = 3u;
+            const auto aa_stride = uint32_t(sizeof(Mesh::Compute));
             const auto aa_offset = subset.arg_view->GetCount().offset;
             vkCmdDispatchIndirect(command_buffer, aa_buffer, aa_offset);
           }
           else
           {
-            const auto grid_x = subset.argument.compute.grid_x;
-            const auto grid_y = subset.argument.compute.grid_y;
-            const auto grid_z = subset.argument.compute.grid_z;
+            const auto grid_x = subset.grid_x;
+            const auto grid_y = subset.grid_y;
+            const auto grid_z = subset.grid_z;
             vkCmdDispatch(command_buffer, grid_x, grid_y, grid_z);
           }
         }

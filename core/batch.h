@@ -120,7 +120,7 @@ namespace RayGene3D
   public:
     Batch(const std::string& name,
       Technique& technique,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},

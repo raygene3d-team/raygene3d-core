@@ -86,16 +86,16 @@ namespace RayGene3D
           auto& blas_buffer = blas_buffers[i];
           auto& blas_item = blas_items[i];
 
-          const auto vtx_resource = reinterpret_cast<VLKResource*>(&vtx_views[0]->GetResource());
+          const auto vtx_resource = reinterpret_cast<VLKResource*>(&va_views[0]->GetResource());
           const auto vtx_stride = vtx_resource->GetStride();
-          const auto vtx_count = subsets[i].argument.graphic.vtx_count;
-          const auto vtx_offset = subsets[i].argument.graphic.vtx_offset;
+          const auto vtx_count = subsets[i].vtx_range.length;
+          const auto vtx_offset = subsets[i].vtx_range.offset;
           const auto vtx_address = device->GetAddress(vtx_resource->GetBuffer());
 
-          const auto idx_resource = reinterpret_cast<VLKResource*>(&idx_views[0]->GetResource());
+          const auto idx_resource = reinterpret_cast<VLKResource*>(&ia_views[0]->GetResource());
           const auto idx_stride = idx_resource->GetStride();
-          const auto idx_count = subsets[i].argument.graphic.idx_count;
-          const auto idx_offset = subsets[i].argument.graphic.vtx_offset;
+          const auto idx_count = subsets[i].idx_range.length;
+          const auto idx_offset = subsets[i].vtx_range.offset;
           const auto idx_address = device->GetAddress(idx_resource->GetBuffer());
 
           //BLAST_LOG("Vertices and Triangles count/offset: %d/%d, %d/%d", va_count, va_offset, ia_count, ia_offset);
@@ -312,10 +312,10 @@ namespace RayGene3D
         std::array<VkDeviceSize, va_limit> va_offsets;
         std::array<VkBuffer, va_limit> va_items;
 
-        const auto va_count = std::min(va_limit, uint32_t(vtx_views.size()));
+        const auto va_count = std::min(va_limit, uint32_t(va_views.size()));
         for (uint32_t i = 0; i < va_count; ++i)
         {
-          const auto& va_view = vtx_views[i];
+          const auto& va_view = va_views[i];
           if (va_view)
           {
             va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
@@ -335,10 +335,10 @@ namespace RayGene3D
         std::array<VkDeviceSize, ia_limit> ia_offsets;
         std::array<VkBuffer, ia_limit> ia_items;
 
-        const auto ia_count = std::min(ia_limit, uint32_t(idx_views.size()));
+        const auto ia_count = std::min(ia_limit, uint32_t(ia_views.size()));
         for (uint32_t i = 0; i < ia_count; ++i)
         {
-          const auto& ia_view = idx_views[i];
+          const auto& ia_view = ia_views[i];
           if (ia_view)
           {
             ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();

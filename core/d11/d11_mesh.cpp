@@ -57,10 +57,10 @@ namespace RayGene3D
       uint32_t va_strides[va_limit]{ 0 };
       uint32_t va_offsets[va_limit]{ 0 };
       ID3D11Buffer* va_items[va_limit]{ nullptr };
-      const uint32_t va_count = std::min(va_limit, uint32_t(vtx_views.size()));
+      const uint32_t va_count = std::min(va_limit, uint32_t(va_views.size()));
       for (uint32_t i = 0; i < va_count; ++i)
       {
-        const auto& va_view = vtx_views[i];
+        const auto& va_view = va_views[i];
         if (va_view)
         {
           va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
@@ -74,10 +74,10 @@ namespace RayGene3D
       uint32_t ia_offsets[ia_limit]{ 0 };
       DXGI_FORMAT ia_formats[ia_limit]{ DXGI_FORMAT_UNKNOWN };
       ID3D11Buffer* ia_items[ia_limit]{ nullptr };
-      const uint32_t ia_count = std::min(ia_limit, uint32_t(idx_views.size()));
+      const uint32_t ia_count = std::min(ia_limit, uint32_t(ia_views.size()));
       for (uint32_t i = 0; i < ia_count; ++i)
       {
-        const auto& ia_view = idx_views[i];
+        const auto& ia_view = ia_views[i];
         if (ia_view)
         {
           ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
