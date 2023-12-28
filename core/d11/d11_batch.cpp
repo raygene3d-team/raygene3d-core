@@ -212,7 +212,7 @@ namespace RayGene3D
               const auto& sb_view = sb_views[i];
               if (sb_view)
               {
-                sb_offsets[i] = subset.sb_offset ? subset.sb_offset.value()[i] : 0u;
+                sb_offsets[i] = subset.sb_offset ? subset.sb_offset.value()[i] / 16u : 0u;
                 const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
                 sb_strides[i] = sb_resource->GetStride() / 16u;
               }

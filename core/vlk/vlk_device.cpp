@@ -813,6 +813,11 @@ namespace RayGene3D
       vkDeviceWaitIdle(device);
     }
 
+    if (screen) // screen MUST be released only after device jobs have been completed
+    {
+      screen.reset();
+    }
+
     //for (auto& pass : passes)
     //{
     //  if (pass) { /*BLAST_LOG("Discarding queue [%s]", name.c_str());*/ pass->Discard(); }
