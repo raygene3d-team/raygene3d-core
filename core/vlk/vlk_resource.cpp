@@ -63,7 +63,7 @@ namespace RayGene3D
 
       {
         const auto addressable = hint & HINT_ADDRESS_BUFFER && device->GetRTXSupported();
-        const auto size = stride * count;
+        const auto size = mipmaps_or_count * layers_or_stride;
         const auto usage = get_bind() | (addressable ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT : 0);
         const auto buffer = device->CreateBuffer(size, usage);
         const auto requirements = device->GetRequirements(buffer);
@@ -118,7 +118,7 @@ namespace RayGene3D
           size += interop_size;
         }
 
-        BLAST_ASSERT(size == stride * count);
+        BLAST_ASSERT(size == mipmaps_or_count * layers_or_stride);
 
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -379,7 +379,7 @@ namespace RayGene3D
         const auto format = get_format();
         const auto extent = get_extent();
         const auto usage = get_bind();
-        const auto image = device->CreateImage(type, format, extent, stride, count, usage, flags);
+        const auto image = device->CreateImage(type, format, extent, mipmaps_or_count, layers_or_stride, usage, flags);
         const auto requirements = device->GetRequirements(image);
         const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
@@ -392,7 +392,7 @@ namespace RayGene3D
         this->memory = memory;
       }
 
-      if (interops.size() == count)
+      if (interops.size() == layers_or_stride)
       {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -403,7 +403,7 @@ namespace RayGene3D
         VkCommandBuffer commandBuffer;
         BLAST_ASSERT(VK_SUCCESS == vkAllocateCommandBuffers(device->GetDevice(), &allocInfo, &commandBuffer));
 
-        for (uint32_t i = 0; i < count; ++i)
+        for (uint32_t i = 0; i < layers_or_stride; ++i)
         {
           const auto [raw_data, raw_size] = interops.at(i);
           BLAST_ASSERT(raw_data != nullptr && raw_size != 0);
@@ -414,7 +414,7 @@ namespace RayGene3D
           BLAST_ASSERT(raw_size <= staging_size);
 
           uint32_t layer_size = 0;
-          for (uint32_t j = 0; j < stride; ++j)
+          for (uint32_t j = 0; j < mipmaps_or_count; ++j)
           {
             const uint32_t extent_x = size_x > 1 ? size_x >> j : 1;
             const uint32_t extent_y = size_y > 1 ? size_y >> j : 1;
@@ -437,7 +437,7 @@ namespace RayGene3D
 
 
           uint32_t offset = 0;
-          for (uint32_t j = 0; j < stride; ++j)
+          for (uint32_t j = 0; j < mipmaps_or_count; ++j)
           {
             const uint32_t layer = i;
             const uint32_t mipmap = j;

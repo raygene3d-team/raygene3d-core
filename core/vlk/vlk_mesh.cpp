@@ -87,15 +87,15 @@ namespace RayGene3D
           auto& blas_item = blas_items[i];
 
           const auto vtx_resource = reinterpret_cast<VLKResource*>(&va_views[0]->GetResource());
-          const auto vtx_stride = vtx_resource->GetStride();
-          const auto vtx_count = subsets[i].vtx_range.length;
-          const auto vtx_offset = subsets[i].vtx_range.offset;
+          const auto vtx_stride = vtx_resource->GetLayersOrStride();
+          const auto vtx_count = subsets[i].vtx_or_grid_x.length;
+          const auto vtx_offset = subsets[i].vtx_or_grid_x.offset;
           const auto vtx_address = device->GetAddress(vtx_resource->GetBuffer());
 
           const auto idx_resource = reinterpret_cast<VLKResource*>(&ia_views[0]->GetResource());
-          const auto idx_stride = idx_resource->GetStride();
-          const auto idx_count = subsets[i].idx_range.length;
-          const auto idx_offset = subsets[i].vtx_range.offset;
+          const auto idx_stride = idx_resource->GetLayersOrStride();
+          const auto idx_count = subsets[i].idx_or_grid_y.length;
+          const auto idx_offset = subsets[i].idx_or_grid_y.offset;
           const auto idx_address = device->GetAddress(idx_resource->GetBuffer());
 
           //BLAST_LOG("Vertices and Triangles count/offset: %d/%d, %d/%d", va_count, va_offset, ia_count, ia_offset);
@@ -319,7 +319,7 @@ namespace RayGene3D
           if (va_view)
           {
             va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
-            va_offsets[i] = va_view->GetCount().offset;
+            va_offsets[i] = va_view->GetMipmapsOrCount().offset;
           }
         }
 
@@ -342,7 +342,7 @@ namespace RayGene3D
           if (ia_view)
           {
             ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
-            ia_offsets[i] = ia_view->GetCount().offset;
+            ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
             ia_formats[i] = technique->GetIAState().indexer
               == Technique::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
               : Technique::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16

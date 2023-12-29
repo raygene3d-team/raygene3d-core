@@ -64,7 +64,7 @@ namespace RayGene3D
         if (va_view)
         {
           va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
-          va_offsets[i] = va_view->GetCount().offset;
+          va_offsets[i] = va_view->GetMipmapsOrCount().offset;
           va_strides[i] = technique->GetStrides().at(i);
         }
       }
@@ -81,7 +81,7 @@ namespace RayGene3D
         if (ia_view)
         {
           ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
-          ia_offsets[i] = ia_view->GetCount().offset;
+          ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
           ia_formats[i] = technique->GetIAState().indexer
             == Technique::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
             : Technique::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT

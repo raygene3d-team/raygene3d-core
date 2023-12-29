@@ -61,25 +61,15 @@ namespace RayGene3D
     struct Subset
     {
       std::shared_ptr<View> arg_view;
-      View::Range vtx_range = { 0u, 0u };
-      View::Range idx_range = { 0u, 0u };
-      View::Range ins_range = { 0u, 0u };
-      uint32_t grid_x = 0u;
-      uint32_t grid_y = 0u;
-      uint32_t grid_z = 0u;
-      Mesh::SBOffset sb_offset = std::nullopt;
-      Mesh::PushData push_data = std::nullopt;
+      View::Range vtx_or_grid_x;
+      View::Range idx_or_grid_y;
+      View::Range ins_or_grid_z;
+      Mesh::SBOffset sb_offset{ std::nullopt };
+      Mesh::PushData push_data{ std::nullopt };
     };
-
-  //protected:
-  //  bool enabled{ false };
 
   protected:
     Batch& batch;
-
-  //public:
-  //  void SetEnabled(bool enabled) { this->enabled = enabled; }
-  //  bool GetEnabled() const { return enabled; }
 
   protected:
     std::vector<std::shared_ptr<View>> va_views; //vertex arrays

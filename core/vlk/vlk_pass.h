@@ -56,15 +56,6 @@ namespace RayGene3D
     VkFramebuffer framebuffer{ nullptr };
     VkRenderPass renderpass{ nullptr };
 
-  protected:
-    //uint32_t extent_x{ 0 };
-    //uint32_t extent_y{ 0 };
-    uint32_t layers{ 1 };
-    // Perhaps we should set these parameters externally and validate during initialize
-
-  protected:
-    
-
   public:
     VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
     VkRenderPass GetRenderPass() const { return renderpass; }
@@ -91,9 +82,9 @@ namespace RayGene3D
     VLKPass(const std::string& name,
       Device& device,
       Pass::Type type,
-      uint32_t extent_x,
-      uint32_t extent_y,
-      uint32_t extent_z,
+      const View::Range& extent_x_or_grid_x,
+      const View::Range& extent_y_or_grid_y,
+      const View::Range& extent_z_or_grid_z,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
     virtual ~VLKPass();

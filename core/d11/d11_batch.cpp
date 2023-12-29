@@ -214,7 +214,7 @@ namespace RayGene3D
               {
                 sb_offsets[i] = subset.sb_offset ? subset.sb_offset.value()[i] / 16u : 0u;
                 const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
-                sb_strides[i] = sb_resource->GetStride() / 16u;
+                sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
               }
             }
 
@@ -235,15 +235,15 @@ namespace RayGene3D
             const auto aa_buffer = (reinterpret_cast<D11Resource*>(&subset.arg_view->GetResource()))->GetBuffer();
             const auto aa_stride = 5u;
             const auto aa_draws = 1;
-            const auto aa_offset = subset.arg_view->GetCount().offset;
+            const auto aa_offset = subset.arg_view->GetMipmapsOrCount().offset;
             device->GetContext()->DrawIndexedInstancedIndirect(aa_buffer, aa_offset);
           }
           else
           {
-            const auto vtx_count = subset.vtx_range.length;
-            const auto vtx_offset = subset.vtx_range.offset;
-            const auto idx_count = subset.idx_range.length;
-            const auto idx_offset = subset.idx_range.offset;
+            const auto vtx_count = subset.vtx_or_grid_x.length;
+            const auto vtx_offset = subset.vtx_or_grid_x.offset;
+            const auto idx_count = subset.idx_or_grid_y.length;
+            const auto idx_offset = subset.idx_or_grid_y.offset;
             const auto ins_count = 1u; // subset.ins_range.length;
             const auto ins_offset = 0u; // subset.ins_range.offset;
             device->GetContext()->DrawIndexedInstanced(idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
@@ -283,7 +283,7 @@ namespace RayGene3D
               {
                 sb_offsets[i] = subset.sb_offset ? subset.sb_offset.value()[i] : 0u;
                 const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
-                sb_strides[i] = sb_resource->GetStride() / 16u;
+                sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
               }
             }
 
@@ -304,14 +304,14 @@ namespace RayGene3D
           {
             const auto aa_buffer = (reinterpret_cast<D11Resource*>(&subset.arg_view->GetResource()))->GetBuffer();
             const auto aa_stride = 3u;
-            const auto aa_offset = subset.arg_view->GetCount().offset;
+            const auto aa_offset = subset.arg_view->GetMipmapsOrCount().offset;
             device->GetContext()->DispatchIndirect(aa_buffer, aa_offset);
           }
           else
           {
-            const auto grid_x = subset.grid_x;
-            const auto grid_y = subset.grid_y;
-            const auto grid_z = subset.grid_z;
+            const auto grid_x = subset.vtx_or_grid_x.length;
+            const auto grid_y = subset.idx_or_grid_y.length;
+            const auto grid_z = subset.ins_or_grid_z.length;
             device->GetContext()->Dispatch(grid_x, grid_y, grid_z);
           }
         }

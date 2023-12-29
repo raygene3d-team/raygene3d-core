@@ -84,13 +84,14 @@ namespace RayGene3D
 
     const std::shared_ptr<Pass>& CreatePass(const std::string& name,
       Pass::Type type,
-      uint32_t extent_x,
-      uint32_t extent_y,
-      uint32_t extent_z,
+      const View::Range& extent_x_or_grid_x,
+      const View::Range& extent_y_or_grid_y,
+      const View::Range& extent_z_or_grid_z,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {}) override
     {
-      return passes.emplace_back(new D11Pass(name, *this, type, extent_x, extent_y, extent_z, rt_attachments, ds_attachments));
+      return passes.emplace_back(new D11Pass(name, *this, type, 
+        extent_x_or_grid_x, extent_y_or_grid_y, extent_z_or_grid_z, rt_attachments, ds_attachments));
     }
 
   public:
