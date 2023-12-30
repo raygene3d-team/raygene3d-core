@@ -33,7 +33,8 @@ namespace RayGene3D
 {
   Batch::Batch(const std::string& name,
     Technique& technique,
-    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+    const std::pair<const Entity*, uint32_t>& entities,
+    const std::pair<const Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
@@ -42,6 +43,7 @@ namespace RayGene3D
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views)
     : Usable(name)
     , technique(technique)
+    , entities(entities.first, entities.first + entities.second)
     , samplers(samplers.first, samplers.first + samplers.second)
     , ub_views(ub_views.first, ub_views.first + ub_views.second)
     , sb_views(sb_views.first, sb_views.first + sb_views.second)

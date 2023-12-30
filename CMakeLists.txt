@@ -8,8 +8,6 @@ set(CORE_SOURCE
 	${CORE_DIR}/batch.cpp
 	${CORE_DIR}/device.h
 	${CORE_DIR}/device.cpp
-	${CORE_DIR}/mesh.h
-	${CORE_DIR}/mesh.cpp
 	${CORE_DIR}/pass.h
 	${CORE_DIR}/pass.cpp
 	${CORE_DIR}/resource.h
@@ -25,8 +23,6 @@ set(CORE_D11_SOURCE
 	${CORE_D11_DIR}/d11_batch.cpp
 	${CORE_D11_DIR}/d11_device.h
 	${CORE_D11_DIR}/d11_device.cpp
-	${CORE_D11_DIR}/d11_mesh.h
-	${CORE_D11_DIR}/d11_mesh.cpp
 	${CORE_D11_DIR}/d11_pass.h
 	${CORE_D11_DIR}/d11_pass.cpp
 	${CORE_D11_DIR}/d11_resource.h
@@ -42,8 +38,6 @@ set(CORE_VLK_SOURCE
 	${CORE_VLK_DIR}/vlk_batch.cpp
 	${CORE_VLK_DIR}/vlk_device.h
 	${CORE_VLK_DIR}/vlk_device.cpp
-	${CORE_VLK_DIR}/vlk_mesh.h
-	${CORE_VLK_DIR}/vlk_mesh.cpp
 	${CORE_VLK_DIR}/vlk_pass.h
 	${CORE_VLK_DIR}/vlk_pass.cpp
 	${CORE_VLK_DIR}/vlk_resource.h

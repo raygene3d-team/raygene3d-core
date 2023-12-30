@@ -190,64 +190,93 @@ namespace RayGene3D
       device->GetContext()->PSSetConstantBuffers(0, ub_items.size(), ub_items.data());
       device->GetContext()->PSSetSamplers(0, sampler_states.size(), sampler_states.data());
 
-      for (const auto& mesh : meshes)
+      for (const auto& chunk : entities)
       {
-        mesh->Use();
-
-        const auto [subset_items, subset_count] = mesh->GetSubsets();
-        for (auto i = 0u; i < subset_count; ++i)
+        const uint32_t va_limit = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+        uint32_t va_strides[va_limit]{ 0 };
+        uint32_t va_offsets[va_limit]{ 0 };
+        ID3D11Buffer* va_items[va_limit]{ nullptr };
+        const uint32_t va_count = std::min(va_limit, uint32_t(chunk.va_views.size()));
+        for (uint32_t i = 0; i < va_count; ++i)
         {
-          const auto& subset = subset_items[i];
+          const auto& va_view = chunk.va_views.at(i);
+          if (va_view)
+          {
+            va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
+            va_offsets[i] = va_view->GetMipmapsOrCount().offset;
+            va_strides[i] = technique->GetStrides().at(i);
+          }
+        }
+        device->GetContext()->IASetVertexBuffers(0, va_count, va_items, va_strides, va_offsets);
+
+        const uint32_t ia_limit = 1;
+        uint32_t ia_offsets[ia_limit]{ 0 };
+        DXGI_FORMAT ia_formats[ia_limit]{ DXGI_FORMAT_UNKNOWN };
+        ID3D11Buffer* ia_items[ia_limit]{ nullptr };
+        const uint32_t ia_count = std::min(ia_limit, uint32_t(chunk.ia_views.size()));
+        for (uint32_t i = 0; i < ia_count; ++i)
+        {
+          const auto& ia_view = chunk.ia_views.at(i);
+          if (ia_view)
+          {
+            ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
+            ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
+            ia_formats[i] = technique->GetIAState().indexer
+              == Technique::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
+              : Technique::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
+              : DXGI_FORMAT_UNKNOWN;
+          }
+        }
+        device->GetContext()->IASetIndexBuffer(ia_items[0], ia_formats[0], ia_offsets[0]);
 
           if (!sb_views.empty())
+        {
+          const auto sb_limit = 4u;
+          const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
+
+          uint32_t sb_offsets[sb_limit] = {};
+          uint32_t sb_strides[sb_limit] = {};
+
+          for (uint32_t i = 0; i < sb_count; ++i)
           {
-            const auto sb_limit = 4u;
-            const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
-
-            uint32_t sb_offsets[sb_limit] = {};
-            uint32_t sb_strides[sb_limit] = {};
-
-            for (uint32_t i = 0; i < sb_count; ++i)
+            const auto& sb_view = sb_views[i];
+            if (sb_view)
             {
-              const auto& sb_view = sb_views[i];
-              if (sb_view)
-              {
-                sb_offsets[i] = subset.sb_offset ? subset.sb_offset.value()[i] / 16u : 0u;
-                const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
-                sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
-              }
+              sb_offsets[i] = chunk.sb_offset ? chunk.sb_offset.value()[i] / 16u : 0u;
+              const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
+              sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
             }
-
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
           }
 
-          if (subset.arg_view)
-          {
-            const auto aa_buffer = (reinterpret_cast<D11Resource*>(&subset.arg_view->GetResource()))->GetBuffer();
-            const auto aa_stride = 5u;
-            const auto aa_draws = 1;
-            const auto aa_offset = subset.arg_view->GetMipmapsOrCount().offset;
-            device->GetContext()->DrawIndexedInstancedIndirect(aa_buffer, aa_offset);
-          }
-          else
-          {
-            const auto vtx_count = subset.vtx_or_grid_x.length;
-            const auto vtx_offset = subset.vtx_or_grid_x.offset;
-            const auto idx_count = subset.idx_or_grid_y.length;
-            const auto idx_offset = subset.idx_or_grid_y.offset;
-            const auto ins_count = 1u; // subset.ins_range.length;
-            const auto ins_offset = 0u; // subset.ins_range.offset;
-            device->GetContext()->DrawIndexedInstanced(idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
-          }
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+        }
+
+        if (chunk.arg_view)
+        {
+          const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
+          const auto aa_stride = uint32_t(sizeof(Graphic));
+          const auto aa_draws = 1;
+          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
+          device->GetContext()->DrawIndexedInstancedIndirect(aa_buffer, aa_offset);
+        }
+        else
+        {
+          const auto vtx_count = chunk.vtx_or_grid_x.length;
+          const auto vtx_offset = chunk.vtx_or_grid_x.offset;
+          const auto idx_count = chunk.idx_or_grid_y.length;
+          const auto idx_offset = chunk.idx_or_grid_y.offset;
+          const auto ins_count = 1u; // subset.ins_range.length;
+          const auto ins_offset = 0u; // subset.ins_range.offset;
+          device->GetContext()->DrawIndexedInstanced(idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
         }
       }
     }
@@ -261,59 +290,53 @@ namespace RayGene3D
       device->GetContext()->CSSetConstantBuffers(0, ub_items.size(), ub_items.data());
       device->GetContext()->CSSetSamplers(0, sampler_states.size(), sampler_states.data());
 
-      for (const auto& mesh : meshes)
+      for (const auto& chunk : entities)
       {
-        const auto [subset_items, subset_count] = mesh->GetSubsets();
-        for (auto i = 0u; i < subset_count; ++i)
+        if (!sb_views.empty())
         {
-          const auto& subset = subset_items[i];
+          const auto sb_limit = 4u;
+          const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
 
-          if (!sb_views.empty())
+          uint32_t sb_offsets[sb_limit] = {};
+          uint32_t sb_strides[sb_limit] = {};
+
+          for (uint32_t i = 0; i < sb_count; ++i)
           {
-            const auto sb_limit = 4u;
-            const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
-
-            uint32_t sb_offsets[sb_limit] = {};
-            uint32_t sb_strides[sb_limit] = {};
-
-            for (uint32_t i = 0; i < sb_count; ++i)
+            const auto& sb_view = sb_views[i];
+            if (sb_view)
             {
-              const auto& sb_view = sb_views[i];
-              if (sb_view)
-              {
-                sb_offsets[i] = subset.sb_offset ? subset.sb_offset.value()[i] : 0u;
-                const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
-                sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
-              }
+              sb_offsets[i] = chunk.sb_offset ? chunk.sb_offset.value()[i] : 0u;
+              const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
+              sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
             }
-
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-            reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(ub_items.size(),
-              sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
           }
 
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+          reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(ub_items.size(),
+            sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+        }
 
-          if (subset.arg_view)
-          {
-            const auto aa_buffer = (reinterpret_cast<D11Resource*>(&subset.arg_view->GetResource()))->GetBuffer();
-            const auto aa_stride = 3u;
-            const auto aa_offset = subset.arg_view->GetMipmapsOrCount().offset;
-            device->GetContext()->DispatchIndirect(aa_buffer, aa_offset);
-          }
-          else
-          {
-            const auto grid_x = subset.vtx_or_grid_x.length;
-            const auto grid_y = subset.idx_or_grid_y.length;
-            const auto grid_z = subset.ins_or_grid_z.length;
-            device->GetContext()->Dispatch(grid_x, grid_y, grid_z);
-          }
+
+        if (chunk.arg_view)
+        {
+          const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
+          const auto aa_stride = uint32_t(sizeof(Compute));
+          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
+          device->GetContext()->DispatchIndirect(aa_buffer, aa_offset);
+        }
+        else
+        {
+          const auto grid_x = chunk.vtx_or_grid_x.length;
+          const auto grid_y = chunk.idx_or_grid_y.length;
+          const auto grid_z = chunk.ins_or_grid_z.length;
+          device->GetContext()->Dispatch(grid_x, grid_y, grid_z);
         }
       }
     }
@@ -333,7 +356,8 @@ namespace RayGene3D
 
   D11Batch::D11Batch(const std::string& name,
     Technique& technique,
-    const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+    const std::pair<const Entity*, uint32_t>& entities,
+    const std::pair<const Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
@@ -341,7 +365,7 @@ namespace RayGene3D
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
   )
-    : Batch(name, technique, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
+    : Batch(name, technique, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
   {
     D11Batch::Initialize();
   }

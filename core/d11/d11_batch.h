@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../batch.h"
-#include "d11_mesh.h"
+//#include "d11_mesh.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
@@ -47,15 +47,15 @@ namespace RayGene3D
     std::vector<ID3D11ShaderResourceView*> rr_items;
     std::vector<ID3D11UnorderedAccessView*> wr_items;
 
-  public:
-    const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
-      const std::pair<const Mesh::Subset*, uint32_t>& subsets,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
-    ) override
-    {
-      return meshes.emplace_back(new D11Mesh(name, *this, subsets, vtx_views, idx_views));
-    }
+  //public:
+  //  const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+  //    const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+  //  ) override
+  //  {
+  //    return meshes.emplace_back(new D11Mesh(name, *this, subsets, vtx_views, idx_views));
+  //  }
 
   public:
     void Initialize() override;
@@ -65,7 +65,8 @@ namespace RayGene3D
   public:
     D11Batch(const std::string& name,
       Technique& technique,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const Entity*, uint32_t>& entities,
+      const std::pair<const Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},

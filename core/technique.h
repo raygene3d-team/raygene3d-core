@@ -317,6 +317,7 @@ namespace RayGene3D
 
   public:
     virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
+      const std::pair<const Batch::Entity*, uint32_t>& entities,
       const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},

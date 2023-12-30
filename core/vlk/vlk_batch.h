@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../batch.h"
-#include "vlk_mesh.h"
+//#include "vlk_mesh.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -74,30 +74,62 @@ namespace RayGene3D
     std::vector<VkDescriptorSetLayout> tables;
 
   protected:
+    //struct RTXItem
+//{
+//  VkDeviceMemory memory{ nullptr };
+//  VkBuffer buffer{ nullptr };
+//  VkAccelerationStructureKHR{ nullptr };
+//};
+//std::vector<RTXItem> blas_items;
+//std::vector<RTXItem> tlas_items;
+
+    std::vector<VkDeviceMemory> blas_memories;
+    std::vector<VkBuffer> blas_buffers;
+    std::vector<VkAccelerationStructureKHR> blas_items;
+
+    VkDeviceMemory tlas_memory{ nullptr };
+    VkBuffer tlas_buffer{ nullptr };
+    VkAccelerationStructureKHR tlas_item{ nullptr };
+
+    VkDeviceMemory instances_memory{ nullptr };
+    VkBuffer instances_buffer{ nullptr };
+
+    VkCommandBuffer command_buffer{ nullptr };
+    VkFence fence{ nullptr };
+
+  protected:
     PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
     PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR{ nullptr };
     PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR{ nullptr };
     PFN_vkCmdTraceRaysIndirectKHR vkCmdTraceRaysIndirectKHR{ nullptr };
+
+  protected:
+    PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
+    PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
+    PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };
+    PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR{ nullptr };
+    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
 
   public:
     void Initialize() override;
     void Use() override;
     void Discard() override;
 
-  public:
-    const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
-      const std::pair<const Mesh::Subset*, uint32_t>& subsets,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
-    ) override
-    {
-      return meshes.emplace_back(new VLKMesh(name, *this, subsets, vtx_views, idx_views));
-    }
+  //public:
+  //  const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+  //    const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+  //  ) override
+  //  {
+  //    return meshes.emplace_back(new VLKMesh(name, *this, subsets, vtx_views, idx_views));
+  //  }
 
   public:
     VLKBatch(const std::string& name,
       Technique& technique,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const Entity*, uint32_t>& entities,
+      const std::pair<const Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},

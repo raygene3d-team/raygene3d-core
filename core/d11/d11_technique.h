@@ -76,6 +76,7 @@ namespace RayGene3D
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
+      const std::pair<const Batch::Entity*, uint32_t>& entities,
       const std::pair<const Batch::Sampler*, uint32_t>& samplers,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
       const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
@@ -85,7 +86,7 @@ namespace RayGene3D
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
     ) override
     {
-      return batches.emplace_back(new D11Batch(name, *this, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
+      return batches.emplace_back(new D11Batch(name, *this, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
     }
 
   public:
