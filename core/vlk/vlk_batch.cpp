@@ -195,8 +195,8 @@ namespace RayGene3D
           structure_geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
 
           VkAccelerationStructureBuildRangeInfoKHR range_info{};
-          range_info.primitiveCount = idx_count;
-          range_info.primitiveOffset = idx_offset * idx_stride; //byte offset
+          range_info.primitiveCount = idx_count / 3;
+          range_info.primitiveOffset = idx_offset * idx_stride / 3; //byte offset
           range_info.firstVertex = vtx_offset;
           range_info.transformOffset = 0;
 
@@ -1034,6 +1034,16 @@ namespace RayGene3D
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
     //RTX section
+    if (table_buffer)
+    {
+      vkDestroyBuffer(device->GetDevice(), table_buffer, nullptr); table_buffer = nullptr;
+    }
+
+    if (table_memory)
+    {
+      vkFreeMemory(device->GetDevice(), table_memory, nullptr); table_memory = nullptr;
+    }
+
     if (fence)
     {
       vkDestroyFence(device->GetDevice(), fence, nullptr); fence = nullptr;
