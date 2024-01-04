@@ -106,9 +106,9 @@ namespace RayGene3D
       device->GetContext()->OMSetRenderTargets(rt_count, rt_items, ds_items[0]);
     }
 
-    for (const auto& technique : techniques)
+    for (const auto& effect : effects)
     {
-      technique->Use();
+      effect->Use();
     }
 
     device->GetContext()->ClearState();

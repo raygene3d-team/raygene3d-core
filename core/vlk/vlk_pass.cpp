@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #include "vlk_pass.h"
-#include "vlk_technique.h"
+#include "vlk_effect.h"
 #include "vlk_batch.h"
 #include "vlk_device.h"
 #include "vlk_view.h"
@@ -270,9 +270,9 @@ namespace RayGene3D
 
       vkCmdBeginRenderPass(command_buffer, &pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-      for (const auto& technique : techniques)
+      for (const auto& effect : effects)
       {
-        technique->Use();
+        effect->Use();
       }
 
       vkCmdEndRenderPass(command_buffer);
@@ -280,17 +280,17 @@ namespace RayGene3D
 
     if (type == TYPE_COMPUTE)
     {
-      for (const auto& technique : techniques)
+      for (const auto& effect : effects)
       {
-        technique->Use();
+        effect->Use();
       }
     }
 
     if (type == TYPE_RAYTRACING && device->GetRTXSupported())
     {
-      for (const auto& technique : techniques)
+      for (const auto& effect : effects)
       {
-        technique->Use();
+        effect->Use();
       }
     }
 

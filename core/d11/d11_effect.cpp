@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "d11_technique.h"
+#include "d11_effect.h"
 #include "d11_device.h"
 
 #pragma comment (lib, "dxgi.lib")

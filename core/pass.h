@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "technique.h"
+#include "effect.h"
 
 namespace RayGene3D
 {
@@ -80,7 +80,7 @@ namespace RayGene3D
     Device& device;
 
   protected:
-    std::list<std::shared_ptr<Technique>> techniques;
+    std::list<std::shared_ptr<Technique>> effects;
 
   public:
     void SetType(Type type) { this->type = type; }
@@ -101,8 +101,8 @@ namespace RayGene3D
       const Technique::RCState& rc_state,
       const Technique::DSState& ds_state,
       const Technique::OMState& om_state) = 0;
-    void VisitTechnique(std::function<void(const std::shared_ptr<Technique>&)> visitor) { for (const auto& technique : techniques) visitor(technique); }
-    void DestroyTechnique(const std::shared_ptr<Technique>& technique) { techniques.remove(technique); }
+    void VisitTechnique(std::function<void(const std::shared_ptr<Technique>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
+    void DestroyTechnique(const std::shared_ptr<Technique>& effect) { effects.remove(effect); }
 
   public:
     void Initialize() override = 0;

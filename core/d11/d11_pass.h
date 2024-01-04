@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../pass.h"
-#include "d11_technique.h"
+#include "d11_effect.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
@@ -58,7 +58,7 @@ namespace RayGene3D
       const Technique::DSState& ds_state,
       const Technique::OMState& om_state) override
     {
-      return techniques.emplace_back(new D11Technique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+      return effects.emplace_back(new D11Technique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:

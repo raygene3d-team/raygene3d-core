@@ -8,12 +8,12 @@ set(CORE_SOURCE
 	${CORE_DIR}/batch.cpp
 	${CORE_DIR}/device.h
 	${CORE_DIR}/device.cpp
+	${CORE_DIR}/effect.h
+	${CORE_DIR}/effect.cpp
 	${CORE_DIR}/pass.h
 	${CORE_DIR}/pass.cpp
 	${CORE_DIR}/resource.h
 	${CORE_DIR}/resource.cpp
-	${CORE_DIR}/technique.h
-	${CORE_DIR}/technique.cpp
 	${CORE_DIR}/view.h
 	${CORE_DIR}/view.cpp
 )
@@ -23,12 +23,12 @@ set(CORE_D11_SOURCE
 	${CORE_D11_DIR}/d11_batch.cpp
 	${CORE_D11_DIR}/d11_device.h
 	${CORE_D11_DIR}/d11_device.cpp
+	${CORE_D11_DIR}/d11_effect.h
+	${CORE_D11_DIR}/d11_effect.cpp
 	${CORE_D11_DIR}/d11_pass.h
 	${CORE_D11_DIR}/d11_pass.cpp
 	${CORE_D11_DIR}/d11_resource.h
 	${CORE_D11_DIR}/d11_resource.cpp
-	${CORE_D11_DIR}/d11_technique.h
-	${CORE_D11_DIR}/d11_technique.cpp
 	${CORE_D11_DIR}/d11_view.h
 	${CORE_D11_DIR}/d11_view.cpp
 )
@@ -38,12 +38,12 @@ set(CORE_VLK_SOURCE
 	${CORE_VLK_DIR}/vlk_batch.cpp
 	${CORE_VLK_DIR}/vlk_device.h
 	${CORE_VLK_DIR}/vlk_device.cpp
+	${CORE_VLK_DIR}/vlk_effect.h
+	${CORE_VLK_DIR}/vlk_effect.cpp
 	${CORE_VLK_DIR}/vlk_pass.h
 	${CORE_VLK_DIR}/vlk_pass.cpp
 	${CORE_VLK_DIR}/vlk_resource.h
 	${CORE_VLK_DIR}/vlk_resource.cpp
-	${CORE_VLK_DIR}/vlk_technique.h
-	${CORE_VLK_DIR}/vlk_technique.cpp
 	${CORE_VLK_DIR}/vlk_view.h
 	${CORE_VLK_DIR}/vlk_view.cpp
 )

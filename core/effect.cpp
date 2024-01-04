@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "technique.h"
+#include "effect.h"
 
 namespace RayGene3D
 {

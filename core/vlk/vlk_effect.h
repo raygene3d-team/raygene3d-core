@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../technique.h"
+#include "../effect.h"
 #include "vlk_batch.h"
 
 #ifdef __linux__

@@ -134,8 +134,8 @@ namespace RayGene3D
     //  auto dst_resource = back_buffer_;
 
     //  spark_broker->Use();
-    //  auto spark_target_resource = &dynamic_cast<SparkBroker*>(spark_broker.get())->GetAsset()->AccessUnorderedAccesses()[0]->GetResource();
-    //  //auto spark_target_resource = &dynamic_cast<SparkBroker*>(spark_broker_.get())->GetOutput()->AccessRenderTargets()[0]->GetResource();
+    //  auto spark_target_resource = &dynamic_cast<Render3DBrokerBroker*>(spark_broker.get())->GetAsset()->AccessUnorderedAccesses()[0]->GetResource();
+    //  //auto spark_target_resource = &dynamic_cast<Render3DBrokerBroker*>(spark_broker_.get())->GetOutput()->AccessRenderTargets()[0]->GetResource();
     //  auto src_resource = dynamic_cast<D3DResource*>(spark_target_resource)->GetResource();
 
     //  //const bool screenshot_enabled = false;

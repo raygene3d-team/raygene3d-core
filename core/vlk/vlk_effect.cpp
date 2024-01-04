@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "vlk_technique.h"
+#include "vlk_effect.h"
 #include "vlk_device.h"
 
 #define ENABLE_HLSL

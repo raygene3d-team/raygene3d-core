@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../pass.h"
-#include "vlk_technique.h"
+#include "vlk_effect.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -70,7 +70,7 @@ namespace RayGene3D
       const Technique::DSState& ds_state,
       const Technique::OMState& om_state) override
     {
-      return techniques.emplace_back(new VLKTechnique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+      return effects.emplace_back(new VLKTechnique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:

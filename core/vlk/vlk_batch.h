@@ -127,7 +127,7 @@ namespace RayGene3D
 
   public:
     VLKBatch(const std::string& name,
-      Technique& technique,
+      Technique& effect,
       const std::pair<const Entity*, uint32_t>& entities,
       const std::pair<const Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
