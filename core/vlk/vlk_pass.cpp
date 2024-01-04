@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #include "vlk_pass.h"
-#include "vlk_effect.h"
+#include "vlk_state.h"
 #include "vlk_batch.h"
 #include "vlk_device.h"
 #include "vlk_view.h"

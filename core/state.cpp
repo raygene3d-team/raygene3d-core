@@ -27,19 +27,19 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "effect.h"
+#include "state.h"
 
 namespace RayGene3D
 {
-  Technique::Technique(const std::string& name,
+  State::State(const std::string& name,
     Pass& pass,
     const std::string& source,
-    Technique::Compilation compilation, 
+    State::Compilation compilation, 
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Technique::IAState& ia_state,
-    const Technique::RCState& rc_state,
-    const Technique::DSState& ds_state,
-    const Technique::OMState& om_state)
+    const State::IAState& ia_state,
+    const State::RCState& rc_state,
+    const State::DSState& ds_state,
+    const State::OMState& om_state)
     : Usable(name)
     , pass(pass)
     , source(source)
@@ -52,7 +52,7 @@ namespace RayGene3D
   {
   }
 
-  Technique::~Technique()
+  State::~State()
   {
   }
 }

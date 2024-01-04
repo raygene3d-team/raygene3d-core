@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #include "vlk_batch.h"
-#include "vlk_effect.h"
+#include "vlk_state.h"
 #include "vlk_pass.h"
 #include "vlk_device.h"
 #include "vlk_view.h"
@@ -37,7 +37,7 @@ namespace RayGene3D
 {
   void VLKBatch::Initialize()
   {
-    auto effect = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto effect = reinterpret_cast<VLKState*>(&this->GetState());
     auto pass = reinterpret_cast<VLKPass*>(&effect->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
@@ -859,7 +859,7 @@ namespace RayGene3D
 
   void VLKBatch::Use()
   {
-    auto effect = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto effect = reinterpret_cast<VLKState*>(&this->GetState());
     auto pass = reinterpret_cast<VLKPass*>(&effect->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
@@ -927,8 +927,8 @@ namespace RayGene3D
               ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
               ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
               ia_formats[i] = effect->GetIAState().indexer
-                == Technique::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
-                : Technique::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
+                == State::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
+                : State::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
                 : VK_INDEX_TYPE_MAX_ENUM;
             }
           }
@@ -1029,7 +1029,7 @@ namespace RayGene3D
     //  command->Discard();
     //}
 
-    auto effect = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto effect = reinterpret_cast<VLKState*>(&this->GetState());
     auto pass = reinterpret_cast<VLKPass*>(&effect->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
@@ -1137,7 +1137,7 @@ namespace RayGene3D
   }
 
   VLKBatch::VLKBatch(const std::string& name,
-    Technique& effect,
+    State& effect,
     const std::pair<const Entity*, uint32_t>& entities,
     const std::pair<const Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,

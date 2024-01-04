@@ -32,7 +32,7 @@ THE SOFTWARE.
 namespace RayGene3D
 {
   Batch::Batch(const std::string& name,
-    Technique& effect,
+    State& effect,
     const std::pair<const Entity*, uint32_t>& entities,
     const std::pair<const Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,

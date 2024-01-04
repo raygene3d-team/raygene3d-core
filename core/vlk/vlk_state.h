@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../effect.h"
+#include "../state.h"
 #include "vlk_batch.h"
 
 #ifdef __linux__
@@ -43,7 +43,7 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class VLKTechnique : public Technique
+  class VLKState : public State
   {
   protected:
     VkShaderModule vs_module{ nullptr };
@@ -130,15 +130,15 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    VLKTechnique(const std::string& name,
+    VLKState(const std::string& name,
       Pass& pass,
       const std::string& source,
-      Technique::Compilation compilation,
+      State::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Technique::IAState& ia_state,
-      const Technique::RCState& rc_state,
-      const Technique::DSState& ds_state,
-      const Technique::OMState& om_state);
-    virtual ~VLKTechnique();
+      const State::IAState& ia_state,
+      const State::RCState& rc_state,
+      const State::DSState& ds_state,
+      const State::OMState& om_state);
+    virtual ~VLKState();
   };
 }

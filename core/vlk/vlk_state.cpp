@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "vlk_effect.h"
+#include "vlk_state.h"
 #include "vlk_device.h"
 
 #define ENABLE_HLSL
@@ -306,7 +306,7 @@ namespace RayGene3D
     glslang::FinalizeProcess();
   }
 
-  void VLKTechnique::Initialize()
+  void VLKState::Initialize()
   {
     auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
@@ -942,7 +942,7 @@ namespace RayGene3D
     }
   }
 
-  void VLKTechnique::Use()
+  void VLKState::Use()
   {
     for (const auto& batch : batches)
     {
@@ -950,7 +950,7 @@ namespace RayGene3D
     }
   }
 
-  void VLKTechnique::Discard()
+  void VLKState::Discard()
   {
     auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
@@ -1019,22 +1019,22 @@ namespace RayGene3D
     }
   }
 
-  VLKTechnique::VLKTechnique(const std::string& name,
+  VLKState::VLKState(const std::string& name,
     Pass& pass,
     const std::string& source,
-    Technique::Compilation compilation,
+    State::Compilation compilation,
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Technique::IAState& ia_state,
-    const Technique::RCState& rc_state,
-    const Technique::DSState& ds_state,
-    const Technique::OMState& om_state)
-    : Technique(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
+    const State::IAState& ia_state,
+    const State::RCState& rc_state,
+    const State::DSState& ds_state,
+    const State::OMState& om_state)
+    : State(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
-    VLKTechnique::Initialize();
+    VLKState::Initialize();
   }
 
-  VLKTechnique::~VLKTechnique()
+  VLKState::~VLKState()
   {
-    VLKTechnique::Discard();
+    VLKState::Discard();
   }
 }

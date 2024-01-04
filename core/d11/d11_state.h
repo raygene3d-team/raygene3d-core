@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../effect.h"
+#include "../state.h"
 #include "d11_batch.h"
 
 #include <dxgi.h>
@@ -36,7 +36,7 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class D11Technique : public Technique
+  class D11State : public State
   {
   protected:
     ID3D11VertexShader* vs_shader{ nullptr };
@@ -95,15 +95,15 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11Technique(const std::string& name,
+    D11State(const std::string& name,
       Pass& pass,
       const std::string& source,
-      Technique::Compilation compilation,
+      State::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Technique::IAState& ia_state,
-      const Technique::RCState& rc_state,
-      const Technique::DSState& ds_state,
-      const Technique::OMState& om_state);
-    virtual ~D11Technique();
+      const State::IAState& ia_state,
+      const State::RCState& rc_state,
+      const State::DSState& ds_state,
+      const State::OMState& om_state);
+    virtual ~D11State();
   };
 }
