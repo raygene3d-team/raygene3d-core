@@ -56,6 +56,10 @@ namespace RayGene3D
     VkFramebuffer framebuffer{ nullptr };
     VkRenderPass renderpass{ nullptr };
 
+    uint32_t size_x{ 0 };
+    uint32_t size_y{ 0 };
+    uint32_t layers{ 0 };
+
   public:
     VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
     VkRenderPass GetRenderPass() const { return renderpass; }
@@ -82,11 +86,10 @@ namespace RayGene3D
     VLKPass(const std::string& name,
       Device& device,
       Pass::Type type,
-      const View::Range& extent_x_or_grid_x,
-      const View::Range& extent_y_or_grid_y,
-      const View::Range& extent_z_or_grid_z,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
+      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
+      const View::Range& ins_or_grid_x = View::Range{ 0, 0 },
+      const View::Range& vtx_or_grid_y = View::Range{ 0, 0 });
     virtual ~VLKPass();
   };
 }

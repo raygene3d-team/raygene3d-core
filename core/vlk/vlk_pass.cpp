@@ -144,9 +144,9 @@ namespace RayGene3D
           rt_attachment_descs[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
           rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
-          //extent_x = std::max(extent_x, rt_view->GetResource().GetSizeX());
-          //extent_y = std::max(extent_y, rt_view->GetResource().GetSizeY());
-          //layers = std::max(rt_view->GetCount().length == -1 ? 1 : rt_view->GetCount().length, layers);
+          size_x = std::max(size_x, rt_view->GetResource().GetSizeX());
+          size_y = std::max(size_y, rt_view->GetResource().GetSizeY());
+          layers = std::max(rt_view->GetLayersOrStride().length == -1 ? 1 : rt_view->GetLayersOrStride().length, layers);
         }
 
         std::vector<VkClearValue> ds_attachment_values(ds_attachments.size());
@@ -170,9 +170,9 @@ namespace RayGene3D
           ds_attachment_descs[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
           ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
-          //extent_x = std::max(extent_x, ds_view->GetResource().GetSizeX());
-          //extent_y = std::max(extent_y, ds_view->GetResource().GetSizeY());
-          //layers = std::max(ds_view->GetCount().length == -1 ? 1 : ds_view->GetCount().length, layers);
+          size_x = std::max(size_x, ds_view->GetResource().GetSizeX());
+          size_y = std::max(size_y, ds_view->GetResource().GetSizeY());
+          layers = std::max(ds_view->GetLayersOrStride().length == -1 ? 1 : ds_view->GetLayersOrStride().length, layers);
         }
 
         attachment_values.clear();
@@ -241,9 +241,9 @@ namespace RayGene3D
         create_info.renderPass = renderpass;
         create_info.attachmentCount = uint32_t(attachment_views.size());
         create_info.pAttachments = attachment_views.data();
-        create_info.width = extent_x_or_grid_x.length;
-        create_info.height = extent_y_or_grid_y.length;
-        create_info.layers = extent_z_or_grid_z.length;
+        create_info.width = size_x;
+        create_info.height = size_y;
+        create_info.layers = layers;
         BLAST_ASSERT(VK_SUCCESS == vkCreateFramebuffer(device->GetDevice(), &create_info, nullptr, &framebuffer));
       }
     }
@@ -263,8 +263,8 @@ namespace RayGene3D
       pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
       pass_info.renderPass = renderpass;
       pass_info.framebuffer = framebuffer;
-      pass_info.renderArea.offset = { int32_t(extent_x_or_grid_x.offset), int32_t(extent_x_or_grid_x.offset) };
-      pass_info.renderArea.extent = {uint32_t(extent_x_or_grid_x.length),uint32_t(extent_y_or_grid_y.length) };
+      pass_info.renderArea.offset = { 0, 0 };
+      pass_info.renderArea.extent = { size_x, size_y };
       pass_info.clearValueCount = uint32_t(attachment_values.size());
       pass_info.pClearValues = attachment_values.data();
 
@@ -322,12 +322,11 @@ namespace RayGene3D
   VLKPass::VLKPass(const std::string& name,
     Device& device,
     Pass::Type type,
-    const View::Range& extent_x_or_grid_x,
-    const View::Range& extent_y_or_grid_y,
-    const View::Range& extent_z_or_grid_z,
     const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
-    : Pass(name, device, type, extent_x_or_grid_x, extent_y_or_grid_y, extent_z_or_grid_z, rt_attachments, ds_attachments)
+    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
+    const View::Range& ins_or_grid_x,
+    const View::Range& vtx_or_grid_y)
+    : Pass(name, device, type, rt_attachments, ds_attachments, ins_or_grid_x, vtx_or_grid_y)
   {
     VLKPass:Initialize();
   }

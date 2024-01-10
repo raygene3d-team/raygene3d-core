@@ -170,14 +170,14 @@ namespace RayGene3D
 
           const auto vtx_resource = reinterpret_cast<VLKResource*>(&chunk.va_views[0]->GetResource());
           const auto vtx_stride = vtx_resource->GetLayersOrStride();
-          const auto vtx_count = chunk.vtx_or_grid_x.length;
-          const auto vtx_offset = chunk.vtx_or_grid_x.offset;
+          const auto vtx_count = chunk.vtx_or_grid_y.length;
+          const auto vtx_offset = chunk.vtx_or_grid_y.offset;
           const auto vtx_address = device->GetAddress(vtx_resource->GetBuffer());
 
           const auto idx_resource = reinterpret_cast<VLKResource*>(&chunk.ia_views[0]->GetResource());
           const auto idx_stride = idx_resource->GetLayersOrStride();
-          const auto idx_count = chunk.idx_or_grid_y.length;
-          const auto idx_offset = chunk.idx_or_grid_y.offset;
+          const auto idx_count = chunk.idx_or_grid_z.length;
+          const auto idx_offset = chunk.idx_or_grid_z.offset;
           const auto idx_address = device->GetAddress(idx_resource->GetBuffer());
 
           //BLAST_LOG("Vertices and Triangles count/offset: %d/%d, %d/%d", va_count, va_offset, ia_count, ia_offset);
@@ -949,12 +949,12 @@ namespace RayGene3D
         }
         else
         {
-          const auto vtx_count = chunk.vtx_or_grid_x.length;
-          const auto vtx_offset = chunk.vtx_or_grid_x.offset;
-          const auto idx_count = chunk.idx_or_grid_y.length;
-          const auto idx_offset = chunk.idx_or_grid_y.offset;
           const auto ins_count = 1u;
           const auto ins_offset = 0u;
+          const auto vtx_count = chunk.vtx_or_grid_y.length;
+          const auto vtx_offset = chunk.vtx_or_grid_y.offset;
+          const auto idx_count = chunk.idx_or_grid_z.length;
+          const auto idx_offset = chunk.idx_or_grid_z.offset;
           vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
         }
       }
@@ -994,9 +994,9 @@ namespace RayGene3D
         }
         else
         {
-          const auto grid_x = chunk.vtx_or_grid_x.length;
-          const auto grid_y = chunk.idx_or_grid_y.length;
-          const auto grid_z = chunk.ins_or_grid_z.length;
+          const auto grid_x = chunk.ins_or_grid_x.length;
+          const auto grid_y = chunk.vtx_or_grid_y.length;
+          const auto grid_z = chunk.idx_or_grid_z.length;
           vkCmdDispatch(command_buffer, grid_x, grid_y, grid_z);
         }
       }

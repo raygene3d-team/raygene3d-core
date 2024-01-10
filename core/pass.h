@@ -69,9 +69,8 @@ namespace RayGene3D
     std::vector<DSAttachment> ds_attachments;
 
   protected:
-    View::Range extent_x_or_grid_x;
-    View::Range extent_y_or_grid_y;
-    View::Range extent_z_or_grid_z;
+    View::Range ins_or_grid_x;
+    View::Range vtx_or_grid_y;
 
   protected:
     bool enabled{ false };
@@ -113,11 +112,11 @@ namespace RayGene3D
     Pass(const std::string& name,
       Device& device,
       Pass::Type type,
-      const View::Range& extent_x_or_grid_x,
-      const View::Range& extent_y_or_grid_y,
-      const View::Range& extent_z_or_grid_z,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
+      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
+      const View::Range& ins_or_grid_x = View::Range{ 0, 0 },
+      const View::Range& vtx_or_grid_y = View::Range{ 0, 0 }
+    );
     virtual ~Pass();
   };
 
