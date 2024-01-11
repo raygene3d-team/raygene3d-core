@@ -65,7 +65,7 @@ namespace RayGene3D
     VkRenderPass GetRenderPass() const { return renderpass; }
 
   public:
-    const std::shared_ptr<Technique>& CreateState(const std::string& name,
+    const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
       const std::string& source,
       Technique::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,

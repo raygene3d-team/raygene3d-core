@@ -435,7 +435,7 @@ namespace RayGene3D
         {
           switch (operand)
           {
-          default:                          return D3D11_BLEND_ZERO;
+          default:                         return D3D11_BLEND_ZERO;
           case OPERAND_ZERO:               return D3D11_BLEND_ZERO;
           case OPERAND_ONE:                return D3D11_BLEND_ONE;
           case OPERAND_SRC_COLOR:          return D3D11_BLEND_SRC_COLOR;

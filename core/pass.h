@@ -92,7 +92,7 @@ namespace RayGene3D
     Device& GetDevice() { return device; }
 
   public:
-    virtual const std::shared_ptr<Technique>& CreateState(const std::string& name,
+    virtual const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
       const std::string& source,
       Technique::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
@@ -100,8 +100,8 @@ namespace RayGene3D
       const Technique::RCState& rc_state,
       const Technique::DSState& ds_state,
       const Technique::OMState& om_state) = 0;
-    void VisitState(std::function<void(const std::shared_ptr<Technique>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
-    void DestroyState(const std::shared_ptr<Technique>& effect) { effects.remove(effect); }
+    void VisitTechnique(std::function<void(const std::shared_ptr<Technique>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
+    void DestroyTechnique(const std::shared_ptr<Technique>& effect) { effects.remove(effect); }
 
   public:
     void Initialize() override = 0;
