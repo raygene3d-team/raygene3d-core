@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../pass.h"
-#include "vlk_state.h"
+#include "vlk_technique.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -65,16 +65,16 @@ namespace RayGene3D
     VkRenderPass GetRenderPass() const { return renderpass; }
 
   public:
-    const std::shared_ptr<State>& CreateState(const std::string& name,
+    const std::shared_ptr<Technique>& CreateState(const std::string& name,
       const std::string& source,
-      State::Compilation compilation,
+      Technique::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const State::IAState& ia_state,
-      const State::RCState& rc_state,
-      const State::DSState& ds_state,
-      const State::OMState& om_state) override
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state) override
     {
-      return effects.emplace_back(new VLKState(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+      return effects.emplace_back(new VLKTechnique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:

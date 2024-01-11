@@ -12,8 +12,8 @@ set(CORE_SOURCE
 	${CORE_DIR}/pass.cpp
 	${CORE_DIR}/resource.h
 	${CORE_DIR}/resource.cpp
-	${CORE_DIR}/state.h
-	${CORE_DIR}/state.cpp
+	${CORE_DIR}/technique.h
+	${CORE_DIR}/technique.cpp
 	${CORE_DIR}/view.h
 	${CORE_DIR}/view.cpp
 )
@@ -27,8 +27,8 @@ set(CORE_D11_SOURCE
 	${CORE_D11_DIR}/d11_pass.cpp
 	${CORE_D11_DIR}/d11_resource.h
 	${CORE_D11_DIR}/d11_resource.cpp
-	${CORE_D11_DIR}/d11_state.h
-	${CORE_D11_DIR}/d11_state.cpp
+	${CORE_D11_DIR}/d11_technique.h
+	${CORE_D11_DIR}/d11_technique.cpp
 	${CORE_D11_DIR}/d11_view.h
 	${CORE_D11_DIR}/d11_view.cpp
 )
@@ -42,8 +42,8 @@ set(CORE_VLK_SOURCE
 	${CORE_VLK_DIR}/vlk_pass.cpp
 	${CORE_VLK_DIR}/vlk_resource.h
 	${CORE_VLK_DIR}/vlk_resource.cpp
-	${CORE_VLK_DIR}/vlk_state.h
-	${CORE_VLK_DIR}/vlk_state.cpp
+	${CORE_VLK_DIR}/vlk_technique.h
+	${CORE_VLK_DIR}/vlk_technique.cpp
 	${CORE_VLK_DIR}/vlk_view.h
 	${CORE_VLK_DIR}/vlk_view.cpp
 )

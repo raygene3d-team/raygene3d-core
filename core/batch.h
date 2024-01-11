@@ -33,12 +33,12 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class State;
+  class Technique;
 
   class Batch : public Usable //TODO Rename into Batch
   {
   protected:
-    State& effect;
+    Technique& technique;
 
   public:
     using SBOffset = std::optional<std::array<uint32_t, 4>>;
@@ -143,7 +143,7 @@ namespace RayGene3D
   //  std::list<std::shared_ptr<Mesh>> meshes;
     
   public:
-    State& GetState() { return effect; }
+    Technique& GetTechnique() { return technique; }
 
   //public:
   //  virtual const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
@@ -161,7 +161,7 @@ namespace RayGene3D
 
   public:
     Batch(const std::string& name,
-      State& effect,
+      Technique& technique,
       const std::pair<const Entity*, uint32_t>& entities,
       const std::pair<const Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},

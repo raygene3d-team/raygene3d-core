@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #include "vlk_batch.h"
-#include "vlk_state.h"
+#include "vlk_technique.h"
 #include "vlk_pass.h"
 #include "vlk_device.h"
 #include "vlk_view.h"
@@ -37,8 +37,8 @@ namespace RayGene3D
 {
   void VLKBatch::Initialize()
   {
-    auto effect = reinterpret_cast<VLKState*>(&this->GetState());
-    auto pass = reinterpret_cast<VLKPass*>(&effect->GetPass());
+    auto technique = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
     {
@@ -769,16 +769,16 @@ namespace RayGene3D
       VkGraphicsPipelineCreateInfo create_info = {};
       create_info.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
       create_info.flags               = 0;
-      create_info.stageCount          = effect->GetStageCount();
-      create_info.pStages             = effect->GetStageArray();
-      create_info.pVertexInputState   = &effect->GetInputState();
-      create_info.pInputAssemblyState = &effect->GetAssemblyState();
-      create_info.pViewportState      = &effect->GetViewportState();
-      create_info.pRasterizationState = &effect->GetRasterizationState();
-      create_info.pMultisampleState   = &effect->GetMultisampleState();
-      create_info.pDepthStencilState  = &effect->GetDepthstencilState();
-      create_info.pTessellationState  = &effect->GetTessellationState();
-      create_info.pColorBlendState    = &effect->GetColorblendState();
+      create_info.stageCount          = technique->GetStageCount();
+      create_info.pStages             = technique->GetStageArray();
+      create_info.pVertexInputState   = &technique->GetInputState();
+      create_info.pInputAssemblyState = &technique->GetAssemblyState();
+      create_info.pViewportState      = &technique->GetViewportState();
+      create_info.pRasterizationState = &technique->GetRasterizationState();
+      create_info.pMultisampleState   = &technique->GetMultisampleState();
+      create_info.pDepthStencilState  = &technique->GetDepthstencilState();
+      create_info.pTessellationState  = &technique->GetTessellationState();
+      create_info.pColorBlendState    = &technique->GetColorblendState();
       create_info.pDynamicState       = nullptr;
       create_info.layout              = layout;
       create_info.renderPass          = pass->GetRenderPass();
@@ -793,7 +793,7 @@ namespace RayGene3D
       VkComputePipelineCreateInfo create_info = {};
       create_info.sType               = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
       create_info.flags               = 0;
-      create_info.stage               = effect->GetStageArray()[0];
+      create_info.stage               = technique->GetStageArray()[0];
       create_info.layout              = layout;
       create_info.basePipelineHandle  = VK_NULL_HANDLE;
       create_info.basePipelineIndex   = -1;
@@ -805,10 +805,10 @@ namespace RayGene3D
       VkRayTracingPipelineCreateInfoKHR create_info = {};
       create_info.sType                         = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
       create_info.flags                         = 0;
-      create_info.stageCount                    = effect->GetStageCount();
-      create_info.pStages                       = effect->GetStageArray();
-      create_info.groupCount                    = effect->GetGroupCount();
-      create_info.pGroups                       = effect->GetGroupArray();
+      create_info.stageCount                    = technique->GetStageCount();
+      create_info.pStages                       = technique->GetStageArray();
+      create_info.groupCount                    = technique->GetGroupCount();
+      create_info.pGroups                       = technique->GetGroupArray();
       create_info.maxPipelineRayRecursionDepth  = 1;
       create_info.layout                        = layout;
       create_info.basePipelineHandle            = VK_NULL_HANDLE;
@@ -818,7 +818,7 @@ namespace RayGene3D
       const auto binding_align = device->GetRTXProperties().shaderGroupBaseAlignment;
 
       {
-        const auto size = effect->GetGroupCount() * binding_align;
+        const auto size = technique->GetGroupCount() * binding_align;
         const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
         const auto buffer = device->CreateBuffer(size, usage);
         const auto requirements = device->GetRequirements(buffer);
@@ -832,13 +832,13 @@ namespace RayGene3D
         table_memory = memory;
       }
 
-      auto* binding_data = new uint8_t[effect->GetGroupCount() * binding_align];
+      auto* binding_data = new uint8_t[technique->GetGroupCount() * binding_align];
       BLAST_ASSERT(VK_SUCCESS == vkGetRayTracingShaderGroupHandlesKHR(device->GetDevice(), pipeline, 0, 
-        effect->GetGroupCount(), effect->GetGroupCount() * binding_align, binding_data));
+        technique->GetGroupCount(), technique->GetGroupCount() * binding_align, binding_data));
 
       uint8_t* mapped = nullptr;
       BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), table_memory, 0, VK_WHOLE_SIZE, 0, (void**)&mapped));
-      for (uint32_t i = 0; i < effect->GetGroupCount(); ++i)
+      for (uint32_t i = 0; i < technique->GetGroupCount(); ++i)
       {
         memcpy(mapped + i * binding_align, binding_data + i * binding_size, binding_size);
 
@@ -848,19 +848,19 @@ namespace RayGene3D
       vkUnmapMemory(device->GetDevice(), table_memory);
       delete[] binding_data;
 
-      if (effect->GetGroupCount() > 0)
+      if (technique->GetGroupCount() > 0)
         rgen_region = { device->GetAddress(table_buffer) + 0 * binding_align, binding_align, binding_align };
-      if (effect->GetGroupCount() > 1)
+      if (technique->GetGroupCount() > 1)
         miss_region = { device->GetAddress(table_buffer) + 1 * binding_align, binding_align, binding_align };
-      if (effect->GetGroupCount() > 2)
+      if (technique->GetGroupCount() > 2)
         xhit_region = { device->GetAddress(table_buffer) + 2 * binding_align, binding_align, binding_align };
     }
   }
 
   void VLKBatch::Use()
   {
-    auto effect = reinterpret_cast<VLKState*>(&this->GetState());
-    auto pass = reinterpret_cast<VLKPass*>(&effect->GetPass());
+    auto technique = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
     const auto command_buffer = device->GetCommadBuffer();
@@ -926,9 +926,9 @@ namespace RayGene3D
             {
               ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
               ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
-              ia_formats[i] = effect->GetIAState().indexer
-                == State::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
-                : State::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
+              ia_formats[i] = technique->GetIAState().indexer
+                == Technique::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
+                : Technique::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
                 : VK_INDEX_TYPE_MAX_ENUM;
             }
           }
@@ -1029,8 +1029,8 @@ namespace RayGene3D
     //  command->Discard();
     //}
 
-    auto effect = reinterpret_cast<VLKState*>(&this->GetState());
-    auto pass = reinterpret_cast<VLKPass*>(&effect->GetPass());
+    auto technique = reinterpret_cast<VLKTechnique*>(&this->GetTechnique());
+    auto pass = reinterpret_cast<VLKPass*>(&technique->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
     //RTX section
@@ -1137,7 +1137,7 @@ namespace RayGene3D
   }
 
   VLKBatch::VLKBatch(const std::string& name,
-    State& effect,
+    Technique& technique,
     const std::pair<const Entity*, uint32_t>& entities,
     const std::pair<const Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
@@ -1147,7 +1147,7 @@ namespace RayGene3D
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
   )
-    : Batch(name, effect, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
+    : Batch(name, technique, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
   {
     VLKBatch::Initialize();
   }
