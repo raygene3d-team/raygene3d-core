@@ -27,34 +27,32 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "layout.h"
+#include "technique.h"
 
 namespace RayGene3D
 {
-  Layout::Layout(const std::string& name,
-    Device& device,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-    const std::pair<const Layout::Sampler*, uint32_t>& samplers,
-    const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities)
+  Technique::Technique(const std::string& name,
+    Pass& pass,
+    const std::string& source,
+    Technique::Compilation compilation, 
+    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const Technique::IAState& ia_state,
+    const Technique::RCState& rc_state,
+    const Technique::DSState& ds_state,
+    const Technique::OMState& om_state)
     : Usable(name)
-    , device(device)
-    , ub_views(ub_views.first, ub_views.first + ub_views.second)
-    , sb_views(sb_views.first, sb_views.first + sb_views.second)
-    , ri_views(ri_views.first, ri_views.first + ri_views.second)
-    , wi_views(wi_views.first, wi_views.first + wi_views.second)
-    , rb_views(rb_views.first, rb_views.first + rb_views.second)
-    , wb_views(wb_views.first, wb_views.first + wb_views.second)
-    , samplers(samplers.first, samplers.first + samplers.second)
-    , rtx_entities(rtx_entities.first, rtx_entities.first + rtx_entities.second)
+    , pass(pass)
+    , source(source)
+    , compilation(compilation)
+    , defines(defines.first, defines.first + defines.second)
+    , ia_state(ia_state)
+    , rc_state(rc_state)
+    , ds_state(ds_state)
+    , om_state(om_state)
   {
   }
 
-  Layout::~Layout()
+  Technique::~Technique()
   {
   }
 }

@@ -27,32 +27,34 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "config.h"
+#include "batch.h"
 
 namespace RayGene3D
 {
-  Config::Config(const std::string& name,
-    Device& device,
-    const std::string& source,
-    Config::Compilation compilation, 
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Config::IAState& ia_state,
-    const Config::RCState& rc_state,
-    const Config::DSState& ds_state,
-    const Config::OMState& om_state)
+  Batch::Batch(const std::string& name,
+    Technique& technique,
+    const std::pair<const Entity*, uint32_t>& entities,
+    const std::pair<const Sampler*, uint32_t>& samplers,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views)
     : Usable(name)
-    , device(device)
-    , source(source)
-    , compilation(compilation)
-    , defines(defines.first, defines.first + defines.second)
-    , ia_state(ia_state)
-    , rc_state(rc_state)
-    , ds_state(ds_state)
-    , om_state(om_state)
+    , technique(technique)
+    , entities(entities.first, entities.first + entities.second)
+    , samplers(samplers.first, samplers.first + samplers.second)
+    , ub_views(ub_views.first, ub_views.first + ub_views.second)
+    , sb_views(sb_views.first, sb_views.first + sb_views.second)
+    , ri_views(ri_views.first, ri_views.first + ri_views.second)
+    , wi_views(wi_views.first, wi_views.first + wi_views.second)
+    , rb_views(rb_views.first, rb_views.first + rb_views.second)
+    , wb_views(wb_views.first, wb_views.first + wb_views.second)
   {
   }
 
-  Config::~Config()
+  Batch::~Batch()
   {
   }
 }

@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "d11_config.h"
+#include "d11_technique.h"
 #include "d11_device.h"
 
 #pragma comment (lib, "dxgi.lib")
@@ -179,9 +179,11 @@ namespace RayGene3D
     }
   }
 
-  void D11Config::Initialize()
+  void D11Technique::Initialize()
   {
-    auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto pass = reinterpret_cast<D11Pass*>(&this->GetPass());
+    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
+
     const auto path = device->GetPath();
 
     if (compilation != COMPILATION_UNKNOWN)
@@ -335,7 +337,8 @@ namespace RayGene3D
             strides[stride_item.first] = stride_item.second;
           }
 
-          BLAST_ASSERT(S_OK == device->GetDevice()->CreateInputLayout(element_descs.data(), uint32_t(element_descs.size()), vs_bytecode.data(), vs_bytecode.size(), &input_layout));
+          BLAST_ASSERT(S_OK == device->GetDevice()->CreateInputLayout(element_descs.data(), uint32_t(element_descs.size()),
+            vs_bytecode.data(), vs_bytecode.size(), &input_layout));
         }
 
         const auto get_fill = [](Fill fill)
@@ -428,24 +431,24 @@ namespace RayGene3D
 
 
 
-        const auto get_argument = [](Argument argument)
+        const auto get_operand = [](Operand operand)
         {
-          switch (argument)
+          switch (operand)
           {
-          default:                          return D3D11_BLEND_ZERO;
-          case ARGUMENT_ZERO:               return D3D11_BLEND_ZERO;
-          case ARGUMENT_ONE:                return D3D11_BLEND_ONE;
-          case ARGUMENT_SRC_COLOR:          return D3D11_BLEND_SRC_COLOR;
-          case ARGUMENT_INV_SRC_COLOR:      return D3D11_BLEND_INV_SRC_COLOR;
-          case ARGUMENT_SRC_ALPHA:          return D3D11_BLEND_SRC_ALPHA;
-          case ARGUMENT_INV_SRC_ALPHA:      return D3D11_BLEND_INV_SRC_ALPHA;
-          case ARGUMENT_DEST_ALPHA:         return D3D11_BLEND_DEST_ALPHA;
-          case ARGUMENT_INV_DEST_ALPHA:     return D3D11_BLEND_INV_DEST_ALPHA;
-          case ARGUMENT_DEST_COLOR:         return D3D11_BLEND_DEST_COLOR;
-          case ARGUMENT_INV_DEST_COLOR:     return D3D11_BLEND_INV_DEST_COLOR;
-          case ARGUMENT_SRC_ALPHA_SAT:      return D3D11_BLEND_SRC_ALPHA_SAT;
-          case ARGUMENT_BLEND_FACTOR:       return D3D11_BLEND_BLEND_FACTOR;
-          case ARGUMENT_INV_BLEND_FACTOR:   return D3D11_BLEND_INV_BLEND_FACTOR;
+          default:                         return D3D11_BLEND_ZERO;
+          case OPERAND_ZERO:               return D3D11_BLEND_ZERO;
+          case OPERAND_ONE:                return D3D11_BLEND_ONE;
+          case OPERAND_SRC_COLOR:          return D3D11_BLEND_SRC_COLOR;
+          case OPERAND_INV_SRC_COLOR:      return D3D11_BLEND_INV_SRC_COLOR;
+          case OPERAND_SRC_ALPHA:          return D3D11_BLEND_SRC_ALPHA;
+          case OPERAND_INV_SRC_ALPHA:      return D3D11_BLEND_INV_SRC_ALPHA;
+          case OPERAND_DEST_ALPHA:         return D3D11_BLEND_DEST_ALPHA;
+          case OPERAND_INV_DEST_ALPHA:     return D3D11_BLEND_INV_DEST_ALPHA;
+          case OPERAND_DEST_COLOR:         return D3D11_BLEND_DEST_COLOR;
+          case OPERAND_INV_DEST_COLOR:     return D3D11_BLEND_INV_DEST_COLOR;
+          case OPERAND_SRC_ALPHA_SAT:      return D3D11_BLEND_SRC_ALPHA_SAT;
+          case OPERAND_BLEND_FACTOR:       return D3D11_BLEND_BLEND_FACTOR;
+          case OPERAND_INV_BLEND_FACTOR:   return D3D11_BLEND_INV_BLEND_FACTOR;
           }
         };
 
@@ -469,11 +472,11 @@ namespace RayGene3D
         for (uint32_t i = 0; i < std::min(uint32_t(om_state.target_blends.size()), 8u); ++i)
         {
           blend_desc.RenderTarget[i].BlendEnable = om_state.target_blends[i].blend_enabled;
-          blend_desc.RenderTarget[i].SrcBlend = get_argument(om_state.target_blends[i].src_color);
-          blend_desc.RenderTarget[i].DestBlend = get_argument(om_state.target_blends[i].dst_color);
+          blend_desc.RenderTarget[i].SrcBlend = get_operand(om_state.target_blends[i].src_color);
+          blend_desc.RenderTarget[i].DestBlend = get_operand(om_state.target_blends[i].dst_color);
           blend_desc.RenderTarget[i].BlendOp = get_operation(om_state.target_blends[i].blend_color);
-          blend_desc.RenderTarget[i].SrcBlendAlpha = get_argument(om_state.target_blends[i].src_alpha);
-          blend_desc.RenderTarget[i].DestBlendAlpha = get_argument(om_state.target_blends[i].dst_alpha);
+          blend_desc.RenderTarget[i].SrcBlendAlpha = get_operand(om_state.target_blends[i].src_alpha);
+          blend_desc.RenderTarget[i].DestBlendAlpha = get_operand(om_state.target_blends[i].dst_alpha);
           blend_desc.RenderTarget[i].BlendOpAlpha = get_operation(om_state.target_blends[i].blend_alpha);
           blend_desc.RenderTarget[i].RenderTargetWriteMask = om_state.target_blends[i].write_mask;
         }
@@ -542,12 +545,48 @@ namespace RayGene3D
     }
   }
 
-  void D11Config::Use()
+  void D11Technique::Use()
   {
-    auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto pass = reinterpret_cast<D11Pass*>(&this->GetPass());
+    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
+    
+     
+    if (pass->GetType() == Pass::TYPE_GRAPHIC)
+    {
+
+      device->GetContext()->VSSetShader(vs_shader, nullptr, 0);
+      device->GetContext()->HSSetShader(hs_shader, nullptr, 0);
+      device->GetContext()->DSSetShader(ds_shader, nullptr, 0);
+      device->GetContext()->GSSetShader(gs_shader, nullptr, 0);
+      device->GetContext()->PSSetShader(ps_shader, nullptr, 0);
+
+      device->GetContext()->IASetPrimitiveTopology(primitive_topology);
+      device->GetContext()->IASetInputLayout(input_layout);
+
+      device->GetContext()->RSSetState(raster_state);
+
+      uint32_t stencil_reference = 0xFFFFFFFF;
+      device->GetContext()->OMSetDepthStencilState(depth_state, stencil_reference);
+
+      float blend_factors[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+      uint32_t sample_mask = 0xFFFFFFFF;
+      device->GetContext()->OMSetBlendState(blend_state, blend_factors, sample_mask);
+
+      device->GetContext()->RSSetViewports(vp_items.size(), vp_items.data());
+    }
+
+    if (pass->GetType() == Pass::TYPE_COMPUTE)
+    {
+      device->GetContext()->CSSetShader(cs_shader, nullptr, 0);
+    }
+
+    for (const auto& batch : batches)
+    {
+      batch->Use();
+    }
   }
 
-  void D11Config::Discard()
+  void D11Technique::Discard()
   {
     if (raster_state)
     {
@@ -610,21 +649,21 @@ namespace RayGene3D
     }
   }
 
-  D11Config::D11Config(const std::string& name,
-    Device& device,
-    const std::string& source, Config::Compilation compilation,
+  D11Technique::D11Technique(const std::string& name,
+    Pass& pass,
+    const std::string& source, Technique::Compilation compilation,
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Config::IAState& ia_state,
-    const Config::RCState& rc_state,
-    const Config::DSState& ds_state,
-    const Config::OMState& om_state)
-    : Config(name, device, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
+    const Technique::IAState& ia_state,
+    const Technique::RCState& rc_state,
+    const Technique::DSState& ds_state,
+    const Technique::OMState& om_state)
+    : Technique(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
-    D11Config::Initialize();
+    D11Technique::Initialize();
   }
 
-  D11Config::~D11Config()
+  D11Technique::~D11Technique()
   {
-    D11Config::Discard();
+    D11Technique::Discard();
   }
 }

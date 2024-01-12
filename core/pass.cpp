@@ -34,15 +34,17 @@ namespace RayGene3D
   Pass::Pass(const std::string& name,
     Device& device,
     Pass::Type type,
-    const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
     const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
+    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
+    const View::Range& ins_or_grid_x,
+    const View::Range& vtx_or_grid_y)
     : Usable(name)
     , device(device)
     , type(type)
-    , subpasses(subpasses.first, subpasses.first + subpasses.second)
     , rt_attachments(rt_attachments.first, rt_attachments.first + rt_attachments.second)
     , ds_attachments(ds_attachments.first, ds_attachments.first + ds_attachments.second)
+    , ins_or_grid_x(ins_or_grid_x)
+    , vtx_or_grid_y(vtx_or_grid_y)
   {
   }
   

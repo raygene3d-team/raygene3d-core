@@ -30,8 +30,6 @@ THE SOFTWARE.
 #pragma once
 #include "../device.h"
 #include "d11_resource.h"
-#include "d11_layout.h"
-#include "d11_config.h"
 #include "d11_pass.h"
 
 #include <dxgi.h>
@@ -84,38 +82,15 @@ namespace RayGene3D
       return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
     }
 
-    const std::shared_ptr<Layout>& CreateLayout(const std::string& name,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Layout::Sampler*, uint32_t>& samplers,
-      const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities) override
-    {
-      return layouts.emplace_back(new D11Layout(name, *this, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views, samplers, rtx_entities));
-    }
-
-    const std::shared_ptr<Config>& CreateConfig(const std::string& name,
-      const std::string& source,
-      Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Config::IAState& ia_state,
-      const Config::RCState& rc_state,
-      const Config::DSState& ds_state,
-      const Config::OMState& om_state) override
-    {
-      return configs.emplace_back(new D11Config(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
-    }
-
     const std::shared_ptr<Pass>& CreatePass(const std::string& name,
       Pass::Type type,
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {}) override
+      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
+      const View::Range& ins_or_grid_x = View::Range{ 0, 0 },
+      const View::Range& vtx_or_grid_y = View::Range{ 0, 0 }) override
     {
-      return passes.emplace_back(new D11Pass(name, *this, type, subpasses, rt_attachments, ds_attachments));
+      return passes.emplace_back(new D11Pass(name, *this, type, 
+        rt_attachments, ds_attachments, ins_or_grid_x, vtx_or_grid_y));
     }
 
   public:

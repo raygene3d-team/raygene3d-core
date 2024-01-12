@@ -174,10 +174,10 @@ namespace RayGene3D
       create_info.viewType = get_type();
       create_info.format = get_format();
       create_info.subresourceRange.aspectMask = get_aspect();
-      create_info.subresourceRange.baseMipLevel = stride.offset;
-      create_info.subresourceRange.levelCount = stride.length == -1 ? resource->GetStride() : stride.length;
-      create_info.subresourceRange.baseArrayLayer = count.offset;
-      create_info.subresourceRange.layerCount = count.length == -1 ? resource->GetCount() : count.length;
+      create_info.subresourceRange.baseMipLevel = mipmaps_or_count.offset;
+      create_info.subresourceRange.levelCount = mipmaps_or_count.length == -1 ? resource->GetMipmapsOrCount() : mipmaps_or_count.length;
+      create_info.subresourceRange.baseArrayLayer = layers_or_stride.offset;
+      create_info.subresourceRange.layerCount = layers_or_stride.length == -1 ? resource->GetLayersOrStride() : layers_or_stride.length;
 
       //if (create_info.format == VK_FORMAT_D32_SFLOAT && bind != BIND_DEPTH_STENCIL)
       //{
@@ -229,19 +229,10 @@ namespace RayGene3D
   VLKView::VLKView(const std::string& name,
     Resource& resource,
     Usage usage,
-    const View::Range& bytes)
-    : View(name, resource, usage, bytes)
-  {
-    VLKView::Initialize();
-  }
-
-  VLKView::VLKView(const std::string& name,
-    Resource& resource,
-    Usage usage,
-    View::Bind bind,
-    const View::Range& mipmaps,
-    const View::Range& layers)
-    : View(name, resource, usage, bind, mipmaps, layers)
+    const View::Range& mipmaps_or_count,
+    const View::Range& layers_or_stride,
+    View::Bind bind)
+    : View(name, resource, usage, mipmaps_or_count, layers_or_stride, bind)
   {
     VLKView::Initialize();
   }

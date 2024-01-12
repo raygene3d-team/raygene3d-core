@@ -813,25 +813,20 @@ namespace RayGene3D
       vkDeviceWaitIdle(device);
     }
 
-    for (auto& pass : passes)
+    if (screen) // screen MUST be released only after device jobs have been completed
     {
-      if (pass) { /*BLAST_LOG("Discarding queue [%s]", name.c_str());*/ pass->Discard(); }
+      screen.reset();
     }
 
-    for (auto& config : configs)
-    {
-      if (config) { /*BLAST_LOG("Discarding shader [%s]", name.c_str());*/ config->Discard(); }
-    }
+    //for (auto& pass : passes)
+    //{
+    //  if (pass) { /*BLAST_LOG("Discarding queue [%s]", name.c_str());*/ pass->Discard(); }
+    //}
 
-    for (auto& layout : layouts)
-    {
-      if (layout) { /*BLAST_LOG("Discarding layout [%s]", name.c_str());*/ layout->Discard(); }
-    }
-
-    for (auto& resource : resources)
-    {
-      if (resource) { /*BLAST_LOG("Discarding resource [%s]", name.c_str());*/ resource->Discard(); }
-    }
+    //for (auto& resource : resources)
+    //{
+    //  if (resource) { /*BLAST_LOG("Discarding resource [%s]", name.c_str());*/ resource->Discard(); }
+    //}
 
     DestroyScratch();
     DestroyStaging();

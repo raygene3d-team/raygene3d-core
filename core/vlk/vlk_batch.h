@@ -28,7 +28,8 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../layout.h"
+#include "../batch.h"
+//#include "vlk_mesh.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -42,11 +43,22 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class VLKLayout : public Layout
+  class VLKBatch : public Batch
   {
   protected:
     VkDescriptorPool pool{ nullptr };
     VkPipelineLayout layout{ nullptr };
+
+  protected:
+    VkPipeline pipeline{ nullptr };
+
+  protected:
+    VkDeviceMemory table_memory{ nullptr };
+    VkBuffer table_buffer{ nullptr };
+    VkStridedDeviceAddressRegionKHR rgen_region{};
+    VkStridedDeviceAddressRegionKHR miss_region{};
+    VkStridedDeviceAddressRegionKHR xhit_region{};
+    VkStridedDeviceAddressRegionKHR call_region{};
 
   protected:
     std::vector<VkSampler> sampler_states;
@@ -55,18 +67,21 @@ namespace RayGene3D
     std::array<VkDescriptorSet, 1> sets;
 
   protected:
+    std::vector<VkAccelerationStructureKHR> as_items;
+
+  protected:
     std::vector<VkPushConstantRange> constants; //TODO: ???
     std::vector<VkDescriptorSetLayout> tables;
 
   protected:
     //struct RTXItem
-    //{
-    //  VkDeviceMemory memory{ nullptr };
-    //  VkBuffer buffer{ nullptr };
-    //  VkAccelerationStructureKHR{ nullptr };
-    //};
-    //std::vector<RTXItem> blas_items;
-    //std::vector<RTXItem> tlas_items;
+//{
+//  VkDeviceMemory memory{ nullptr };
+//  VkBuffer buffer{ nullptr };
+//  VkAccelerationStructureKHR{ nullptr };
+//};
+//std::vector<RTXItem> blas_items;
+//std::vector<RTXItem> tlas_items;
 
     std::vector<VkDeviceMemory> blas_memories;
     std::vector<VkBuffer> blas_buffers;
@@ -83,35 +98,45 @@ namespace RayGene3D
     VkFence fence{ nullptr };
 
   protected:
+    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
+    PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR{ nullptr };
+    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR{ nullptr };
+    PFN_vkCmdTraceRaysIndirectKHR vkCmdTraceRaysIndirectKHR{ nullptr };
+
+  protected:
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
-    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
     PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
     PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };
     PFN_vkCmdBuildAccelerationStructuresKHR vkCmdBuildAccelerationStructuresKHR{ nullptr };
-
-  public:
-    const VkPipelineLayout& GetLayout() const { return layout; }
-
-  public:
-    const VkDescriptorSet* GetSetItems() const { return sets.data(); }
-    uint32_t GetSetCount() const { return 1u; }
+    PFN_vkDestroyAccelerationStructureKHR vkDestroyAccelerationStructureKHR{ nullptr };
 
   public:
     void Initialize() override;
     void Use() override;
     void Discard() override;
 
+  //public:
+  //  const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+  //    const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+  //  ) override
+  //  {
+  //    return meshes.emplace_back(new VLKMesh(name, *this, subsets, vtx_views, idx_views));
+  //  }
+
   public:
-    VLKLayout(const std::string& name,
-      Device& device,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Layout::Sampler*, uint32_t>& samplers = {},
-      const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities = {});
-    virtual ~VLKLayout();
+    VLKBatch(const std::string& name,
+      Technique& technique,
+      const std::pair<const Entity*, uint32_t>& entities,
+      const std::pair<const Sampler*, uint32_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+    );
+    virtual ~VLKBatch();
   };
 }

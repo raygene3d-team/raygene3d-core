@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../pass.h"
+#include "d11_technique.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
@@ -48,12 +49,26 @@ namespace RayGene3D
     void Discard() override;
 
   public:
+    const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
+      const std::string& source,
+      Technique::Compilation compilation,
+      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state) override
+    {
+      return effects.emplace_back(new D11Technique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+    }
+
+  public:
     D11Pass(const std::string& name,
       Device& device,
       Pass::Type type,
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
+      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
+      const View::Range& ins_or_grid_x = View::Range{ 0, 0 },
+      const View::Range& vtx_or_grid_y = View::Range{ 0, 0 });
     virtual ~D11Pass();
   };
 }

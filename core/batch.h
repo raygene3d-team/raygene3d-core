@@ -29,15 +29,54 @@ THE SOFTWARE.
 
 #pragma once
 #include "view.h"
+//#include "mesh.h"
 
 namespace RayGene3D
 {
-  class Device;
+  class Technique;
 
-  class Layout : public Usable //TODO Rename into Layout
+  class Batch : public Usable //TODO Rename into Batch
   {
   protected:
-    Device& device;
+    Technique& technique;
+
+  public:
+    using SBOffset = std::optional<std::array<uint32_t, 4>>;
+    using PushData = std::optional<std::array<uint8_t, 128>>;
+
+  public:
+    static const uint32_t va_limit =16u;
+    static const uint32_t ia_limit = 1u;
+
+  public:
+    struct Graphic
+    {
+      uint32_t idx_count{ 0 };
+      uint32_t ins_count{ 0 };
+      uint32_t idx_offset{ 0 };
+      uint32_t vtx_offset{ 0 };
+      uint32_t ins_offset{ 0 };
+    };
+
+    struct Compute
+    {
+      uint32_t grid_x{ 0 };
+      uint32_t grid_y{ 0 };
+      uint32_t grid_z{ 0 };
+    };
+
+  public:
+    struct Entity
+    {
+      std::vector<std::shared_ptr<View>> va_views; //vertex arrays
+      std::vector<std::shared_ptr<View>> ia_views; //index_arrays
+      std::shared_ptr<View> arg_view;
+      View::Range ins_or_grid_x;
+      View::Range vtx_or_grid_y;
+      View::Range idx_or_grid_z;
+      SBOffset sb_offset{ std::nullopt };
+      PushData push_data{ std::nullopt };
+    };
 
   public:
     struct Sampler
@@ -82,19 +121,11 @@ namespace RayGene3D
       float bias_lod{ 0.0f };
     };
 
-  public:
-    struct RTXEntity
-    {
-      float transform[12];
+  protected:
+    std::vector<Entity> entities;
 
-      std::shared_ptr<View> va_view;
-      uint32_t va_offset;
-      uint32_t va_count;
-
-      std::shared_ptr<View> ia_view;
-      uint32_t ia_offset;
-      uint32_t ia_count;
-    };
+  protected:
+    std::vector<Sampler> samplers;
 
   protected:
     std::vector<std::shared_ptr<View>> ub_views; //uniform buffers
@@ -108,14 +139,20 @@ namespace RayGene3D
     std::vector<std::shared_ptr<View>> rb_views; //read-only buffers
     std::vector<std::shared_ptr<View>> wb_views; //read-write buffers
 
-  protected:
-    std::vector<Sampler> samplers;
-
-  protected:
-    std::vector<RTXEntity> rtx_entities;
+  //protected:
+  //  std::list<std::shared_ptr<Mesh>> meshes;
     
   public:
-    Device& GetDevice() { return device; }
+    Technique& GetTechnique() { return technique; }
+
+  //public:
+  //  virtual const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+  //    const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+  //  ) = 0;
+  //  void VisitMesh(std::function<void(const std::shared_ptr<Mesh>&)> visitor) { for (const auto& mesh : meshes) visitor(mesh); }
+  //  void DestroyMesh(const std::shared_ptr<Mesh>& mesh) { meshes.remove(mesh); }
 
   public:
     void Initialize() override = 0;
@@ -123,16 +160,21 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    Layout(const std::string& name,
-      Device& device,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Layout::Sampler*, uint32_t>& samplers = {},
-      const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities = {});
-    virtual ~Layout();
+    Batch(const std::string& name,
+      Technique& technique,
+      const std::pair<const Entity*, uint32_t>& entities,
+      const std::pair<const Sampler*, uint32_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+    );
+    virtual ~Batch();
   };
+
+  typedef std::shared_ptr<Batch> SPtrBatch;
+  typedef std::weak_ptr<Batch> WPtrBatch;
+  typedef std::unique_ptr<Batch> UPtrBatch;
 }

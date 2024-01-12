@@ -61,8 +61,10 @@ namespace RayGene3D
 
   protected:
     Usage usage{ USAGE_UNKNOWN };
-    uint32_t stride{ 0 };
-    uint32_t count{ 0 };
+
+  protected:
+    uint32_t mipmaps_or_count{ 0 };
+    uint32_t layers_or_stride{ 0 };
 
   protected:
     Format format{ FORMAT_UNKNOWN };
@@ -123,8 +125,10 @@ namespace RayGene3D
 
   public:
     Usage GetUsage() const { return usage; }
-    uint32_t GetStride() const { return stride; }
-    uint32_t GetCount() const { return count; }
+
+  public:
+    uint32_t GetMipmapsOrCount() const { return mipmaps_or_count; }
+    uint32_t GetLayersOrStride() const { return layers_or_stride; }
 
   public:
     Format GetFormat() const { return format; }
@@ -153,11 +157,11 @@ namespace RayGene3D
 
   public:
     virtual const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, const View::Range& bytes = View::Range{ 0, uint32_t(-1) }) = 0;
-    virtual const std::shared_ptr<View>& CreateView(const std::string& name,
-      Usage usage, View::Bind bind, 
-      const View::Range& mipmaps = View::Range{ 0, uint32_t(-1) }, 
-      const View::Range& layers = View::Range{ 0, uint32_t(-1) }) = 0;
+      Usage usage, 
+      const View::Range& mipmaps_or_count = View::Range{ 0, uint32_t(-1) },
+      const View::Range& layers_or_stride = View::Range{ 0, uint32_t(-1) },
+      View::Bind bind = View::BIND_UNKNOWN
+    ) = 0;
     void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view); }
     void DestroyView(const std::shared_ptr<View>& view) { views.remove(view); };
 
@@ -191,4 +195,8 @@ namespace RayGene3D
       const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
     virtual ~Resource();
   };
+
+  typedef std::shared_ptr<Resource> SPtrResource;
+  typedef std::weak_ptr<Resource> WPtrResource;
+  typedef std::unique_ptr<Resource> UPtrResource;
 }

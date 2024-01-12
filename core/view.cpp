@@ -35,26 +35,15 @@ namespace RayGene3D
   View::View(const std::string& name,
     Resource& resource,
     Usage usage,
-    const View::Range& bytes)
+    const View::Range& mipmaps_or_count,
+    const View::Range& layers_or_stride,
+    View::Bind bind)
     : Usable(name)
     , resource(resource)
     , usage(usage)
-    , count(bytes)
-  {
-  }
-
-  View::View(const std::string& name,
-    Resource& resource,
-    Usage usage,
-    View::Bind bind,
-    const View::Range& mipmaps,
-    const View::Range& layers)
-    : Usable(name)
-    , resource(resource)
-    , usage(usage)
+    , mipmaps_or_count(mipmaps_or_count)
+    , layers_or_stride(layers_or_stride)
     , bind(bind)
-    , stride(mipmaps)
-    , count(layers)
   {
   }
 

@@ -50,8 +50,8 @@ namespace RayGene3D
   public:
     struct Range
     {
-      uint32_t offset{ 0 };
-      uint32_t length{ uint32_t(-1) };
+      uint32_t offset{ 0u };
+      uint32_t length{ 0u };
     };
    
   protected:
@@ -64,8 +64,8 @@ namespace RayGene3D
     Bind bind{ BIND_UNKNOWN };
 
   protected:
-    Range stride;
-    Range count;
+    Range mipmaps_or_count;
+    Range layers_or_stride;
 
   public:
     Resource& GetResource() { return resource; }
@@ -75,25 +75,24 @@ namespace RayGene3D
     Bind GetBind() const { return bind; }
 
   public:
-    const Range& GetStride() const { return stride; }
-    const Range& GetCount() const { return count; }
+    const Range& GetMipmapsOrCount() const { return mipmaps_or_count; }
+    const Range& GetLayersOrStride() const { return layers_or_stride; }
 
   public:
     void Initialize() override = 0;
     void Use() override = 0;
     void Discard() override = 0;
 
-  public:
     View(const std::string& name,
       Resource& resource,
       Usage usage,
-      const View::Range& bytes = Range{0, uint32_t(-1)});
-    View(const std::string& name,
-      Resource& resource,
-      Usage usage,
-      View::Bind bind,
-      const View::Range& mipmaps = Range{ 0, uint32_t(-1) },
-      const View::Range& layers = Range{ 0, uint32_t(-1) });
+      const View::Range& mipmaps_or_count = Range{ 0, uint32_t(-1) },
+      const View::Range& layers_or_stride = Range{ 0, uint32_t(-1) },
+      View::Bind bind = View::BIND_UNKNOWN);
     virtual ~View();
   };
+
+  typedef std::shared_ptr<View> SPtrView;
+  typedef std::weak_ptr<View> WPtrView;
+  typedef std::unique_ptr<View> UPtrView;
 }

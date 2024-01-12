@@ -106,25 +106,15 @@ namespace RayGene3D
       BLAST_ASSERT(S_OK == swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backbuffer));
     }
 
-    for (auto& resource : resources)
-    {
-      if (resource) { resource->Initialize(); }
-    }
+    //for (auto& resource : resources)
+    //{
+    //  if (resource) { resource->Initialize(); }
+    //}
 
-    for (auto& layout : layouts)
-    {
-      if (layout) { layout->Initialize(); }
-    }
-
-    for (auto& config : configs)
-    {
-      if (config) { config->Initialize(); }
-    }
-
-    for (auto& pass : passes)
-    {
-      if (pass) { pass->Initialize(); }
-    }
+    //for (auto& pass : passes)
+    //{
+    //  if (pass) { pass->Initialize(); }
+    //}
   }
 
 
@@ -144,8 +134,8 @@ namespace RayGene3D
     //  auto dst_resource = back_buffer_;
 
     //  spark_broker->Use();
-    //  auto spark_target_resource = &dynamic_cast<SparkBroker*>(spark_broker.get())->GetAsset()->AccessUnorderedAccesses()[0]->GetResource();
-    //  //auto spark_target_resource = &dynamic_cast<SparkBroker*>(spark_broker_.get())->GetOutput()->AccessRenderTargets()[0]->GetResource();
+    //  auto spark_target_resource = &dynamic_cast<Render3DBrokerBroker*>(spark_broker.get())->GetAsset()->AccessUnorderedAccesses()[0]->GetResource();
+    //  //auto spark_target_resource = &dynamic_cast<Render3DBrokerBroker*>(spark_broker_.get())->GetOutput()->AccessRenderTargets()[0]->GetResource();
     //  auto src_resource = dynamic_cast<D3DResource*>(spark_target_resource)->GetResource();
 
     //  //const bool screenshot_enabled = false;
@@ -197,25 +187,15 @@ namespace RayGene3D
 
   void D11Device::Discard()
   {
-    for (auto& pass : passes)
-    {
-      if (pass) { pass->Discard(); }
-    }
+    //for (auto& pass : passes)
+    //{
+    //  if (pass) { pass->Discard(); }
+    //}
 
-    for (auto& config : configs)
-    {
-      if (config) { config->Discard(); }
-    }
-
-    for (auto& layout : layouts)
-    {
-      if (layout) { layout->Discard(); }
-    }
-
-    for (auto& resource : resources)
-    {
-      if (resource) { resource->Discard(); }
-    }
+    //for (auto& resource : resources)
+    //{
+    //  if (resource) { resource->Discard(); }
+    //}
 
     if (backbuffer)
     {

@@ -28,7 +28,8 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../config.h"
+#include "../technique.h"
+#include "vlk_batch.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -42,7 +43,7 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class VLKConfig : public Config
+  class VLKTechnique : public Technique
   {
   protected:
     VkShaderModule vs_module{ nullptr };
@@ -57,7 +58,6 @@ namespace RayGene3D
     VkShaderModule chit_module{ nullptr };
     VkShaderModule ahit_module{ nullptr };
     VkShaderModule miss_module{ nullptr };
-
 
   protected:
     std::vector<VkPipelineShaderStageCreateInfo> stages;
@@ -109,6 +109,20 @@ namespace RayGene3D
     uint32_t GetGroupCount() const { return uint32_t(groups.size()); }
     const VkRayTracingShaderGroupCreateInfoKHR* GetGroupArray() const { return groups.data(); }
 
+  public:
+    const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
+      const std::pair<const Batch::Entity*, uint32_t>& entities,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
+    ) override
+    {
+      return batches.emplace_back(new VLKBatch(name, *this, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
+    }
 
   public:
     void Initialize() override;
@@ -116,15 +130,15 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    VLKConfig(const std::string& name,
-      Device& device,
+    VLKTechnique(const std::string& name,
+      Pass& pass,
       const std::string& source,
-      Config::Compilation compilation,
+      Technique::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Config::IAState& ia_state,
-      const Config::RCState& rc_state,
-      const Config::DSState& ds_state,
-      const Config::OMState& om_state);
-    virtual ~VLKConfig();
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state);
+    virtual ~VLKTechnique();
   };
 }

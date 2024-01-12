@@ -28,18 +28,18 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "view.h"
+#include "batch.h"
 
 namespace RayGene3D
 {
-  class Device;
+  class Pass;
 
   typedef void(*DefineVisitor)(const std::string&, const std::string&);
 
-  class Config : public Usable
+  class Technique : public Usable
   {
   protected:
-    Device& device;
+    Pass& pass;
 
   public:
     enum Compilation
@@ -142,7 +142,7 @@ namespace RayGene3D
     struct IAState
     {
       Topology topology{ TOPOLOGY_UNKNOWN };
-      Indexer indexer{ INDEXER_UNKNOWN };
+      Indexer indexer{ INDEXER_UNKNOWN };  //TODO: Remove
       std::vector<Attribute> attributes;
     };
 
@@ -256,22 +256,22 @@ namespace RayGene3D
     DSState ds_state;
     
   public:
-    enum Argument
+    enum Operand
     {
-      ARGUMENT_UNKNOWN = 0,
-      ARGUMENT_ZERO = 1,
-      ARGUMENT_ONE = 2,
-      ARGUMENT_SRC_COLOR = 3,
-      ARGUMENT_INV_SRC_COLOR = 4,
-      ARGUMENT_SRC_ALPHA = 5,
-      ARGUMENT_INV_SRC_ALPHA = 6,
-      ARGUMENT_DEST_ALPHA = 7,
-      ARGUMENT_INV_DEST_ALPHA = 8,
-      ARGUMENT_DEST_COLOR = 9,
-      ARGUMENT_INV_DEST_COLOR = 10,
-      ARGUMENT_SRC_ALPHA_SAT = 11,
-      ARGUMENT_BLEND_FACTOR = 14,
-      ARGUMENT_INV_BLEND_FACTOR = 15,
+      OPERAND_UNKNOWN = 0,
+      OPERAND_ZERO = 1,
+      OPERAND_ONE = 2,
+      OPERAND_SRC_COLOR = 3,
+      OPERAND_INV_SRC_COLOR = 4,
+      OPERAND_SRC_ALPHA = 5,
+      OPERAND_INV_SRC_ALPHA = 6,
+      OPERAND_DEST_ALPHA = 7,
+      OPERAND_INV_DEST_ALPHA = 8,
+      OPERAND_DEST_COLOR = 9,
+      OPERAND_INV_DEST_COLOR = 10,
+      OPERAND_SRC_ALPHA_SAT = 11,
+      OPERAND_BLEND_FACTOR = 14,
+      OPERAND_INV_BLEND_FACTOR = 15,
     };
 
     enum Operation
@@ -287,11 +287,11 @@ namespace RayGene3D
     struct Blend
     {
       bool blend_enabled{ false };
-      Argument src_color{ ARGUMENT_ONE };
-      Argument dst_color{ ARGUMENT_ZERO };
+      Operand src_color{ OPERAND_ONE };
+      Operand dst_color{ OPERAND_ZERO };
       Operation blend_color{ OPERATION_ADD };
-      Argument src_alpha{ ARGUMENT_ONE };
-      Argument dst_alpha{ ARGUMENT_ZERO };
+      Operand src_alpha{ OPERAND_ONE };
+      Operand dst_alpha{ OPERAND_ZERO };
       Operation blend_alpha{ OPERATION_ADD };
       uint8_t write_mask{ 0xF };
     };
@@ -306,11 +306,28 @@ namespace RayGene3D
       uint32_t sample_mask{ 0xFFFFFFFF };
     };
 
-    protected:
-      OMState om_state;
+  protected:
+    OMState om_state;
+
+  protected:
+    std::list<std::shared_ptr<Batch>> batches;
 
   public:
-    Device& GetDevice() { return device; }
+    Pass& GetPass() { return pass; }
+
+  public:
+    virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
+      const std::pair<const Batch::Entity*, uint32_t>& entities,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+    ) = 0;
+    void VisitBatch(std::function<void(const std::shared_ptr<Batch>&)> visitor) { for (const auto& batch : batches) visitor(batch); }
+    void DestroyBatch(const std::shared_ptr<Batch>& batch) { batches.remove(batch); }
   
   public:
     const IAState& GetIAState() const { return ia_state; }
@@ -324,15 +341,19 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    Config(const std::string& name,
-      Device& device,
+    Technique(const std::string& name,
+      Pass& pass,
       const std::string& source,
-      Config::Compilation compilation, 
+      Technique::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Config::IAState& ia_state,
-      const Config::RCState& rc_state,
-      const Config::DSState& ds_state,
-      const Config::OMState& om_state);
-    virtual ~Config();
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state);
+    virtual ~Technique();
   };
+
+  typedef std::shared_ptr<Technique> SPtrTechnique;
+  typedef std::weak_ptr<Technique> WPtrTechnique;
+  typedef std::unique_ptr<Technique> UPtrTechnique;
 }

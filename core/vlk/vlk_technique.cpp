@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "vlk_config.h"
+#include "vlk_technique.h"
 #include "vlk_device.h"
 
 #define ENABLE_HLSL
@@ -306,9 +306,11 @@ namespace RayGene3D
     glslang::FinalizeProcess();
   }
 
-  void VLKConfig::Initialize()
+  void VLKTechnique::Initialize()
   {
-    auto device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
+    auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
+    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
+
     const auto path = device->GetPath();
 
     if (compilation != COMPILATION_UNKNOWN)
@@ -765,22 +767,22 @@ namespace RayGene3D
     multisample_state.alphaToOneEnable = VK_FALSE;
 
     // color blend
-    const auto get_argument = [](Argument argument)
+    const auto get_operand = [](Operand operand)
     {
-      switch (argument)
+      switch (operand)
       {
-      default:                          return VK_BLEND_FACTOR_ZERO;
-      case ARGUMENT_ZERO:               return VK_BLEND_FACTOR_ZERO;
-      case ARGUMENT_ONE:                return VK_BLEND_FACTOR_ONE;
-      case ARGUMENT_SRC_COLOR:          return VK_BLEND_FACTOR_SRC_COLOR;
-      case ARGUMENT_INV_SRC_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
-      case ARGUMENT_SRC_ALPHA:          return VK_BLEND_FACTOR_SRC_ALPHA;
-      case ARGUMENT_INV_SRC_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-      case ARGUMENT_DEST_ALPHA:         return VK_BLEND_FACTOR_DST_ALPHA;
-      case ARGUMENT_INV_DEST_ALPHA:     return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
-      case ARGUMENT_DEST_COLOR:         return VK_BLEND_FACTOR_DST_COLOR;
-      case ARGUMENT_INV_DEST_COLOR:     return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-      case ARGUMENT_SRC_ALPHA_SAT:      return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+      default:                         return VK_BLEND_FACTOR_ZERO;
+      case OPERAND_ZERO:               return VK_BLEND_FACTOR_ZERO;
+      case OPERAND_ONE:                return VK_BLEND_FACTOR_ONE;
+      case OPERAND_SRC_COLOR:          return VK_BLEND_FACTOR_SRC_COLOR;
+      case OPERAND_INV_SRC_COLOR:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+      case OPERAND_SRC_ALPHA:          return VK_BLEND_FACTOR_SRC_ALPHA;
+      case OPERAND_INV_SRC_ALPHA:      return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+      case OPERAND_DEST_ALPHA:         return VK_BLEND_FACTOR_DST_ALPHA;
+      case OPERAND_INV_DEST_ALPHA:     return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+      case OPERAND_DEST_COLOR:         return VK_BLEND_FACTOR_DST_COLOR;
+      case OPERAND_INV_DEST_COLOR:     return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+      case OPERAND_SRC_ALPHA_SAT:      return VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
       }
     };
 
@@ -803,11 +805,11 @@ namespace RayGene3D
     {
       colorblend_attachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
       colorblend_attachments[i].blendEnable = om_state.target_blends[i].blend_enabled ? VK_TRUE : VK_FALSE;
-      colorblend_attachments[i].srcColorBlendFactor = get_argument(om_state.target_blends[i].src_color);
-      colorblend_attachments[i].dstColorBlendFactor = get_argument(om_state.target_blends[i].dst_color);
+      colorblend_attachments[i].srcColorBlendFactor = get_operand(om_state.target_blends[i].src_color);
+      colorblend_attachments[i].dstColorBlendFactor = get_operand(om_state.target_blends[i].dst_color);
       colorblend_attachments[i].colorBlendOp = get_operation(om_state.target_blends[i].blend_color);
-      colorblend_attachments[i].srcAlphaBlendFactor = get_argument(om_state.target_blends[i].src_alpha);
-      colorblend_attachments[i].dstAlphaBlendFactor = get_argument(om_state.target_blends[i].dst_alpha);
+      colorblend_attachments[i].srcAlphaBlendFactor = get_operand(om_state.target_blends[i].src_alpha);
+      colorblend_attachments[i].dstAlphaBlendFactor = get_operand(om_state.target_blends[i].dst_alpha);
       colorblend_attachments[i].alphaBlendOp = get_operation(om_state.target_blends[i].blend_alpha);
     }
 
@@ -940,13 +942,18 @@ namespace RayGene3D
     }
   }
 
-  void VLKConfig::Use()
+  void VLKTechnique::Use()
   {
+    for (const auto& batch : batches)
+    {
+      batch->Use();
+    }
   }
 
-  void VLKConfig::Discard()
+  void VLKTechnique::Discard()
   {
-    auto device = reinterpret_cast<VLKDevice*>(&this->GetDevice());
+    auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
+    auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
     stages.clear();
     
@@ -1012,22 +1019,22 @@ namespace RayGene3D
     }
   }
 
-  VLKConfig::VLKConfig(const std::string& name,
-    Device& device,
+  VLKTechnique::VLKTechnique(const std::string& name,
+    Pass& pass,
     const std::string& source,
-    Config::Compilation compilation,
+    Technique::Compilation compilation,
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Config::IAState& ia_state,
-    const Config::RCState& rc_state,
-    const Config::DSState& ds_state,
-    const Config::OMState& om_state)
-    : Config(name, device, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
+    const Technique::IAState& ia_state,
+    const Technique::RCState& rc_state,
+    const Technique::DSState& ds_state,
+    const Technique::OMState& om_state)
+    : Technique(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
-    VLKConfig::Initialize();
+    VLKTechnique::Initialize();
   }
 
-  VLKConfig::~VLKConfig()
+  VLKTechnique::~VLKTechnique()
   {
-    VLKConfig::Discard();
+    VLKTechnique::Discard();
   }
 }

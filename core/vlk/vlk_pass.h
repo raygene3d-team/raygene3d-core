@@ -29,6 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../pass.h"
+#include "vlk_technique.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -48,37 +49,33 @@ namespace RayGene3D
     VkCommandBuffer command_buffer{ nullptr };
     VkFence fence{ nullptr };
 
-  protected:
-    struct SubpassProxy
-    {
-      VkPipeline pipeline{ nullptr };
-      VkDeviceMemory table_memory{ nullptr };
-      VkBuffer table_buffer{ nullptr };
-      VkStridedDeviceAddressRegionKHR rgen_region{};
-      VkStridedDeviceAddressRegionKHR miss_region{};
-      VkStridedDeviceAddressRegionKHR xhit_region{};
-    };
-    std::vector<SubpassProxy> subpass_proxies;
-
     std::vector<VkImageView> attachment_views;
     std::vector<VkClearValue> attachment_values;
     std::vector<VkAttachmentDescription> attachment_descs;
+
     VkFramebuffer framebuffer{ nullptr };
     VkRenderPass renderpass{ nullptr };
 
-  protected:
-    uint32_t extent_x{ 0 };
-    uint32_t extent_y{ 0 };
-    uint32_t layers{ 1 };
-    // Perhaps we should set these parameters externally and validate during initialize
-
-  protected:
-    PFN_vkCreateRayTracingPipelinesKHR vkCreateRayTracingPipelinesKHR{ nullptr };
-    PFN_vkGetRayTracingShaderGroupHandlesKHR vkGetRayTracingShaderGroupHandlesKHR{ nullptr };
-    PFN_vkCmdTraceRaysKHR vkCmdTraceRaysKHR{ nullptr };
+    uint32_t size_x{ 0 };
+    uint32_t size_y{ 0 };
+    uint32_t layers{ 0 };
 
   public:
     VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
+    VkRenderPass GetRenderPass() const { return renderpass; }
+
+  public:
+    const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
+      const std::string& source,
+      Technique::Compilation compilation,
+      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state) override
+    {
+      return effects.emplace_back(new VLKTechnique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+    }
 
   public:
     void Initialize() override;
@@ -89,9 +86,10 @@ namespace RayGene3D
     VLKPass(const std::string& name,
       Device& device,
       Pass::Type type,
-      const std::pair<const Pass::Subpass*, uint32_t>& subpasses,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments = {},
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments = {});
+      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
+      const View::Range& ins_or_grid_x = View::Range{ 0, 0 },
+      const View::Range& vtx_or_grid_y = View::Range{ 0, 0 });
     virtual ~VLKPass();
   };
 }

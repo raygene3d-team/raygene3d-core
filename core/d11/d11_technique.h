@@ -28,14 +28,15 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../config.h"
+#include "../technique.h"
+#include "d11_batch.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
 
 namespace RayGene3D
 {
-  class D11Config : public Config
+  class D11Technique : public Technique
   {
   protected:
     ID3D11VertexShader* vs_shader{ nullptr };
@@ -65,30 +66,28 @@ namespace RayGene3D
     std::vector<D3D11_VIEWPORT> vp_items;
 
   protected:
-    std::vector<uint32_t> strides;
+    std::vector<uint32_t> strides; //TODO: Remove
 
   protected:
     D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
 
   public:
-    ID3D11VertexShader* GetVSShader() const { return vs_shader; }
-    ID3D11HullShader* GetHSShader() const { return hs_shader; }
-    ID3D11DomainShader* GetDSShader() const { return ds_shader; }
-    ID3D11GeometryShader* GetGSShader() const { return gs_shader; }
-    ID3D11PixelShader* GetPSShader() const { return ps_shader; }
-    ID3D11ComputeShader* GetCSShader() const { return cs_shader; }
-
-  public:
-    D3D_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const { return primitive_topology; }
-    ID3D11InputLayout* GetInputLayout() const { return input_layout; }
-    ID3D11RasterizerState* GetRasterState() const { return raster_state; }
-    ID3D11DepthStencilState* GetDepthState() const { return depth_state; }
-    ID3D11BlendState* GetBlendState() const { return blend_state; }
-    const D3D11_VIEWPORT* GetViewportItems() const { return vp_items.data(); }
-    uint32_t GetViewportCount() const { return uint32_t(vp_items.size()); }
-
-  public:
     const std::vector<uint32_t>& GetStrides() const { return strides; }
+
+  public:
+    const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
+      const std::pair<const Batch::Entity*, uint32_t>& entities,
+      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
+    ) override
+    {
+      return batches.emplace_back(new D11Batch(name, *this, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
+    }
 
   public:
     void Initialize() override;
@@ -96,15 +95,15 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11Config(const std::string& name,
-      Device& device,
+    D11Technique(const std::string& name,
+      Pass& pass,
       const std::string& source,
-      Config::Compilation compilation,
+      Technique::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Config::IAState& ia_state,
-      const Config::RCState& rc_state,
-      const Config::DSState& ds_state,
-      const Config::OMState& om_state);
-    virtual ~D11Config();
+      const Technique::IAState& ia_state,
+      const Technique::RCState& rc_state,
+      const Technique::DSState& ds_state,
+      const Technique::OMState& om_state);
+    virtual ~D11Technique();
   };
 }

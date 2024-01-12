@@ -28,14 +28,15 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../layout.h"
+#include "../batch.h"
+//#include "d11_mesh.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
 
 namespace RayGene3D
 {
-  class D11Layout : public Layout
+  class D11Batch : public Batch
   {
   protected:
     std::vector<ID3D11SamplerState*> sampler_states;
@@ -46,17 +47,15 @@ namespace RayGene3D
     std::vector<ID3D11ShaderResourceView*> rr_items;
     std::vector<ID3D11UnorderedAccessView*> wr_items;
 
-  public:
-    ID3D11Buffer* const* GetUBItems() const {return ub_items.data(); }
-    uint32_t GetUBCount() const { return uint32_t(ub_items.size()); }
-    ID3D11Buffer* const* GetSBItems() const { return sb_items.data(); }
-    uint32_t GetSBCount() const { return uint32_t(sb_items.size()); }
-    ID3D11ShaderResourceView* const* GetRRItems() const { return rr_items.data(); }
-    uint32_t GetRRCount() const { return uint32_t(rr_items.size()); }
-    ID3D11UnorderedAccessView* const* GetWRItems() const { return wr_items.data(); }
-    uint32_t GetWRCount() const { return uint32_t(wr_items.size()); }
-    ID3D11SamplerState* const* GetSamplerItems() const { return sampler_states.data(); }
-    uint32_t GetSamplerCount() const { return uint32_t(sampler_states.size()); }
+  //public:
+  //  const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
+  //    const std::pair<const Mesh::Subset*, uint32_t>& subsets,
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
+  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
+  //  ) override
+  //  {
+  //    return meshes.emplace_back(new D11Mesh(name, *this, subsets, vtx_views, idx_views));
+  //  }
 
   public:
     void Initialize() override;
@@ -64,16 +63,17 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11Layout(const std::string& name,
-      Device& device,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views,
-      const std::pair<const Layout::Sampler*, uint32_t>& samplers = {},
-      const std::pair<const Layout::RTXEntity*, uint32_t>& rtx_entities = {});
-    virtual ~D11Layout();
+    D11Batch(const std::string& name,
+      Technique& technique,
+      const std::pair<const Entity*, uint32_t>& entities,
+      const std::pair<const Sampler*, uint32_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+    );
+    virtual ~D11Batch();
   };
 }
