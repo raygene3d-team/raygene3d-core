@@ -294,9 +294,15 @@ namespace RayGene3D
       }
     }
 
+    VkMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+    barrier.dstAccessMask = 0;
+
     vkCmdPipelineBarrier(command_buffer,
-      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
-      0, nullptr,
+      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+      0,
+      1, &barrier,
       0, nullptr,
       0, nullptr);
   }
