@@ -108,7 +108,7 @@ namespace RayGene3D
         create_info.mipLodBias = sampler.bias_lod;
         create_info.anisotropyEnable = sampler.filtering != Sampler::FILTERING_ANISOTROPIC ? VK_FALSE : VK_TRUE;
         create_info.maxAnisotropy = float(sampler.anisotropy);
-        create_info.compareEnable = sampler.comparison != Sampler::COMPARISON_NEVER ? VK_FALSE : VK_TRUE;
+        create_info.compareEnable = sampler.comparison == Sampler::COMPARISON_NEVER ? VK_FALSE : VK_TRUE;
         create_info.compareOp = get_comparison(sampler.comparison);
         create_info.minLod = sampler.min_lod;
         create_info.maxLod = sampler.max_lod;

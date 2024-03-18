@@ -46,14 +46,14 @@ namespace RayGene3D
     auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
 
-    const auto get_filter = [this](Sampler::Filtering filtering)
+    const auto get_filter = [this](Sampler::Filtering filtering, bool compare)
     {
       switch (filtering)
       {
       default: return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-      case Sampler::FILTERING_NEAREST: return D3D11_FILTER_MIN_MAG_MIP_POINT;
-      case Sampler::FILTERING_LINEAR: return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-      case Sampler::FILTERING_ANISOTROPIC: return D3D11_FILTER_ANISOTROPIC;
+      case Sampler::FILTERING_NEAREST: return compare ? D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D11_FILTER_MIN_MAG_MIP_POINT;
+      case Sampler::FILTERING_LINEAR: return compare ? D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+      case Sampler::FILTERING_ANISOTROPIC: return compare ? D3D11_FILTER_COMPARISON_ANISOTROPIC : D3D11_FILTER_ANISOTROPIC;
       }
     };
 
@@ -89,19 +89,19 @@ namespace RayGene3D
     for (uint32_t i = 0; i < sampler_states.size(); ++i)
     {
       D3D11_SAMPLER_DESC sampler_desc{};
-      sampler_desc.Filter = get_filter(samplers[i].filtering);
+      sampler_desc.Filter = get_filter(samplers[i].filtering, samplers[i].comparison != Sampler::COMPARISON_NEVER);
       sampler_desc.AddressU = get_addressing(samplers[i].addressing);
       sampler_desc.AddressV = get_addressing(samplers[i].addressing);
       sampler_desc.AddressW = get_addressing(samplers[i].addressing);
       sampler_desc.MipLODBias = samplers[i].bias_lod;
-      sampler_desc.MaxAnisotropy = 16;
+      sampler_desc.MaxAnisotropy = samplers[i].anisotropy;
       sampler_desc.ComparisonFunc = get_comparison(samplers[i].comparison);
       sampler_desc.BorderColor[0] = samplers[i].color[0];
       sampler_desc.BorderColor[1] = samplers[i].color[1];
       sampler_desc.BorderColor[2] = samplers[i].color[2];
       sampler_desc.BorderColor[3] = samplers[i].color[3];
-      sampler_desc.MinLOD =-FLT_MAX; // samplers[i].min_lod;
-      sampler_desc.MaxLOD = FLT_MAX; // samplers[i].max_lod;
+      sampler_desc.MinLOD = samplers[i].min_lod;
+      sampler_desc.MaxLOD = samplers[i].max_lod;
 
       BLAST_ASSERT(S_OK == device->GetDevice()->CreateSamplerState(&sampler_desc, &sampler_states[i]));
     }
