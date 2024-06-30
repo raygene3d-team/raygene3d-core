@@ -416,9 +416,9 @@ namespace RayGene3D
           uint32_t layer_size = 0;
           for (uint32_t j = 0; j < mipmaps_or_count; ++j)
           {
-            const uint32_t extent_x = size_x > 1 ? size_x >> j : 1;
-            const uint32_t extent_y = size_y > 1 ? size_y >> j : 1;
-            const uint32_t extent_z = size_z > 1 ? size_z >> j : 1;
+            const uint32_t extent_x = std::max(1u, size_x >> j);
+            const uint32_t extent_y = std::max(1u, size_y >> j);
+            const uint32_t extent_z = std::max(1u, size_z >> j);
             const uint32_t mipmap_size = extent_x * extent_y * extent_z * BitCount(format) / 8;
             layer_size += mipmap_size;
           }
@@ -441,9 +441,9 @@ namespace RayGene3D
           {
             const uint32_t layer = i;
             const uint32_t mipmap = j;
-            const uint32_t extent_x = size_x > 1 ? size_x >> mipmap : 1;
-            const uint32_t extent_y = size_y > 1 ? size_y >> mipmap : 1;
-            const uint32_t extent_z = size_z > 1 ? size_z >> mipmap : 1;
+            const uint32_t extent_x = std::max(1u, size_x >> j);
+            const uint32_t extent_y = std::max(1u, size_y >> j);
+            const uint32_t extent_z = std::max(1u, size_z >> j);
 
             {
               VkImageMemoryBarrier barrier = {};
