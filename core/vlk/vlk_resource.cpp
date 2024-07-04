@@ -392,7 +392,11 @@ namespace RayGene3D
         this->memory = memory;
       }
 
-      if (interops.size() == layers_or_stride)
+      VkBuffer staging_buffer = device->GetStagingBuffer();
+      VkDeviceMemory staging_memory = device->GetStagingMemory();
+      VkDeviceSize staging_size = device->GetStagingSize();
+
+      if (interops.size() == layers_or_stride * mipmaps_or_count)
       {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -405,40 +409,21 @@ namespace RayGene3D
 
         for (uint32_t i = 0; i < layers_or_stride; ++i)
         {
-          const auto [raw_data, raw_size] = interops.at(i);
-          BLAST_ASSERT(raw_data != nullptr && raw_size != 0);
-
-          VkBuffer staging_buffer = device->GetStagingBuffer();
-          VkDeviceMemory staging_memory = device->GetStagingMemory();
-          VkDeviceSize staging_size = device->GetStagingSize();
-          BLAST_ASSERT(raw_size <= staging_size);
-
-          uint32_t layer_size = 0;
           for (uint32_t j = 0; j < mipmaps_or_count; ++j)
           {
-            const uint32_t extent_x = std::max(1u, size_x >> j);
-            const uint32_t extent_y = std::max(1u, size_y >> j);
-            const uint32_t extent_z = std::max(1u, size_z >> j);
-            const uint32_t mipmap_size = extent_x * extent_y * extent_z * BitCount(format) / 8;
-            layer_size += mipmap_size;
-          }
-          BLAST_ASSERT(raw_size == layer_size);
+            const auto [raw_data, raw_size] = interops.at(i * mipmaps_or_count + j);
+            BLAST_ASSERT(raw_size <= staging_size);
 
-          void* mapped = nullptr;
-          BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), staging_memory, 0, VK_WHOLE_SIZE, 0, &mapped));
-          memcpy(mapped, raw_data, raw_size);
-          vkUnmapMemory(device->GetDevice(), staging_memory);
+            void* mapped = nullptr;
+            BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), staging_memory, 0, VK_WHOLE_SIZE, 0, &mapped));
+            memcpy(mapped, raw_data, raw_size);
+            vkUnmapMemory(device->GetDevice(), staging_memory);
 
+            VkCommandBufferBeginInfo beginInfo{};
+            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+            BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
-          VkCommandBufferBeginInfo beginInfo{};
-          beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-          beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-          BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-
-          uint32_t offset = 0;
-          for (uint32_t j = 0; j < mipmaps_or_count; ++j)
-          {
             const uint32_t layer = i;
             const uint32_t mipmap = j;
             const uint32_t extent_x = std::max(1u, size_x >> j);
@@ -468,7 +453,7 @@ namespace RayGene3D
             }
 
             VkBufferImageCopy region = {};
-            region.bufferOffset = offset;
+            region.bufferOffset = 0;
             region.bufferRowLength = 0;
             region.bufferImageHeight = 0;
             region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -501,19 +486,16 @@ namespace RayGene3D
                 0, nullptr,
                 1, &barrier);
             }
+            BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(commandBuffer));
 
-            offset += extent_x * extent_y * extent_z * BitCount(format) / 8;
+            VkSubmitInfo submitInfo{};
+            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &commandBuffer;
+
+            BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE));
+            BLAST_ASSERT(VK_SUCCESS == vkQueueWaitIdle(device->GetQueue()));
           }
-
-          BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(commandBuffer));
-
-          VkSubmitInfo submitInfo{};
-          submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-          submitInfo.commandBufferCount = 1;
-          submitInfo.pCommandBuffers = &commandBuffer;
-
-          BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE));
-          BLAST_ASSERT(VK_SUCCESS == vkQueueWaitIdle(device->GetQueue()));          
         }
 
         vkFreeCommandBuffers(device->GetDevice(), device->GetCommandPool(), 1, &commandBuffer);
