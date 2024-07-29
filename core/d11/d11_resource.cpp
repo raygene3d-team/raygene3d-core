@@ -167,6 +167,29 @@ namespace RayGene3D
       }
     };
 
+    const auto populate_subresources_fn = [this](const std::vector<std::pair<const void*, uint32_t>>& interops)
+    {
+      BLAST_ASSERT(layers_or_stride * mipmaps_or_count == uint32_t(interops.size()));
+
+      auto result = std::vector<D3D11_SUBRESOURCE_DATA>(layers_or_stride * mipmaps_or_count);
+      for (uint32_t i = 0; i < layers_or_stride; ++i)
+      {
+        for (uint32_t j = 0; j < mipmaps_or_count; ++j)
+        {
+          const auto [data, size] = interops[i * mipmaps_or_count + j];
+          BLAST_ASSERT(data != nullptr && size != 0);
+
+          const auto mip_extent_x = std::max(1u, size_x >> j);
+          const auto mip_extent_y = std::max(1u, size_y >> j);
+
+          result[i * mipmaps_or_count + j].pSysMem = data;
+          result[i * mipmaps_or_count + j].SysMemPitch = size / mip_extent_y;
+          result[i * mipmaps_or_count + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+        }
+      }
+      return result;
+    };
+
     switch (type)
     {
     case TYPE_BUFFER:
@@ -189,7 +212,8 @@ namespace RayGene3D
         arr_sd_items[i].SysMemPitch = 0;
         arr_sd_items[i].SysMemSlicePitch = 0;
       }
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateBuffer(&buffer_desc, arr_sd_items.empty() ? nullptr : arr_sd_items.data(), reinterpret_cast<ID3D11Buffer**>(&resource)));
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateBuffer(&buffer_desc, 
+        arr_sd_items.empty() ? nullptr : arr_sd_items.data(), reinterpret_cast<ID3D11Buffer**>(&resource)));
       GetBuffer()->GetDesc(&info.buffer_desc);
       break;
     }
@@ -206,17 +230,31 @@ namespace RayGene3D
       tex1d_desc.CPUAccessFlags = get_access();
       tex1d_desc.MiscFlags = get_misc();
 
-      std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(interops.size());
-      for (size_t i = 0; i < arr_sd_items.size(); ++i)
-      {
-        const auto [data, size] = interops[i];
-        BLAST_ASSERT(data != nullptr && size != 0);
+      //std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(interops.size());
+      //for (size_t i = 0; i < arr_sd_items.size(); ++i)
+      //{
+      //  const auto [data, size] = interops[i];
+      //  BLAST_ASSERT(data != nullptr && size != 0);
 
-        arr_sd_items[i].pSysMem = data;
-        arr_sd_items[i].SysMemPitch = 0;
-        arr_sd_items[i].SysMemSlicePitch = 0;
+      //  const auto mip_extent_x = size_x >> j;
+      //  const auto mip_extent_y = size_y >> j;
+
+      //  arr_sd_items[i * mipmaps_or_count + j].pSysMem = data;
+      //  arr_sd_items[i * mipmaps_or_count + j].SysMemPitch = size / mip_extent_y;
+      //  arr_sd_items[i * mipmaps_or_count + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+      //}
+      if (interops.empty())
+      {
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture1D(&tex1d_desc, 
+          nullptr, reinterpret_cast<ID3D11Texture1D**>(&resource)));
       }
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture1D(&tex1d_desc, arr_sd_items.empty() ? nullptr : arr_sd_items.data(), reinterpret_cast<ID3D11Texture1D**>(&resource)));
+      else
+      {
+        const auto subresources = populate_subresources_fn(interops);
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture1D(&tex1d_desc, 
+          subresources.data(), reinterpret_cast<ID3D11Texture1D**>(&resource)));
+      }
+
       GetTexture1D()->GetDesc(&info.tex1d_desc);
       break;
     }
@@ -246,36 +284,35 @@ namespace RayGene3D
         }
       }
 
+      //std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(mipmaps_or_count * layers_or_stride);
+      //for (uint32_t i = 0; i < layers_or_stride; ++i)
+      //{
+      //  for (uint32_t j = 0; j < mipmaps_or_count; ++j)
+      //  {
+      //    const auto [data, size] = interops[i];
+      //    BLAST_ASSERT(data != nullptr && size != 0);
+
+      //    const auto mip_extent_x = size_x >> j;
+      //    const auto mip_extent_y = size_y >> j;
+
+      //    arr_sd_items[i * mipmaps_or_count + j].pSysMem = data;
+      //    arr_sd_items[i * mipmaps_or_count + j].SysMemPitch = size / mip_extent_y;
+      //    arr_sd_items[i * mipmaps_or_count + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+      //  }
+      //}
+
       if (interops.empty())
       {
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture2D(&tex2d_desc, nullptr, reinterpret_cast<ID3D11Texture2D**>(&resource)));
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture2D(&tex2d_desc,
+          nullptr, reinterpret_cast<ID3D11Texture2D**>(&resource)));
       }
       else
       {
-        std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(mipmaps_or_count * layers_or_stride);
-        for (uint32_t i = 0; i < layers_or_stride; ++i)
-        {
-          const auto [data, size] = interops[i];
-          BLAST_ASSERT(data != nullptr && size != 0);
-
-          auto mip_data = reinterpret_cast<const uint8_t*>(data);
-          auto mip_size = 0;
-          for (uint32_t j = 0; j < mipmaps_or_count; ++j)
-          {
-            const auto mip_extent_x = size_x >> j;
-            const auto mip_extent_y = size_y >> j;
-            mip_size = mip_extent_x * mip_extent_y * BitCount(format) / 8;
-
-            arr_sd_items[i * mipmaps_or_count + j].pSysMem = mip_data;
-            arr_sd_items[i * mipmaps_or_count + j].SysMemPitch = mip_size / mip_extent_y;
-            arr_sd_items[i * mipmaps_or_count + j].SysMemSlicePitch = mip_size / (mip_extent_x * mip_extent_y);
-
-            mip_data += mip_size;
-            mip_size = 0;
-          }
-        }
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture2D(&tex2d_desc, arr_sd_items.data(), reinterpret_cast<ID3D11Texture2D**>(&resource)));
+        const auto subresources = populate_subresources_fn(interops);
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture2D(&tex2d_desc,
+          subresources.data(), reinterpret_cast<ID3D11Texture2D**>(&resource)));
       }
+      
       GetTexture2D()->GetDesc(&info.tex2d_desc);
       break;
     }
@@ -293,17 +330,32 @@ namespace RayGene3D
       tex3d_desc.CPUAccessFlags = get_access();
       tex3d_desc.MiscFlags = get_misc();
 
-      std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(interops.size());
-      for (size_t i = 0; i < arr_sd_items.size(); ++i)
-      {
-        const auto [data, size] = interops[i];
-        BLAST_ASSERT(data != nullptr && size != 0);
+      //std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(interops.size());
+      //for (size_t i = 0; i < arr_sd_items.size(); ++i)
+      //{
+      //  const auto [data, size] = interops[i];
+      //  BLAST_ASSERT(data != nullptr && size != 0);
 
-        arr_sd_items[i].pSysMem = data;
-        arr_sd_items[i].SysMemPitch = size / (tex3d_desc.Height >> (i % tex3d_desc.MipLevels));
-        arr_sd_items[i].SysMemSlicePitch = size / (tex3d_desc.Height >> (i % tex3d_desc.MipLevels)) / tex3d_desc.Height;
+      //  const auto mip_extent_x = size_x >> j;
+      //  const auto mip_extent_y = size_y >> j;
+
+      //  arr_sd_items[i * mipmaps_or_count + j].pSysMem = data;
+      //  arr_sd_items[i * mipmaps_or_count + j].SysMemPitch = size / mip_extent_y;
+      //  arr_sd_items[i * mipmaps_or_count + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+      //}
+
+      if (interops.empty())
+      {
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture3D(&tex3d_desc,
+          nullptr, reinterpret_cast<ID3D11Texture3D**>(&resource)));
       }
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture3D(&tex3d_desc, arr_sd_items.empty() ? nullptr : arr_sd_items.data(), reinterpret_cast<ID3D11Texture3D**>(&resource)));
+      else
+      {
+        const auto subresources = populate_subresources_fn(interops);
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture3D(&tex3d_desc,
+          subresources.data(), reinterpret_cast<ID3D11Texture3D**>(&resource)));
+      }
+
       GetTexture3D()->GetDesc(&info.tex3d_desc);
       break;
     }
@@ -346,39 +398,39 @@ namespace RayGene3D
       return;
     }
 
-    const auto [data, size] = interops[index];
-    //const auto [stride, count] = properties[index]->GetRawSize();
+    //const auto [data, size] = interops[index];
+    ////const auto [stride, count] = properties[index]->GetRawSize();
 
-    switch (type)
-    {
-    case TYPE_BUFFER:
-      if (size == mipmaps_or_count * layers_or_stride)
-      {
-        device->GetContext()->UpdateSubresource(resource, index, nullptr, data, 0, 0);
-      }
-      break;
+    //switch (type)
+    //{
+    //case TYPE_BUFFER:
+    //  if (size == mipmaps_or_count * layers_or_stride)
+    //  {
+    //    device->GetContext()->UpdateSubresource(resource, index, nullptr, data, 0, 0);
+    //  }
+    //  break;
 
-    case TYPE_TEX1D:
-      if (size * 8 == size_x * BitCount(format))
-      {
-        device->GetContext()->UpdateSubresource(resource, index, nullptr, data, 0, 0);
-      }
-      break;
+    //case TYPE_TEX1D:
+    //  if (size * 8 == size_x * BitCount(format))
+    //  {
+    //    device->GetContext()->UpdateSubresource(resource, index, nullptr, data, 0, 0);
+    //  }
+    //  break;
 
-    case TYPE_TEX2D:
-      if (size * 8 == size_x * size_y * BitCount(format))
-      {
-        device->GetContext()->UpdateSubresource(resource, index, nullptr, data, size_x, 0);
-      }
-      break;
+    //case TYPE_TEX2D:
+    //  if (size * 8 == size_x * size_y * BitCount(format))
+    //  {
+    //    device->GetContext()->UpdateSubresource(resource, index, nullptr, data, size_x, 0);
+    //  }
+    //  break;
 
-    case TYPE_TEX3D:
-      if (size * 8 == size_x * size_y * size_z * BitCount(format))
-      {
-        device->GetContext()->UpdateSubresource(resource, index, nullptr, data, size_x, size_x * size_y);
-      }
-      break;
-    }
+    //case TYPE_TEX3D:
+    //  if (size * 8 == size_x * size_y * size_z * BitCount(format))
+    //  {
+    //    device->GetContext()->UpdateSubresource(resource, index, nullptr, data, size_x, size_x * size_y);
+    //  }
+    //  break;
+    //}
   }
 
 
