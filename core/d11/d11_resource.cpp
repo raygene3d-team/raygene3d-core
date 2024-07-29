@@ -68,7 +68,7 @@ namespace RayGene3D
       {
         misc = (type == TYPE_BUFFER && (usage & USAGE_SHADER_RESOURCE))  ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
         misc = (type == TYPE_BUFFER && (usage & USAGE_UNORDERED_ACCESS)) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
-        misc = (type == TYPE_BUFFER && (usage & USAGE_ARGUMENT_INDIRECT)) ? misc | D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS : misc;
+        misc = (type == TYPE_BUFFER && (usage & USAGE_ARGUMENT_LIST)) ? misc | D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS : misc;
       }
       return misc;
     };
@@ -84,7 +84,7 @@ namespace RayGene3D
         bind = usage & USAGE_VERTEX_ARRAY ? bind | D3D11_BIND_VERTEX_BUFFER : bind;
         bind = usage & USAGE_INDEX_ARRAY ? bind | D3D11_BIND_INDEX_BUFFER : bind;
         bind = usage & USAGE_CONSTANT_DATA ? bind | D3D11_BIND_CONSTANT_BUFFER : bind;
-        bind = usage & USAGE_ARGUMENT_INDIRECT ? bind | D3D11_BIND_VIDEO_ENCODER : bind; // Hack to create command buffer
+        bind = usage & USAGE_ARGUMENT_LIST ? bind | D3D11_BIND_VIDEO_ENCODER : bind; // Hack to create command buffer
       }
       return bind;
     };
