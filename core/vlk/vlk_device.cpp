@@ -305,6 +305,7 @@ namespace RayGene3D
     BLAST_ASSERT(features.geometryShader);             enabled_features.geometryShader = true;
     BLAST_ASSERT(features.tessellationShader);         enabled_features.tessellationShader = true;
     BLAST_ASSERT(features.imageCubeArray);             enabled_features.imageCubeArray = true;
+    BLAST_ASSERT(features.multiViewport);              enabled_features.multiViewport = true;
 
     VkDeviceQueueCreateInfo queue_create_info = {};
     queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;

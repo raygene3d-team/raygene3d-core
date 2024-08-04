@@ -949,8 +949,8 @@ namespace RayGene3D
         }
         else
         {
-          const auto ins_count = 1u;
-          const auto ins_offset = 0u;
+          const auto ins_count = chunk.ins_or_grid_x.length;
+          const auto ins_offset = chunk.ins_or_grid_x.offset;
           const auto vtx_count = chunk.vtx_or_grid_y.length;
           const auto vtx_offset = chunk.vtx_or_grid_y.offset;
           const auto idx_count = chunk.idx_or_grid_z.length;

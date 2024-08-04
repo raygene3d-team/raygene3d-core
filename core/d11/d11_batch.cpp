@@ -264,14 +264,14 @@ namespace RayGene3D
         {
           const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Graphic));
-          const auto aa_draws = 1;
+          const auto aa_draws = 1u;
           const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
           device->GetContext()->DrawIndexedInstancedIndirect(aa_buffer, aa_offset);
         }
         else
         {
-          const auto ins_count = 1u; // subset.ins_range.length;
-          const auto ins_offset = 0u; // subset.ins_range.offset;
+          const auto ins_count = chunk.ins_or_grid_x.length;
+          const auto ins_offset = chunk.ins_or_grid_x.offset;
           const auto vtx_count = chunk.vtx_or_grid_y.length;
           const auto vtx_offset = chunk.vtx_or_grid_y.offset;
           const auto idx_count = chunk.idx_or_grid_z.length;

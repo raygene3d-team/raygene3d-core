@@ -709,7 +709,7 @@ namespace RayGene3D
       raster_viewports[i].maxDepth = viewport.max_z;
     }
 
-    raster_scissors.resize(1);
+    raster_scissors.resize(rc_state.viewports.size());
     for (uint32_t i = 0; i < uint32_t(rc_state.viewports.size()); ++i)
     {
       raster_scissors[i].offset = { (int32_t)rc_state.viewports[i].origin_x, (int32_t)rc_state.viewports[i].origin_y };
