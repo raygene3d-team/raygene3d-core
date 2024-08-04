@@ -103,10 +103,11 @@ namespace RayGene3D
 
     virtual const std::shared_ptr<Pass>& CreatePass(const std::string& name,
       Pass::Type type,
+      uint32_t size_x,
+      uint32_t size_y,
+      uint32_t layers,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
-      const View::Range& ins_or_grid_x = View::Range{ 0, 0 },
-      const View::Range& vtx_or_grid_y = View::Range{ 0, 0 }) = 0;
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments) = 0;
     void VisitPass(std::function<void(const std::shared_ptr<Pass>&)> visitor) { for (const auto& pass : passes) visitor(pass); }
     void DestroyPass(const std::shared_ptr<Pass>& pass) { passes.remove(pass); }
 

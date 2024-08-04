@@ -374,12 +374,15 @@ namespace RayGene3D
       };
 
       {
-        const auto flags = get_flags();
+        
         const auto type = get_type();
         const auto format = get_format();
         const auto extent = get_extent();
+        const auto mipmap = mipmaps_or_count;
+        const auto layers = layers_or_stride;
         const auto usage = get_bind();
-        const auto image = device->CreateImage(type, format, extent, mipmaps_or_count, layers_or_stride, usage, flags);
+        const auto flags = get_flags();
+        const auto image = device->CreateImage(type, format, extent, mipmap, layers, usage, flags);
         const auto requirements = device->GetRequirements(image);
         const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
