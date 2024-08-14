@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "../technique.h"
+#include "../config.h"
 #include "d11_batch.h"
 
 #include <dxgi.h>

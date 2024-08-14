@@ -353,7 +353,7 @@ namespace RayGene3D
     virtual ~Config();
   };
 
-  typedef std::shared_ptr<Config> SPtrTechnique;
-  typedef std::weak_ptr<Config> WPtrTechnique;
-  typedef std::unique_ptr<Config> UPtrTechnique;
+  typedef std::shared_ptr<Config> SPtrConfig;
+  typedef std::weak_ptr<Config> WPtrConfig;
+  typedef std::unique_ptr<Config> UPtrConfig;
 }

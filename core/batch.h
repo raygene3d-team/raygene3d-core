@@ -38,7 +38,7 @@ namespace RayGene3D
   class Batch : public Usable //TODO Rename into Batch
   {
   protected:
-    Config& technique;
+    Config& config;
 
   public:
     using SBOffset = std::optional<std::array<uint32_t, 4>>;
@@ -143,7 +143,7 @@ namespace RayGene3D
   //  std::list<std::shared_ptr<Mesh>> meshes;
     
   public:
-    Config& GetTechnique() { return technique; }
+    Config& GetConfig() { return config; }
 
   //public:
   //  virtual const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
@@ -161,7 +161,7 @@ namespace RayGene3D
 
   public:
     Batch(const std::string& name,
-      Config& technique,
+      Config& config,
       const std::pair<const Entity*, uint32_t>& entities,
       const std::pair<const Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
