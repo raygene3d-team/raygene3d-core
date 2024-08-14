@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "d11_batch.h"
-#include "d11_technique.h"
+#include "d11_config.h"
 #include "d11_pass.h"
 #include "d11_device.h"
 #include "d11_resource.h"
@@ -42,7 +42,7 @@ namespace RayGene3D
 {
   void D11Batch::Initialize()
   {
-    auto technique = reinterpret_cast<D11Technique*>(&this->GetTechnique());
+    auto technique = reinterpret_cast<D11Config*>(&this->GetTechnique());
     auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
 
@@ -164,7 +164,7 @@ namespace RayGene3D
 
   void D11Batch::Use()
   {
-    auto technique = reinterpret_cast<D11Technique*>(&this->GetTechnique());
+    auto technique = reinterpret_cast<D11Config*>(&this->GetTechnique());
     auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
 
@@ -222,8 +222,8 @@ namespace RayGene3D
             ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
             ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
             ia_formats[i] = technique->GetIAState().indexer
-              == Technique::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
-              : Technique::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
+              == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
+              : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
               : DXGI_FORMAT_UNKNOWN;
           }
         }
@@ -355,7 +355,7 @@ namespace RayGene3D
   }
 
   D11Batch::D11Batch(const std::string& name,
-    Technique& technique,
+    Config& technique,
     const std::pair<const Entity*, uint32_t>& entities,
     const std::pair<const Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,

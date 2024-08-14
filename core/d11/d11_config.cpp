@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "d11_technique.h"
+#include "d11_config.h"
 #include "d11_device.h"
 
 #pragma comment (lib, "dxgi.lib")
@@ -179,7 +179,7 @@ namespace RayGene3D
     }
   }
 
-  void D11Technique::Initialize()
+  void D11Config::Initialize()
   {
     auto pass = reinterpret_cast<D11Pass*>(&this->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
@@ -545,7 +545,7 @@ namespace RayGene3D
     }
   }
 
-  void D11Technique::Use()
+  void D11Config::Use()
   {
     auto pass = reinterpret_cast<D11Pass*>(&this->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
@@ -586,7 +586,7 @@ namespace RayGene3D
     }
   }
 
-  void D11Technique::Discard()
+  void D11Config::Discard()
   {
     if (raster_state)
     {
@@ -649,21 +649,21 @@ namespace RayGene3D
     }
   }
 
-  D11Technique::D11Technique(const std::string& name,
+  D11Config::D11Config(const std::string& name,
     Pass& pass,
-    const std::string& source, Technique::Compilation compilation,
+    const std::string& source, Config::Compilation compilation,
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Technique::IAState& ia_state,
-    const Technique::RCState& rc_state,
-    const Technique::DSState& ds_state,
-    const Technique::OMState& om_state)
-    : Technique(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
+    const Config::IAState& ia_state,
+    const Config::RCState& rc_state,
+    const Config::DSState& ds_state,
+    const Config::OMState& om_state)
+    : Config(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
-    D11Technique::Initialize();
+    D11Config::Initialize();
   }
 
-  D11Technique::~D11Technique()
+  D11Config::~D11Config()
   {
-    D11Technique::Discard();
+    D11Config::Discard();
   }
 }

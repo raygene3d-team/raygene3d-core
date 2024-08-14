@@ -43,7 +43,7 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class VLKTechnique : public Technique
+  class VLKConfig : public Config
   {
   protected:
     VkShaderModule vs_module{ nullptr };
@@ -130,15 +130,15 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    VLKTechnique(const std::string& name,
+    VLKConfig(const std::string& name,
       Pass& pass,
       const std::string& source,
-      Technique::Compilation compilation,
+      Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Technique::IAState& ia_state,
-      const Technique::RCState& rc_state,
-      const Technique::DSState& ds_state,
-      const Technique::OMState& om_state);
-    virtual ~VLKTechnique();
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state);
+    virtual ~VLKConfig();
   };
 }

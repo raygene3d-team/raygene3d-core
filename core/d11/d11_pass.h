@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../pass.h"
-#include "d11_technique.h"
+#include "d11_config.h"
 
 #include <dxgi.h>
 #include <d3d11_1.h>
@@ -49,16 +49,16 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
+    const std::shared_ptr<Config>& CreateConfig(const std::string& name,
       const std::string& source,
-      Technique::Compilation compilation,
+      Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Technique::IAState& ia_state,
-      const Technique::RCState& rc_state,
-      const Technique::DSState& ds_state,
-      const Technique::OMState& om_state) override
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state) override
     {
-      return effects.emplace_back(new D11Technique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+      return effects.emplace_back(new D11Config(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:

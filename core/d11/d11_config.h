@@ -36,7 +36,7 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class D11Technique : public Technique
+  class D11Config : public Config
   {
   protected:
     ID3D11VertexShader* vs_shader{ nullptr };
@@ -95,15 +95,15 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    D11Technique(const std::string& name,
+    D11Config(const std::string& name,
       Pass& pass,
       const std::string& source,
-      Technique::Compilation compilation,
+      Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Technique::IAState& ia_state,
-      const Technique::RCState& rc_state,
-      const Technique::DSState& ds_state,
-      const Technique::OMState& om_state);
-    virtual ~D11Technique();
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state);
+    virtual ~D11Config();
   };
 }

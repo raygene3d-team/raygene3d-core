@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "technique.h"
+#include "config.h"
 
 namespace RayGene3D
 {
@@ -80,7 +80,7 @@ namespace RayGene3D
     Device& device;
 
   protected:
-    std::list<std::shared_ptr<Technique>> effects;
+    std::list<std::shared_ptr<Config>> effects;
 
   public:
     void SetType(Type type) { this->type = type; }
@@ -93,16 +93,16 @@ namespace RayGene3D
     Device& GetDevice() { return device; }
 
   public:
-    virtual const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
+    virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,
       const std::string& source,
-      Technique::Compilation compilation,
+      Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Technique::IAState& ia_state,
-      const Technique::RCState& rc_state,
-      const Technique::DSState& ds_state,
-      const Technique::OMState& om_state) = 0;
-    void VisitTechnique(std::function<void(const std::shared_ptr<Technique>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
-    void DestroyTechnique(const std::shared_ptr<Technique>& effect) { effects.remove(effect); }
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state) = 0;
+    void VisitConfig(std::function<void(const std::shared_ptr<Config>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
+    void DestroyConfig(const std::shared_ptr<Config>& effect) { effects.remove(effect); }
 
   public:
     void Initialize() override = 0;

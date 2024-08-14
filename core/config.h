@@ -36,7 +36,7 @@ namespace RayGene3D
 
   typedef void(*DefineVisitor)(const std::string&, const std::string&);
 
-  class Technique : public Usable
+  class Config : public Usable
   {
   protected:
     Pass& pass;
@@ -341,19 +341,19 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
-    Technique(const std::string& name,
+    Config(const std::string& name,
       Pass& pass,
       const std::string& source,
-      Technique::Compilation compilation,
+      Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Technique::IAState& ia_state,
-      const Technique::RCState& rc_state,
-      const Technique::DSState& ds_state,
-      const Technique::OMState& om_state);
-    virtual ~Technique();
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state);
+    virtual ~Config();
   };
 
-  typedef std::shared_ptr<Technique> SPtrTechnique;
-  typedef std::weak_ptr<Technique> WPtrTechnique;
-  typedef std::unique_ptr<Technique> UPtrTechnique;
+  typedef std::shared_ptr<Config> SPtrTechnique;
+  typedef std::weak_ptr<Config> WPtrTechnique;
+  typedef std::unique_ptr<Config> UPtrTechnique;
 }
