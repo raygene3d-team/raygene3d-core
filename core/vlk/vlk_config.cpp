@@ -27,7 +27,7 @@ THE SOFTWARE.
 ================================================================================*/
 
 
-#include "vlk_technique.h"
+#include "vlk_config.h"
 #include "vlk_device.h"
 
 #define ENABLE_HLSL
@@ -306,7 +306,7 @@ namespace RayGene3D
     glslang::FinalizeProcess();
   }
 
-  void VLKTechnique::Initialize()
+  void VLKConfig::Initialize()
   {
     auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
@@ -709,7 +709,7 @@ namespace RayGene3D
       raster_viewports[i].maxDepth = viewport.max_z;
     }
 
-    raster_scissors.resize(1);
+    raster_scissors.resize(rc_state.viewports.size());
     for (uint32_t i = 0; i < uint32_t(rc_state.viewports.size()); ++i)
     {
       raster_scissors[i].offset = { (int32_t)rc_state.viewports[i].origin_x, (int32_t)rc_state.viewports[i].origin_y };
@@ -942,7 +942,7 @@ namespace RayGene3D
     }
   }
 
-  void VLKTechnique::Use()
+  void VLKConfig::Use()
   {
     for (const auto& batch : batches)
     {
@@ -950,7 +950,7 @@ namespace RayGene3D
     }
   }
 
-  void VLKTechnique::Discard()
+  void VLKConfig::Discard()
   {
     auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
@@ -1019,22 +1019,22 @@ namespace RayGene3D
     }
   }
 
-  VLKTechnique::VLKTechnique(const std::string& name,
+  VLKConfig::VLKConfig(const std::string& name,
     Pass& pass,
     const std::string& source,
-    Technique::Compilation compilation,
+    Config::Compilation compilation,
     const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-    const Technique::IAState& ia_state,
-    const Technique::RCState& rc_state,
-    const Technique::DSState& ds_state,
-    const Technique::OMState& om_state)
-    : Technique(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
+    const Config::IAState& ia_state,
+    const Config::RCState& rc_state,
+    const Config::DSState& ds_state,
+    const Config::OMState& om_state)
+    : Config(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
-    VLKTechnique::Initialize();
+    VLKConfig::Initialize();
   }
 
-  VLKTechnique::~VLKTechnique()
+  VLKConfig::~VLKConfig()
   {
-    VLKTechnique::Discard();
+    VLKConfig::Discard();
   }
 }

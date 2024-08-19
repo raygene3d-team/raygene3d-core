@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "../pass.h"
-#include "vlk_technique.h"
+#include "vlk_config.h"
 
 #ifdef __linux__
 #define VK_USE_PLATFORM_XLIB_KHR
@@ -56,25 +56,21 @@ namespace RayGene3D
     VkFramebuffer framebuffer{ nullptr };
     VkRenderPass renderpass{ nullptr };
 
-    uint32_t size_x{ 0 };
-    uint32_t size_y{ 0 };
-    uint32_t layers{ 0 };
-
   public:
     VkCommandBuffer GetCommandBuffer() const { return command_buffer; }
     VkRenderPass GetRenderPass() const { return renderpass; }
 
   public:
-    const std::shared_ptr<Technique>& CreateTechnique(const std::string& name,
+    const std::shared_ptr<Config>& CreateConfig(const std::string& name,
       const std::string& source,
-      Technique::Compilation compilation,
+      Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
-      const Technique::IAState& ia_state,
-      const Technique::RCState& rc_state,
-      const Technique::DSState& ds_state,
-      const Technique::OMState& om_state) override
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state) override
     {
-      return effects.emplace_back(new VLKTechnique(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+      return effects.emplace_back(new VLKConfig(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:
@@ -86,10 +82,11 @@ namespace RayGene3D
     VLKPass(const std::string& name,
       Device& device,
       Pass::Type type,
+      uint32_t size_x,
+      uint32_t size_y,
+      uint32_t layers,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
-      const View::Range& ins_or_grid_x = View::Range{ 0, 0 },
-      const View::Range& vtx_or_grid_y = View::Range{ 0, 0 });
+      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments);
     virtual ~VLKPass();
   };
 }

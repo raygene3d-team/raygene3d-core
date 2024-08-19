@@ -32,7 +32,7 @@ THE SOFTWARE.
 namespace RayGene3D
 {
   Batch::Batch(const std::string& name,
-    Technique& technique,
+    Config& config,
     const std::pair<const Entity*, uint32_t>& entities,
     const std::pair<const Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
@@ -42,7 +42,7 @@ namespace RayGene3D
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views)
     : Usable(name)
-    , technique(technique)
+    , config(config)
     , entities(entities.first, entities.first + entities.second)
     , samplers(samplers.first, samplers.first + samplers.second)
     , ub_views(ub_views.first, ub_views.first + ub_views.second)

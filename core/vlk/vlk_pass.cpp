@@ -28,7 +28,7 @@ THE SOFTWARE.
 
 
 #include "vlk_pass.h"
-#include "vlk_technique.h"
+#include "vlk_config.h"
 #include "vlk_batch.h"
 #include "vlk_device.h"
 #include "vlk_view.h"
@@ -144,9 +144,6 @@ namespace RayGene3D
           rt_attachment_descs[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
           rt_attachment_views[i] = (reinterpret_cast<VLKView*>(rt_view.get()))->GetView();
-          size_x = std::max(size_x, rt_view->GetResource().GetSizeX());
-          size_y = std::max(size_y, rt_view->GetResource().GetSizeY());
-          layers = std::max(rt_view->GetLayersOrStride().length == -1 ? 1 : rt_view->GetLayersOrStride().length, layers);
         }
 
         std::vector<VkClearValue> ds_attachment_values(ds_attachments.size());
@@ -170,9 +167,6 @@ namespace RayGene3D
           ds_attachment_descs[i].finalLayout = VK_IMAGE_LAYOUT_GENERAL;
 
           ds_attachment_views[i] = (reinterpret_cast<VLKView*>(ds_view.get()))->GetView();
-          size_x = std::max(size_x, ds_view->GetResource().GetSizeX());
-          size_y = std::max(size_y, ds_view->GetResource().GetSizeY());
-          layers = std::max(ds_view->GetLayersOrStride().length == -1 ? 1 : ds_view->GetLayersOrStride().length, layers);
         }
 
         attachment_values.clear();
@@ -328,11 +322,12 @@ namespace RayGene3D
   VLKPass::VLKPass(const std::string& name,
     Device& device,
     Pass::Type type,
+    uint32_t size_x,
+    uint32_t size_y,
+    uint32_t layers,
     const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments,
-    const View::Range& ins_or_grid_x,
-    const View::Range& vtx_or_grid_y)
-    : Pass(name, device, type, rt_attachments, ds_attachments, ins_or_grid_x, vtx_or_grid_y)
+    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
+    : Pass(name, device, type, size_x, size_y, layers, rt_attachments, ds_attachments)
   {
     VLKPass:Initialize();
   }

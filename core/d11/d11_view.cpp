@@ -291,7 +291,7 @@ namespace RayGene3D
       rtv_desc.Format = rtv_desc.Format == DXGI_FORMAT_D24_UNORM_S8_UINT ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : rtv_desc.Format;
       rtv_desc.Format = rtv_desc.Format == DXGI_FORMAT_D16_UNORM ? DXGI_FORMAT_R16_UNORM : rtv_desc.Format;
 
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateRenderTargetView(resource->GetResource(), nullptr, reinterpret_cast<ID3D11RenderTargetView**>(&view)));
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateRenderTargetView(resource->GetResource(), &rtv_desc, reinterpret_cast<ID3D11RenderTargetView**>(&view)));
       GetRTView()->GetDesc(&info.rtv_desc);
       break;
     }

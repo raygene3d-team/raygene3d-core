@@ -64,7 +64,7 @@ namespace RayGene3D
 
   public:
     D11Batch(const std::string& name,
-      Technique& technique,
+      Config& config,
       const std::pair<const Entity*, uint32_t>& entities,
       const std::pair<const Sampler*, uint32_t>& samplers = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},

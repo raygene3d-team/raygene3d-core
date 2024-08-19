@@ -29,7 +29,7 @@ THE SOFTWARE.
 
 #pragma once
 #include "d11_batch.h"
-#include "d11_technique.h"
+#include "d11_config.h"
 #include "d11_pass.h"
 #include "d11_device.h"
 #include "d11_resource.h"
@@ -42,8 +42,8 @@ namespace RayGene3D
 {
   void D11Batch::Initialize()
   {
-    auto technique = reinterpret_cast<D11Technique*>(&this->GetTechnique());
-    auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
+    auto config = reinterpret_cast<D11Config*>(&this->GetConfig());
+    auto pass = reinterpret_cast<D11Pass*>(&config->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
 
     const auto get_filter = [this](Sampler::Filtering filtering, bool compare)
@@ -164,8 +164,8 @@ namespace RayGene3D
 
   void D11Batch::Use()
   {
-    auto technique = reinterpret_cast<D11Technique*>(&this->GetTechnique());
-    auto pass = reinterpret_cast<D11Pass*>(&technique->GetPass());
+    auto config = reinterpret_cast<D11Config*>(&this->GetConfig());
+    auto pass = reinterpret_cast<D11Pass*>(&config->GetPass());
     auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
 
     if (pass->GetType() == Pass::TYPE_GRAPHIC)
@@ -204,7 +204,7 @@ namespace RayGene3D
           {
             va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
             va_offsets[i] = va_view->GetMipmapsOrCount().offset;
-            va_strides[i] = technique->GetStrides().at(i);
+            va_strides[i] = config->GetStrides().at(i);
           }
         }
         device->GetContext()->IASetVertexBuffers(0, va_count, va_items, va_strides, va_offsets);
@@ -221,9 +221,9 @@ namespace RayGene3D
           {
             ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
             ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
-            ia_formats[i] = technique->GetIAState().indexer
-              == Technique::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
-              : Technique::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
+            ia_formats[i] = config->GetIAState().indexer
+              == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
+              : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
               : DXGI_FORMAT_UNKNOWN;
           }
         }
@@ -264,14 +264,14 @@ namespace RayGene3D
         {
           const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Graphic));
-          const auto aa_draws = 1;
+          const auto aa_draws = 1u;
           const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
           device->GetContext()->DrawIndexedInstancedIndirect(aa_buffer, aa_offset);
         }
         else
         {
-          const auto ins_count = 1u; // subset.ins_range.length;
-          const auto ins_offset = 0u; // subset.ins_range.offset;
+          const auto ins_count = chunk.ins_or_grid_x.length;
+          const auto ins_offset = chunk.ins_or_grid_x.offset;
           const auto vtx_count = chunk.vtx_or_grid_y.length;
           const auto vtx_offset = chunk.vtx_or_grid_y.offset;
           const auto idx_count = chunk.idx_or_grid_z.length;
@@ -355,7 +355,7 @@ namespace RayGene3D
   }
 
   D11Batch::D11Batch(const std::string& name,
-    Technique& technique,
+    Config& config,
     const std::pair<const Entity*, uint32_t>& entities,
     const std::pair<const Sampler*, uint32_t>& samplers,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
@@ -365,7 +365,7 @@ namespace RayGene3D
     const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
     const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
   )
-    : Batch(name, technique, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
+    : Batch(name, config, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
   {
     D11Batch::Initialize();
   }
