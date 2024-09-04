@@ -162,8 +162,14 @@ namespace RayGene3D
       const View::Range& layers_or_stride = View::Range{ 0, uint32_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN
     ) = 0;
-    void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view); }
-    void DestroyView(const std::shared_ptr<View>& view) { views.remove(view); };
+    //void VisitView(std::function<bool(const std::shared_ptr<View>&)> visitor)
+    //{ 
+    //  for (const auto& view : views) if (visitor(view)) return;
+    //}
+    void DestroyView(const std::shared_ptr<View>& view)
+    { 
+      if(view) views.remove(view);
+    };
 
   public:
     void SetInteropCount(uint32_t count) { interops.resize(count); }

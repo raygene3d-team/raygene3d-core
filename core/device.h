@@ -53,8 +53,8 @@ namespace RayGene3D
 
   protected:
     std::list<std::shared_ptr<Resource>> resources;
-    
-    
+
+
     std::list<std::shared_ptr<Pass>> passes;
 
   public:
@@ -83,7 +83,7 @@ namespace RayGene3D
 
   public:
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
-      const Resource::BufferDesc& desc, 
+      const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
       const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
@@ -98,8 +98,22 @@ namespace RayGene3D
       const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
       const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
-    void VisitResource(std::function<void(const std::shared_ptr<Resource>&)> visitor) { for (const auto& resource : resources) visitor(resource); }
-    void DestroyResource(const std::shared_ptr<Resource>& resource) { resources.remove(resource); }
+    void VisitResource(std::function<bool(const std::shared_ptr<Resource>&)> visitor) const
+    {
+      for (const auto& resource : resources) if (visitor(resource)) return;
+    }
+    bool ObtainResource(const std::string& name, std::shared_ptr<Resource>& resource) const
+    {
+      const auto it = std::find_if(resources.begin(), resources.end(),
+        [name](const std::shared_ptr<Resource>& resource) { return name.compare(resource->GetName()) == 0; });
+      resource = it == resources.end() ? nullptr : *it;
+
+      return resource == nullptr;
+    }
+    void DestroyResource(const std::shared_ptr<Resource>& resource)
+    { 
+      if(resource) resources.remove(resource);
+    }
 
     virtual const std::shared_ptr<Pass>& CreatePass(const std::string& name,
       Pass::Type type,
@@ -108,8 +122,22 @@ namespace RayGene3D
       uint32_t layers,
       const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
       const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments) = 0;
-    void VisitPass(std::function<void(const std::shared_ptr<Pass>&)> visitor) { for (const auto& pass : passes) visitor(pass); }
-    void DestroyPass(const std::shared_ptr<Pass>& pass) { passes.remove(pass); }
+    void VisitPass(std::function<bool(const std::shared_ptr<Pass>&)> visitor)
+    { 
+      for (const auto& pass : passes) if (visitor(pass)) return;
+    }
+    bool ObtainPass(const std::string& name, std::shared_ptr<Pass>& pass) const
+    {
+      const auto it = std::find_if(passes.begin(), passes.end(),
+        [name](const std::shared_ptr<Pass>& pass) { return name.compare(pass->GetName()) == 0; });
+      pass = it == passes.end() ? nullptr : *it;
+
+      return pass == nullptr;
+    }
+    void DestroyPass(const std::shared_ptr<Pass>& pass) 
+    { 
+      if(pass) passes.remove(pass);
+    }
 
   public:
     void Initialize() override = 0;

@@ -80,7 +80,7 @@ namespace RayGene3D
     Device& device;
 
   protected:
-    std::list<std::shared_ptr<Config>> effects;
+    std::list<std::shared_ptr<Config>> configs;
 
   public:
     void SetType(Type type) { this->type = type; }
@@ -101,8 +101,11 @@ namespace RayGene3D
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state) = 0;
-    void VisitConfig(std::function<void(const std::shared_ptr<Config>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
-    void DestroyConfig(const std::shared_ptr<Config>& effect) { effects.remove(effect); }
+    //void VisitConfig(std::function<void(const std::shared_ptr<Config>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
+    void DestroyConfig(const std::shared_ptr<Config>& config) 
+    { 
+      if(config) configs.remove(config);
+    }
 
   public:
     void Initialize() override = 0;

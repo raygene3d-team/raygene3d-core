@@ -326,8 +326,11 @@ namespace RayGene3D
       const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
       const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
     ) = 0;
-    void VisitBatch(std::function<void(const std::shared_ptr<Batch>&)> visitor) { for (const auto& batch : batches) visitor(batch); }
-    void DestroyBatch(const std::shared_ptr<Batch>& batch) { batches.remove(batch); }
+    //void VisitBatch(std::function<void(const std::shared_ptr<Batch>&)> visitor) { for (const auto& batch : batches) visitor(batch); }
+    void DestroyBatch(const std::shared_ptr<Batch>& batch) 
+    {
+      if(batch) batches.remove(batch);
+    }
   
   public:
     const IAState& GetIAState() const { return ia_state; }
