@@ -108,7 +108,7 @@ namespace RayGene3D
         [name](const std::shared_ptr<Resource>& resource) { return name.compare(resource->GetName()) == 0; });
       resource = it == resources.end() ? nullptr : *it;
 
-      return resource == nullptr;
+      return resource != nullptr;
     }
     void DestroyResource(const std::shared_ptr<Resource>& resource)
     { 
@@ -132,7 +132,7 @@ namespace RayGene3D
         [name](const std::shared_ptr<Pass>& pass) { return name.compare(pass->GetName()) == 0; });
       pass = it == passes.end() ? nullptr : *it;
 
-      return pass == nullptr;
+      return pass != nullptr;
     }
     void DestroyPass(const std::shared_ptr<Pass>& pass) 
     { 
