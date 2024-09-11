@@ -78,7 +78,7 @@ namespace RayGene3D
 
     VkBuffer staging_buffer{ nullptr };
     VkDeviceMemory staging_memory{ nullptr };
-    VkDeviceSize staging_size{ 32 * 1024 * 1024 };
+    VkDeviceSize staging_size{ 64 * 1024 * 1024 };
 
     VkDeviceAddress scratch_address{ 0 };
     VkBuffer scratch_buffer{ nullptr };
