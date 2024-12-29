@@ -140,8 +140,8 @@ namespace RayGene3D
 
         srv_desc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
         srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-        srv_desc.Buffer.FirstElement = mipmaps_or_count.offset / desc.StructureByteStride;
-        srv_desc.Buffer.NumElements = mipmaps_or_count.length == -1 ? desc.ByteWidth / desc.StructureByteStride : mipmaps_or_count.length / desc.StructureByteStride;
+        srv_desc.Buffer.FirstElement = mipmaps_or_count.offset;
+        srv_desc.Buffer.NumElements = mipmaps_or_count.length == -1 ? resource->GetMipmapsOrCount() : mipmaps_or_count.length;
         break;
       }
       case Resource::TYPE_TEX1D:
