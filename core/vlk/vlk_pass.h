@@ -70,7 +70,7 @@ namespace RayGene3D
       const Config::DSState& ds_state,
       const Config::OMState& om_state) override
     {
-      return effects.emplace_back(new VLKConfig(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+      return configs.emplace_back(new VLKConfig(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:

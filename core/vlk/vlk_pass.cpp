@@ -264,9 +264,9 @@ namespace RayGene3D
 
       vkCmdBeginRenderPass(command_buffer, &pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-      for (const auto& effect : effects)
+      for (const auto& config : configs)
       {
-        effect->Use();
+        config->Use();
       }
 
       vkCmdEndRenderPass(command_buffer);
@@ -274,17 +274,17 @@ namespace RayGene3D
 
     if (type == TYPE_COMPUTE)
     {
-      for (const auto& effect : effects)
+      for (const auto& config : configs)
       {
-        effect->Use();
+        config->Use();
       }
     }
 
     if (type == TYPE_RAYTRACING && device->GetRTXSupported())
     {
-      for (const auto& effect : effects)
+      for (const auto& config : configs)
       {
-        effect->Use();
+        config->Use();
       }
     }
 
