@@ -86,10 +86,8 @@ IF(WIN32)
 target_link_libraries(raygene3d-core PRIVATE
 	debug ${GLSLANG_LIB_PATH}/MachineIndependentd.lib optimized ${GLSLANG_LIB_PATH}/MachineIndependent.lib
 	debug ${GLSLANG_LIB_PATH}/GenericCodeGend.lib optimized ${GLSLANG_LIB_PATH}/GenericCodeGen.lib
-	debug ${GLSLANG_LIB_PATH}/OGLCompilerd.lib optimized ${GLSLANG_LIB_PATH}/OGLCompiler.lib
 	debug ${GLSLANG_LIB_PATH}/OSDependentd.lib optimized ${GLSLANG_LIB_PATH}/OSDependent.lib
 	debug ${GLSLANG_LIB_PATH}/glslangd.lib optimized ${GLSLANG_LIB_PATH}/glslang.lib
-	debug ${GLSLANG_LIB_PATH}/HLSLd.lib optimized ${GLSLANG_LIB_PATH}/HLSL.lib
 )
 target_link_libraries(raygene3d-core PRIVATE
 	debug ${SPIRV_LIB_PATH}/SPVRemapperd.lib optimized ${SPIRV_LIB_PATH}/SPVRemapper.lib
@@ -99,10 +97,8 @@ ELSE(WIN32)
 target_link_libraries(${NAME}-core PRIVATE
 	optimized ${GLSLANG_LIB_PATH}/libMachineIndependent.a
 	optimized ${GLSLANG_LIB_PATH}/libGenericCodeGen.a
-	optimized ${GLSLANG_LIB_PATH}/libOGLCompiler.a
 	optimized ${GLSLANG_LIB_PATH}/libOSDependent.a
 	optimized ${GLSLANG_LIB_PATH}/libglslang.a
-	optimized ${GLSLANG_LIB_PATH}/libHLSL.a
 )
 target_link_libraries(${NAME}-core PRIVATE
 	optimized ${SPIRV_LIB_PATH}/libSPVRemapper.a
