@@ -37,116 +37,6 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  static TBuiltInResource InitResources()
-  {
-    TBuiltInResource Resources;
-
-    Resources.maxLights = 32;
-    Resources.maxClipPlanes = 6;
-    Resources.maxTextureUnits = 32;
-    Resources.maxTextureCoords = 32;
-    Resources.maxVertexAttribs = 64;
-    Resources.maxVertexUniformComponents = 4096;
-    Resources.maxVaryingFloats = 64;
-    Resources.maxVertexTextureImageUnits = 32;
-    Resources.maxCombinedTextureImageUnits = 80;
-    Resources.maxTextureImageUnits = 32;
-    Resources.maxFragmentUniformComponents = 4096;
-    Resources.maxDrawBuffers = 32;
-    Resources.maxVertexUniformVectors = 128;
-    Resources.maxVaryingVectors = 8;
-    Resources.maxFragmentUniformVectors = 16;
-    Resources.maxVertexOutputVectors = 16;
-    Resources.maxFragmentInputVectors = 15;
-    Resources.minProgramTexelOffset = -8;
-    Resources.maxProgramTexelOffset = 7;
-    Resources.maxClipDistances = 8;
-    Resources.maxComputeWorkGroupCountX = 65535;
-    Resources.maxComputeWorkGroupCountY = 65535;
-    Resources.maxComputeWorkGroupCountZ = 65535;
-    Resources.maxComputeWorkGroupSizeX = 1024;
-    Resources.maxComputeWorkGroupSizeY = 1024;
-    Resources.maxComputeWorkGroupSizeZ = 64;
-    Resources.maxComputeUniformComponents = 1024;
-    Resources.maxComputeTextureImageUnits = 16;
-    Resources.maxComputeImageUniforms = 8;
-    Resources.maxComputeAtomicCounters = 8;
-    Resources.maxComputeAtomicCounterBuffers = 1;
-    Resources.maxVaryingComponents = 60;
-    Resources.maxVertexOutputComponents = 64;
-    Resources.maxGeometryInputComponents = 64;
-    Resources.maxGeometryOutputComponents = 128;
-    Resources.maxFragmentInputComponents = 128;
-    Resources.maxImageUnits = 8;
-    Resources.maxCombinedImageUnitsAndFragmentOutputs = 8;
-    Resources.maxCombinedShaderOutputResources = 8;
-    Resources.maxImageSamples = 0;
-    Resources.maxVertexImageUniforms = 0;
-    Resources.maxTessControlImageUniforms = 0;
-    Resources.maxTessEvaluationImageUniforms = 0;
-    Resources.maxGeometryImageUniforms = 0;
-    Resources.maxFragmentImageUniforms = 8;
-    Resources.maxCombinedImageUniforms = 8;
-    Resources.maxGeometryTextureImageUnits = 16;
-    Resources.maxGeometryOutputVertices = 256;
-    Resources.maxGeometryTotalOutputComponents = 1024;
-    Resources.maxGeometryUniformComponents = 1024;
-    Resources.maxGeometryVaryingComponents = 64;
-    Resources.maxTessControlInputComponents = 128;
-    Resources.maxTessControlOutputComponents = 128;
-    Resources.maxTessControlTextureImageUnits = 16;
-    Resources.maxTessControlUniformComponents = 1024;
-    Resources.maxTessControlTotalOutputComponents = 4096;
-    Resources.maxTessEvaluationInputComponents = 128;
-    Resources.maxTessEvaluationOutputComponents = 128;
-    Resources.maxTessEvaluationTextureImageUnits = 16;
-    Resources.maxTessEvaluationUniformComponents = 1024;
-    Resources.maxTessPatchComponents = 120;
-    Resources.maxPatchVertices = 32;
-    Resources.maxTessGenLevel = 64;
-    Resources.maxViewports = 16;
-    Resources.maxVertexAtomicCounters = 0;
-    Resources.maxTessControlAtomicCounters = 0;
-    Resources.maxTessEvaluationAtomicCounters = 0;
-    Resources.maxGeometryAtomicCounters = 0;
-    Resources.maxFragmentAtomicCounters = 8;
-    Resources.maxCombinedAtomicCounters = 8;
-    Resources.maxAtomicCounterBindings = 1;
-    Resources.maxVertexAtomicCounterBuffers = 0;
-    Resources.maxTessControlAtomicCounterBuffers = 0;
-    Resources.maxTessEvaluationAtomicCounterBuffers = 0;
-    Resources.maxGeometryAtomicCounterBuffers = 0;
-    Resources.maxFragmentAtomicCounterBuffers = 1;
-    Resources.maxCombinedAtomicCounterBuffers = 1;
-    Resources.maxAtomicCounterBufferSize = 16384;
-    Resources.maxTransformFeedbackBuffers = 4;
-    Resources.maxTransformFeedbackInterleavedComponents = 64;
-    Resources.maxCullDistances = 8;
-    Resources.maxCombinedClipAndCullDistances = 8;
-    Resources.maxSamples = 4;
-    Resources.maxMeshOutputVerticesNV = 256;
-    Resources.maxMeshOutputPrimitivesNV = 512;
-    Resources.maxMeshWorkGroupSizeX_NV = 32;
-    Resources.maxMeshWorkGroupSizeY_NV = 1;
-    Resources.maxMeshWorkGroupSizeZ_NV = 1;
-    Resources.maxTaskWorkGroupSizeX_NV = 32;
-    Resources.maxTaskWorkGroupSizeY_NV = 1;
-    Resources.maxTaskWorkGroupSizeZ_NV = 1;
-    Resources.maxMeshViewCountNV = 4;
-
-    Resources.limits.nonInductiveForLoops = 1;
-    Resources.limits.whileLoops = 1;
-    Resources.limits.doWhileLoops = 1;
-    Resources.limits.generalUniformIndexing = 1;
-    Resources.limits.generalAttributeMatrixVectorIndexing = 1;
-    Resources.limits.generalVaryingIndexing = 1;
-    Resources.limits.generalSamplerIndexing = 1;
-    Resources.limits.generalVariableIndexing = 1;
-    Resources.limits.generalConstantMatrixVectorIndexing = 1;
-
-    return Resources;
-  }
-
   void CompileVLK(const std::string& source, const char* entry, const char* target, 
     std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
   {
@@ -170,12 +60,12 @@ namespace RayGene3D
 
         const auto size = text.size();
         const auto data = new char[size];
-        assert(data);
+        //assert(data);
 
         memcpy(data, text.data(), size);
 
         auto result = new IncludeResult(file_path, data, size, nullptr);
-        assert(result);
+        //assert(result);
 
         return result;
       }
@@ -196,12 +86,12 @@ namespace RayGene3D
 
         const auto size = text.size();
         const auto data = new char[size];
-        assert(data);
+        //assert(data);
 
         memcpy(data, text.data(), size);
 
         auto result = new IncludeResult(file_path, data, size, nullptr);
-        assert(result);
+        //assert(result);
 
         return result;
       }
@@ -233,16 +123,20 @@ namespace RayGene3D
     std::string preamble = "#define USE_SPIRV\n";
 
     EShLanguage stage = EShLangCount;
+    if (strcmp(target, "cs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangCompute; } else
     if (strcmp(target, "vs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangVertex; } else
     if (strcmp(target, "ds_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangTessEvaluation; } else
     if (strcmp(target, "hs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangTessControl; } else
     if (strcmp(target, "gs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangGeometry; } else
     if (strcmp(target, "ps_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangFragment; } else
-    if (strcmp(target, "cs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangCompute; } else
-    if (strcmp(target, "rgen") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangRayGen; preamble.append("#define RGEN\n"); } else
+    if (strcmp(target, "task") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangTask;       preamble.append("#define TASK\n"); } else
+    if (strcmp(target, "mesh") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMesh;       preamble.append("#define MESH\n"); } else
+    if (strcmp(target, "rgen") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangRayGen;     preamble.append("#define RGEN\n"); } else
+    if (strcmp(target, "isec") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangIntersect;  preamble.append("#define ISEC\n"); } else
     if (strcmp(target, "chit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangClosestHit; preamble.append("#define CHIT\n"); } else
-    if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangAnyHit; preamble.append("#define AHIT\n"); } else
-    if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMiss; preamble.append("#define MISS\n"); }
+    if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangAnyHit;     preamble.append("#define AHIT\n"); } else
+    if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMiss;       preamble.append("#define MISS\n"); } else
+    if (strcmp(target, "call") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangCallable;   preamble.append("#define CALL\n"); }
 
     for (const auto& define : defines)
     {
@@ -265,7 +159,7 @@ namespace RayGene3D
     const auto source_str = source.c_str();
     shader.setStrings(&source_str, 1);
 
-    TBuiltInResource resources = InitResources();
+    TBuiltInResource resources{ 0 };
     EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules /*| EShMsgHlslOffsets | EShMsgReadHlsl*/);
     if (!shader.parse(&resources, 100, false, messages, includer))
     {
@@ -311,81 +205,37 @@ namespace RayGene3D
     auto pass = reinterpret_cast<VLKPass*>(&this->GetPass());
     auto device = reinterpret_cast<VLKDevice*>(&pass->GetDevice());
 
-    const auto path = device->GetPath();
+    const auto& path = device->GetPath();
 
-    if (compilation != COMPILATION_UNKNOWN)
-    {
-      if (compilation & COMPILATION_VS)
-      {
-        vs_bytecode.clear();
-        CompileVLK(source, "vs_main", "vs_5_0", defines, path, vs_bytecode);
-        BLAST_ASSERT(!vs_bytecode.empty());
-      }
+    cs_bytecode.clear();
+    vs_bytecode.clear();
+    hs_bytecode.clear();
+    ds_bytecode.clear();
+    gs_bytecode.clear();
+    ps_bytecode.clear();
+    task_bytecode.clear();
+    mesh_bytecode.clear();
+    rgen_bytecode.clear();
+    isec_bytecode.clear();
+    miss_bytecode.clear();
+    chit_bytecode.clear();
+    ahit_bytecode.clear();
+    call_bytecode.clear();
 
-      if (compilation & COMPILATION_HS)
-      {
-        hs_bytecode.clear();
-        CompileVLK(source, "hs_main", "hs_5_0", defines, path, hs_bytecode);
-        BLAST_ASSERT(!hs_bytecode.empty());
-      }
-
-      if (compilation & COMPILATION_DS)
-      {
-        ds_bytecode.clear();
-        CompileVLK(source, "ds_main", "ds_5_0", defines, path, ds_bytecode);
-        BLAST_ASSERT(!ds_bytecode.empty());
-      }
-
-      if (compilation & COMPILATION_GS)
-      {
-        gs_bytecode.clear();
-        CompileVLK(source, "gs_main", "gs_5_0", defines, path, gs_bytecode);
-        BLAST_ASSERT(!gs_bytecode.empty());
-      }
-
-      if (compilation & COMPILATION_PS)
-      {
-        ps_bytecode.clear();
-        CompileVLK(source, "ps_main", "ps_5_0", defines, path, ps_bytecode);
-        BLAST_ASSERT(!ps_bytecode.empty());
-      }
-
-      if (compilation & COMPILATION_CS)
-      {
-        cs_bytecode.clear();
-        CompileVLK(source, "cs_main", "cs_5_0", defines, path, cs_bytecode);
-        BLAST_ASSERT(!cs_bytecode.empty());
-      }
-
-      //RTX section
-      if (compilation & COMPILATION_RGEN)
-      {
-        rgen_bytecode.clear();
-        CompileVLK(source, "main", "rgen", defines, path, rgen_bytecode);
-        BLAST_ASSERT(!rgen_bytecode.empty());
-      }
-
-      if (compilation & COMPILATION_MISS)
-      {
-        miss_bytecode.clear();
-        CompileVLK(source, "main", "miss", defines, path, miss_bytecode);
-        BLAST_ASSERT(!miss_bytecode.empty());
-      }
-
-      if (compilation & COMPILATION_CHIT)
-      {
-        chit_bytecode.clear();
-        CompileVLK(source, "main", "chit", defines, path, chit_bytecode);
-        BLAST_ASSERT(!chit_bytecode.empty());
-      }
-
-      if (compilation & COMPILATION_AHIT)
-      {
-        ahit_bytecode.clear();
-        CompileVLK(source, "main", "ahit", defines, path, ahit_bytecode);
-        BLAST_ASSERT(!ahit_bytecode.empty());
-      }
-    }
+    if (compilation & COMPILATION_CS) { CompileVLK(source, "cs_main", "cs_5_0", defines, path, cs_bytecode); BLAST_ASSERT(!cs_bytecode.empty()); }
+    if (compilation & COMPILATION_VS) { CompileVLK(source, "vs_main", "vs_5_0", defines, path, vs_bytecode); BLAST_ASSERT(!vs_bytecode.empty()); }
+    if (compilation & COMPILATION_HS) { CompileVLK(source, "hs_main", "hs_5_0", defines, path, hs_bytecode); BLAST_ASSERT(!hs_bytecode.empty()); }
+    if (compilation & COMPILATION_DS) { CompileVLK(source, "ds_main", "ds_5_0", defines, path, ds_bytecode); BLAST_ASSERT(!ds_bytecode.empty()); }
+    if (compilation & COMPILATION_GS) { CompileVLK(source, "gs_main", "gs_5_0", defines, path, gs_bytecode); BLAST_ASSERT(!gs_bytecode.empty()); }
+    if (compilation & COMPILATION_PS) { CompileVLK(source, "ps_main", "ps_5_0", defines, path, ps_bytecode); BLAST_ASSERT(!ps_bytecode.empty()); }
+    if (compilation & COMPILATION_TASK) { CompileVLK(source, "main", "task", defines, path, task_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
+    if (compilation & COMPILATION_MESH) { CompileVLK(source, "main", "mesh", defines, path, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
+    if (compilation & COMPILATION_RGEN) { CompileVLK(source, "main", "rgen", defines, path, rgen_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
+    if (compilation & COMPILATION_ISEC) { CompileVLK(source, "main", "isec", defines, path, isec_bytecode); BLAST_ASSERT(!isec_bytecode.empty()); }
+    if (compilation & COMPILATION_MISS) { CompileVLK(source, "main", "miss", defines, path, miss_bytecode); BLAST_ASSERT(!miss_bytecode.empty()); }
+    if (compilation & COMPILATION_CHIT) { CompileVLK(source, "main", "chit", defines, path, chit_bytecode); BLAST_ASSERT(!chit_bytecode.empty()); }
+    if (compilation & COMPILATION_AHIT) { CompileVLK(source, "main", "ahit", defines, path, ahit_bytecode); BLAST_ASSERT(!ahit_bytecode.empty()); }
+    if (compilation & COMPILATION_CALL) { CompileVLK(source, "main", "call", defines, path, call_bytecode); BLAST_ASSERT(!call_bytecode.empty()); }
 
     {
       const auto create_shader_module = [device](const std::vector<char>& bytecode)
@@ -401,6 +251,18 @@ namespace RayGene3D
         return shader_module;
       };
 
+      if (!cs_bytecode.empty())
+      {
+        cs_module = create_shader_module(cs_bytecode);
+
+        auto create_info = VkPipelineShaderStageCreateInfo{};
+        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+        create_info.module = cs_module;
+        create_info.pName = "cs_main";
+        create_info.pSpecializationInfo = nullptr;
+        stages.push_back(create_info);
+      }
 
       if (!vs_bytecode.empty())
       {
@@ -467,20 +329,6 @@ namespace RayGene3D
         stages.push_back(create_info);
       }
 
-      if (!cs_bytecode.empty())
-      {
-        cs_module = create_shader_module(cs_bytecode);
-
-        auto create_info = VkPipelineShaderStageCreateInfo{};
-        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        create_info.module = cs_module;
-        create_info.pName = "cs_main";
-        create_info.pSpecializationInfo = nullptr;
-        stages.push_back(create_info);
-      }
-
-
       // RTX shaders
       if (!rgen_bytecode.empty())
       {
@@ -499,6 +347,28 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         create_info.module = rgen_module;
+        create_info.pName = "main";
+        create_info.pSpecializationInfo = nullptr;
+        stages.push_back(create_info);
+      }
+
+      if (!isec_bytecode.empty())
+      {
+        auto shader_group = VkRayTracingShaderGroupCreateInfoKHR{};
+        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR;
+        shader_group.generalShader = VK_SHADER_UNUSED_KHR;
+        shader_group.intersectionShader = uint32_t(stages.size());
+        shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
+        shader_group.anyHitShader = VK_SHADER_UNUSED_KHR;
+        groups.push_back(shader_group);
+
+        isec_module = create_shader_module(isec_bytecode);
+
+        auto create_info = VkPipelineShaderStageCreateInfo{};
+        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        create_info.stage = VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
+        create_info.module = isec_module;
         create_info.pName = "main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
@@ -565,6 +435,54 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
         create_info.module = ahit_module;
+        create_info.pName = "main";
+        create_info.pSpecializationInfo = nullptr;
+        stages.push_back(create_info);
+      }
+
+      if (!call_bytecode.empty())
+      {
+        auto shader_group = VkRayTracingShaderGroupCreateInfoKHR{};
+        shader_group.sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+        shader_group.type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+        shader_group.generalShader = uint32_t(stages.size());
+        shader_group.intersectionShader = VK_SHADER_UNUSED_KHR;
+        shader_group.closestHitShader = VK_SHADER_UNUSED_KHR;
+        shader_group.anyHitShader = VK_SHADER_UNUSED_KHR; // ahit shader;
+        groups.push_back(shader_group);
+
+        call_module = create_shader_module(call_bytecode);
+
+        auto create_info = VkPipelineShaderStageCreateInfo{};
+        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        create_info.stage = VK_SHADER_STAGE_CALLABLE_BIT_KHR;
+        create_info.module = call_module;
+        create_info.pName = "main";
+        create_info.pSpecializationInfo = nullptr;
+        stages.push_back(create_info);
+      }
+
+      if (!task_bytecode.empty())
+      {
+        task_module = create_shader_module(task_bytecode);
+
+        auto create_info = VkPipelineShaderStageCreateInfo{};
+        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        create_info.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
+        create_info.module = task_module;
+        create_info.pName = "main";
+        create_info.pSpecializationInfo = nullptr;
+        stages.push_back(create_info);
+      }
+
+      if (!mesh_bytecode.empty())
+      {
+        mesh_module = create_shader_module(mesh_bytecode);
+
+        auto create_info = VkPipelineShaderStageCreateInfo{};
+        create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        create_info.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
+        create_info.module = mesh_module;
         create_info.pName = "main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);

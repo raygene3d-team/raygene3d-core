@@ -120,7 +120,7 @@ namespace RayGene3D
     }
 
 
-    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRTXSupported())
     {
       {
         vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateRayTracingPipelinesKHR"));
@@ -800,7 +800,7 @@ namespace RayGene3D
       BLAST_ASSERT(VK_SUCCESS == vkCreateComputePipelines(device->GetDevice(), VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
     }
 
-    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRTXSupported())
     {
       VkRayTracingPipelineCreateInfoKHR create_info = {};
       create_info.sType                         = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -1003,7 +1003,7 @@ namespace RayGene3D
     }
 
 
-    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRTXSupported())
     {
       vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 

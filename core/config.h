@@ -52,23 +52,33 @@ namespace RayGene3D
       COMPILATION_PS = 0x00000010,
       COMPILATION_CS = 0x00000100,
       COMPILATION_RGEN = 0x00001000,
-      COMPILATION_CHIT = 0x00002000,
-      COMPILATION_AHIT = 0x00004000,
-      COMPILATION_MISS = 0x00008000,
+      COMPILATION_ISEC = 0x00002000,
+      COMPILATION_CHIT = 0x00004000,
+      COMPILATION_AHIT = 0x00008000,
+      COMPILATION_MISS = 0x00010000,
+      COMPILATION_CALL = 0x00020000,
+      COMPILATION_TASK = 0x00100000,
+      COMPILATION_MESH = 0x00200000,
     };
 
   protected:
+    std::vector<char> cs_bytecode;
+
     std::vector<char> vs_bytecode;
     std::vector<char> hs_bytecode;
     std::vector<char> ds_bytecode;
     std::vector<char> gs_bytecode;
     std::vector<char> ps_bytecode;
-    std::vector<char> cs_bytecode;
+
+    std::vector<char> task_bytecode;
+    std::vector<char> mesh_bytecode;
 
     std::vector<char> rgen_bytecode;
+    std::vector<char> isec_bytecode;
     std::vector<char> chit_bytecode;
     std::vector<char> ahit_bytecode;
     std::vector<char> miss_bytecode;
+    std::vector<char> call_bytecode;
 
   protected:
     std::string source;
@@ -148,7 +158,6 @@ namespace RayGene3D
 
   protected:
     IAState ia_state;
-
 
   public:
     enum Fill

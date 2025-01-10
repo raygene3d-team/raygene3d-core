@@ -54,10 +54,16 @@ namespace RayGene3D
     VkShaderModule cs_module{ nullptr };
 
   protected:
+    VkShaderModule task_module{ nullptr };
+    VkShaderModule mesh_module{ nullptr };
+
+  protected:
     VkShaderModule rgen_module{ nullptr };
+    VkShaderModule isec_module{ nullptr };
     VkShaderModule chit_module{ nullptr };
     VkShaderModule ahit_module{ nullptr };
     VkShaderModule miss_module{ nullptr };
+    VkShaderModule call_module{ nullptr };
 
   protected:
     std::vector<VkPipelineShaderStageCreateInfo> stages;

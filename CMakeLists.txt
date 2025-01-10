@@ -71,17 +71,14 @@ target_include_directories(${NAME}-core PUBLIC
 
 set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/win64)
 set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/win64)
-set(SPIRVTOOLS_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/spirv-tools/lib/win64)
 
 if(UNIX)
 	if(APPLE)
 		set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/macos)
 		set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/macos)
-		set(SPIRVTOOLS_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/spirv-tools/lib/macos)
 	else(APPLE)
 		set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/linux)
 		set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/linux)
-		set(SPIRVTOOLS_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/spirv-tools/lib/linux)
 	endif(APPLE)
 endif(UNIX)
 
@@ -98,11 +95,6 @@ target_link_libraries(raygene3d-core PRIVATE
 	debug ${SPIRV_LIB_PATH}/SPVRemapperd.lib optimized ${SPIRV_LIB_PATH}/SPVRemapper.lib
 	debug ${SPIRV_LIB_PATH}/SPIRVd.lib optimized ${SPIRV_LIB_PATH}/SPIRV.lib
 )
-target_link_libraries(raygene3d-core PRIVATE
-	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-reduced.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-reduce.lib
-	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-optd.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-opt.lib
-	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Toolsd.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools.lib
-)
 ELSE(WIN32)
 target_link_libraries(${NAME}-core PRIVATE
 	optimized ${GLSLANG_LIB_PATH}/libMachineIndependent.a
@@ -115,11 +107,6 @@ target_link_libraries(${NAME}-core PRIVATE
 target_link_libraries(${NAME}-core PRIVATE
 	optimized ${SPIRV_LIB_PATH}/libSPVRemapper.a
 	optimized ${SPIRV_LIB_PATH}/libSPIRV.a
-)
-target_link_libraries(${NAME}-core PRIVATE
-	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools-reduce.a
-	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools-opt.a
-	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools.a
 )
 ENDIF(WIN32)
 
