@@ -54,8 +54,11 @@ namespace RayGene3D
     VkPhysicalDeviceFeatures features{};
     VkPhysicalDeviceMemoryProperties memory{};
     
-    bool raytracing_supported{ false };
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR raytracing_properties;
+    bool tracing_supported{ false };
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR tracing_properties;
+
+    bool meshing_supported{ false };
+    VkPhysicalDeviceMeshShaderPropertiesEXT meshing_properties;
 
 
     VkDevice device{ nullptr };
@@ -179,8 +182,12 @@ namespace RayGene3D
     VkQueue GetQueue() { return queue; }
 
   public:
-    bool GetRTXSupported() const { return raytracing_supported; }
-    const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& GetRTXProperties() const { return  raytracing_properties; }
+    bool GetTracingSupported() const { return tracing_supported; }
+    const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& GetTracingProperties() const { return  tracing_properties; }
+
+  public:
+    bool GetMeshingSupported() const { return meshing_supported; }
+    const VkPhysicalDeviceMeshShaderPropertiesEXT& GetMeshingProperties() const { return  meshing_properties; }
 
   protected:
     void CreateInstance();

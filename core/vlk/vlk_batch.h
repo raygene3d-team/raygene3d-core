@@ -104,6 +104,11 @@ namespace RayGene3D
     PFN_vkCmdTraceRaysIndirectKHR vkCmdTraceRaysIndirectKHR{ nullptr };
 
   protected:
+    PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT{ nullptr };
+    PFN_vkCmdDrawMeshTasksIndirectEXT vkCmdDrawMeshTasksIndirectEXT{ nullptr };
+    //PFN_vkCmdDrawMeshTasksIndirectCountEXT vkCmdDrawMeshTasksIndirectCountEXT{ nullptr };
+
+  protected:
     PFN_vkCreateAccelerationStructureKHR vkCreateAccelerationStructureKHR{ nullptr };
     PFN_vkGetAccelerationStructureDeviceAddressKHR vkGetAccelerationStructureDeviceAddressKHR{ nullptr };
     PFN_vkGetAccelerationStructureBuildSizesKHR vkGetAccelerationStructureBuildSizesKHR{ nullptr };

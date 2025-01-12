@@ -243,11 +243,11 @@ namespace RayGene3D
     };
 
     {
-      raytracing_supported = extension_check_fn(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-      raytracing_supported &= extension_check_fn(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-      raytracing_supported &= extension_check_fn(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+      tracing_supported = extension_check_fn(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+      tracing_supported &= extension_check_fn(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+      tracing_supported &= extension_check_fn(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 
-      if (raytracing_supported)
+      if (tracing_supported)
       {
         VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtx_properties = {};
         rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
@@ -255,7 +255,7 @@ namespace RayGene3D
         device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         device_properties.pNext = &rtx_properties;
         vkGetPhysicalDeviceProperties2(adapter, &device_properties);
-        raytracing_properties = rtx_properties;
+        tracing_properties = rtx_properties;
 
         //BLAST_LOG("\
         //==RTX capabilities==:\n\
@@ -297,12 +297,12 @@ namespace RayGene3D
     bda_features.pNext = &rtp_features;
     bda_features.bufferDeviceAddress = true;
 
-    void* extention_features = raytracing_supported ? &bda_features : nullptr;
+    void* extention_features = tracing_supported ? &bda_features : nullptr;
 
     VkPhysicalDeviceFeatures enabled_features{};
     BLAST_ASSERT(features.samplerAnisotropy);          enabled_features.samplerAnisotropy = true;
     BLAST_ASSERT(features.robustBufferAccess);         enabled_features.robustBufferAccess = true;
-    BLAST_ASSERT(features.geometryShader);             enabled_features.geometryShader = true;
+    //BLAST_ASSERT(features.geometryShader);             enabled_features.geometryShader = true;
     BLAST_ASSERT(features.tessellationShader);         enabled_features.tessellationShader = true;
     BLAST_ASSERT(features.imageCubeArray);             enabled_features.imageCubeArray = true;
     BLAST_ASSERT(features.multiViewport);              enabled_features.multiViewport = true;
@@ -660,7 +660,7 @@ namespace RayGene3D
 
   void VLKDevice::CreateScratch()
   {
-    if (!raytracing_supported) return;
+    if (!tracing_supported) return;
 
     const auto size = scratch_size;
     const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -682,7 +682,7 @@ namespace RayGene3D
 
   void VLKDevice::DestroyScratch()
   {
-    if (!raytracing_supported) return;
+    if (!tracing_supported) return;
 
     if (scratch_memory)
     {

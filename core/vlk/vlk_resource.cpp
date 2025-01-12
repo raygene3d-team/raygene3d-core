@@ -62,7 +62,7 @@ namespace RayGene3D
       };
 
       {
-        const auto addressable = hint & HINT_ADDRESS_BUFFER && device->GetRTXSupported();
+        const auto addressable = hint & HINT_ADDRESS_BUFFER && device->GetTracingSupported();
         const auto size = mipmaps_or_count * layers_or_stride;
         const auto usage = get_bind() | (addressable ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT : 0);
         const auto buffer = device->CreateBuffer(size, usage);

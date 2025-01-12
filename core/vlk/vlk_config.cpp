@@ -826,7 +826,7 @@ namespace RayGene3D
       }
     };
 
-    VkStencilOpState front_op_state;
+    VkStencilOpState front_op_state = {};
     front_op_state.failOp = get_action(ds_state.stencil_fface_mode.stencil_fail);
     front_op_state.passOp = get_action(ds_state.stencil_fface_mode.stencil_pass);
     front_op_state.depthFailOp = get_action(ds_state.stencil_fface_mode.depth_fail);
@@ -835,7 +835,7 @@ namespace RayGene3D
     front_op_state.writeMask = ds_state.stencil_wmask;
     front_op_state.reference = ds_state.stencil_reference;
 
-    VkStencilOpState back_op_state;
+    VkStencilOpState back_op_state = {};
     back_op_state.failOp = get_action(ds_state.stencil_bface_mode.stencil_fail);
     back_op_state.passOp = get_action(ds_state.stencil_bface_mode.stencil_pass);
     back_op_state.depthFailOp = get_action(ds_state.stencil_bface_mode.depth_fail);
