@@ -591,6 +591,8 @@ namespace RayGene3D
     input_state.vertexAttributeDescriptionCount = uint32_t(input_attributes.size());
     input_state.pVertexAttributeDescriptions = input_attributes.data();
 
+    use_vertex_input = !input_bindings.empty() && !input_attributes.empty();
+
     // input assembly
     const auto get_topology = [](Topology topology)
     {
@@ -947,6 +949,29 @@ namespace RayGene3D
     const Config::DSState& ds_state,
     const Config::OMState& om_state)
     : Config(name, pass, source, compilation, defines, ia_state, rc_state, ds_state, om_state)
+  {
+    VLKConfig::Initialize();
+  }
+
+  VLKConfig::VLKConfig(const std::string& name,
+    Pass& pass,
+    const std::string& source,
+    Config::Compilation compilation,
+    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const Config::RCState& rc_state,
+    const Config::DSState& ds_state,
+    const Config::OMState& om_state)
+    : Config(name, pass, source, compilation, defines, rc_state, ds_state, om_state)
+  {
+    VLKConfig::Initialize();
+  }
+
+  VLKConfig::VLKConfig(const std::string& name,
+    Pass& pass,
+    const std::string& source,
+    Config::Compilation compilation,
+    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines)
+    : Config(name, pass, source, compilation, defines)
   {
     VLKConfig::Initialize();
   }

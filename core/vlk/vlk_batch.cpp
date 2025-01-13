@@ -120,7 +120,7 @@ namespace RayGene3D
     }
 
 
-    if (pass->GetType() == Pass::TYPE_TRACING && device->GetTracingSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
     {
       {
         vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateRayTracingPipelinesKHR"));
@@ -773,7 +773,7 @@ namespace RayGene3D
       create_info.pStages             = config->GetStageArray();
       create_info.pVertexInputState   = &config->GetInputState();
       create_info.pInputAssemblyState = &config->GetAssemblyState();
-      create_info.pTessellationState = &config->GetTessellationState();
+      create_info.pTessellationState  = &config->GetTessellationState();
       create_info.pViewportState      = &config->GetViewportState();      
       create_info.pRasterizationState = &config->GetRasterizationState();
       create_info.pMultisampleState   = &config->GetMultisampleState();
@@ -800,7 +800,7 @@ namespace RayGene3D
       BLAST_ASSERT(VK_SUCCESS == vkCreateComputePipelines(device->GetDevice(), VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
     }
 
-    if (pass->GetType() == Pass::TYPE_TRACING && device->GetTracingSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
     {
       VkRayTracingPipelineCreateInfoKHR create_info = {};
       create_info.sType                         = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -854,30 +854,6 @@ namespace RayGene3D
         miss_region = { device->GetAddress(table_buffer) + 1 * binding_align, binding_align, binding_align };
       if (config->GetGroupCount() > 2)
         xhit_region = { device->GetAddress(table_buffer) + 2 * binding_align, binding_align, binding_align };
-    }
-
-    if (pass->GetType() == Pass::TYPE_MESHING && device->GetMeshingSupported())
-    {
-      VkGraphicsPipelineCreateInfo create_info = {};
-      create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-      create_info.flags = 0;
-      create_info.stageCount = config->GetStageCount();
-      create_info.pStages = config->GetStageArray();
-      create_info.pVertexInputState = nullptr;
-      create_info.pInputAssemblyState = nullptr;
-      create_info.pTessellationState = nullptr;
-      create_info.pViewportState = &config->GetViewportState();
-      create_info.pRasterizationState = &config->GetRasterizationState();
-      create_info.pMultisampleState = &config->GetMultisampleState();
-      create_info.pDepthStencilState = &config->GetDepthstencilState();
-      create_info.pColorBlendState = &config->GetColorblendState();
-      create_info.pDynamicState = nullptr;
-      create_info.layout = layout;
-      create_info.renderPass = pass->GetRenderPass();
-      create_info.subpass = 0;
-      create_info.basePipelineHandle = VK_NULL_HANDLE;
-      create_info.basePipelineIndex = -1;
-      BLAST_ASSERT(VK_SUCCESS == vkCreateGraphicsPipelines(device->GetDevice(), VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
     }
   }
 
@@ -969,7 +945,11 @@ namespace RayGene3D
           const auto aa_stride = uint32_t(sizeof(Graphic));
           const auto aa_draws = 1u;
           const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
-          vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
+          
+          if(config->UseVertexInput())
+            vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
+          else if(device->GetMeshShaderSupported())
+            vkCmdDrawMeshTasksIndirectEXT(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
         }
         else
         {
@@ -979,7 +959,15 @@ namespace RayGene3D
           const auto vtx_offset = chunk.vtx_or_grid_y.offset;
           const auto idx_count = chunk.idx_or_grid_z.length;
           const auto idx_offset = chunk.idx_or_grid_z.offset;
-          vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
+
+          const auto grid_x = chunk.ins_or_grid_x.length;
+          const auto grid_y = chunk.vtx_or_grid_y.length;
+          const auto grid_z = chunk.idx_or_grid_z.length;
+
+          if (config->UseVertexInput())
+            vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
+          else if(device->GetMeshShaderSupported())
+            vkCmdDrawMeshTasksEXT(command_buffer, grid_x, grid_y, grid_z);
         }
       }
     }
@@ -1027,7 +1015,7 @@ namespace RayGene3D
     }
 
 
-    if (pass->GetType() == Pass::TYPE_TRACING && device->GetTracingSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
     {
       vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 
@@ -1043,48 +1031,6 @@ namespace RayGene3D
       const auto extent_x = device->GetExtentX();
       const auto extent_y = device->GetExtentY();
       vkCmdTraceRaysKHR(command_buffer, &rgen_region, &miss_region, &xhit_region, &call_region, extent_x, extent_y, 1);
-    }
-
-    if (pass->GetType() == Pass::TYPE_MESHING && device->GetMeshingSupported())
-    {
-      vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-
-      if (sb_views.empty())
-      {
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), 0, nullptr);
-      }
-
-      for (const auto& chunk : entities)
-      {
-        if (!sb_views.empty())
-        {
-          const auto sb_limit = 4u;
-          const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
-
-          uint32_t sb_offsets[sb_limit] = {};
-          for (uint32_t i = 0; i < sb_count; ++i)
-          {
-            sb_offsets[i] = chunk.sb_offset ? chunk.sb_offset.value()[i] : 0u;
-          }
-          vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), sb_count, sb_offsets);
-        }
-
-        if (chunk.arg_view)
-        {
-          const auto aa_buffer = (reinterpret_cast<VLKResource*>(&chunk.arg_view->GetResource()))->GetBuffer();
-          const auto aa_stride = uint32_t(sizeof(Graphic));
-          const auto aa_draws = 1u;
-          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
-          vkCmdDrawMeshTasksIndirectEXT(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
-        }
-        else
-        {
-          const auto grid_x = chunk.ins_or_grid_x.length;
-          const auto grid_y = chunk.vtx_or_grid_y.length;
-          const auto grid_z = chunk.idx_or_grid_z.length;
-          vkCmdDrawMeshTasksEXT(command_buffer, grid_x, grid_y, grid_z);
-        }
-      }
     }
   }
 

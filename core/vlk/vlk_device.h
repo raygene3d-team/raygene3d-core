@@ -54,11 +54,11 @@ namespace RayGene3D
     VkPhysicalDeviceFeatures features{};
     VkPhysicalDeviceMemoryProperties memory{};
     
-    bool tracing_supported{ false };
-    VkPhysicalDeviceRayTracingPipelinePropertiesKHR tracing_properties;
+    bool ray_tracing_supported{ false };
+    VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties{};
 
-    bool meshing_supported{ false };
-    VkPhysicalDeviceMeshShaderPropertiesEXT meshing_properties;
+    bool mesh_shader_supported{ false };
+    VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader_properties{};
 
 
     VkDevice device{ nullptr };
@@ -177,17 +177,17 @@ namespace RayGene3D
     //void DestroyCommand(const VkCommandBuffer& command);
 
   public:
-    VkDevice GetDevice() { return device; }
-    uint32_t GetFamily() { return family; }
-    VkQueue GetQueue() { return queue; }
+    VkDevice GetDevice() const { return device; }
+    uint32_t GetFamily() const { return family; }
+    VkQueue GetQueue() const { return queue; }
 
   public:
-    bool GetTracingSupported() const { return tracing_supported; }
-    const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& GetTracingProperties() const { return  tracing_properties; }
+    bool GetRayTracingSupported() const { return ray_tracing_supported; }
+    const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& GetTracingProperties() const { return  ray_tracing_properties; }
 
   public:
-    bool GetMeshingSupported() const { return meshing_supported; }
-    const VkPhysicalDeviceMeshShaderPropertiesEXT& GetMeshingProperties() const { return  meshing_properties; }
+    bool GetMeshShaderSupported() const { return mesh_shader_supported; }
+    const VkPhysicalDeviceMeshShaderPropertiesEXT& GetMeshShaderProperties() const { return  mesh_shader_properties; }
 
   protected:
     void CreateInstance();
@@ -208,9 +208,6 @@ namespace RayGene3D
     void DestroyStaging();
     void CreateScratch();
     void DestroyScratch();
-
-  public:
-    VkDevice GetDevice() const { return device; }
 
   public:
     void Initialize() override;
