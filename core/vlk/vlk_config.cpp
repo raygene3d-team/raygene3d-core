@@ -34,171 +34,297 @@ THE SOFTWARE.
 #include <glslang/Public/ShaderLang.h>
 #include <SPIRV/GlslangToSpv.h>
 
+#include <shaderc/shaderc.hpp>
+
 
 namespace RayGene3D
 {
-  void CompileVLK(const std::string& source, const char* entry, const char* target, 
-    std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
+  
+
+  class Includer : public shaderc::CompileOptions::IncluderInterface
   {
-    class VLKIncluder : public glslang::TShader::Includer
+    struct Includee
     {
-    private:
-      std::string path;
-
-    public:
-      // For the "system" or <>-style includes; search the "system" paths.
-      IncludeResult* includeSystem(const char* headerName, const char* includerName, size_t inclusionDepth) override
-      {
-        const auto file_path = path + std::string(headerName);
-
-        std::fstream fs;
-        fs.open(file_path, std::fstream::in);
-
-        std::stringstream ss;
-        ss << fs.rdbuf();
-        const std::string text = ss.str();
-
-        const auto size = text.size();
-        const auto data = new char[size];
-        //assert(data);
-
-        memcpy(data, text.data(), size);
-
-        auto result = new IncludeResult(file_path, data, size, nullptr);
-        //assert(result);
-
-        return result;
-      }
-
-      // For the "local"-only aspect of a "" include. Should not search in the
-      // "system" paths, because on returning a failure, the parser will
-      // call includeSystem() to look in the "system" locations.
-      IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
-      {
-        const auto file_path = path + std::string(headerName);
-
-        std::fstream fs;
-        fs.open(file_path, std::fstream::in);
-
-        std::stringstream ss;
-        ss << fs.rdbuf();
-        const std::string text = ss.str();
-
-        const auto size = text.size();
-        const auto data = new char[size];
-        //assert(data);
-
-        memcpy(data, text.data(), size);
-
-        auto result = new IncludeResult(file_path, data, size, nullptr);
-        //assert(result);
-
-        return result;
-      }
-
-      // Signals that the parser will no longer use the contents of the
-      // specified IncludeResult.
-      void releaseInclude(IncludeResult* result) override
-      {
-        if (result)
-        {
-          if (result->headerData)
-          {
-            delete[] result->headerData;
-          }
-          delete result;
-        }
-      }
-
-    public:
-      VLKIncluder(const std::string& path) : glslang::TShader::Includer(), path(path) {}
-      virtual ~VLKIncluder() {}
+      std::string name;
+      std::string content;
     };
 
+    std::string path;
 
-    glslang::InitializeProcess();
-    
-    glslang::EShTargetLanguageVersion version = glslang::EShTargetSpv_1_0;
-    glslang::EShSource language = glslang::EShSourceCount;
-    std::string preamble = "#define USE_SPIRV\n";
+    shaderc_include_result* GetInclude(
+      const char* requested_source,
+      shaderc_include_type type,
+      const char* requesting_source,
+      size_t include_depth) override
+    {      
+      auto includee = new Includee;
+      includee->name = std::move(path + requested_source);
 
-    EShLanguage stage = EShLangCount;
-    if (strcmp(target, "cs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangCompute; } else
-    if (strcmp(target, "vs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangVertex; } else
-    if (strcmp(target, "ds_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangTessEvaluation; } else
-    if (strcmp(target, "hs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangTessControl; } else
-    if (strcmp(target, "gs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangGeometry; } else
-    if (strcmp(target, "ps_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangFragment; } else
-    if (strcmp(target, "task") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangTask;       preamble.append("#define TASK\n"); } else
-    if (strcmp(target, "mesh") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMesh;       preamble.append("#define MESH\n"); } else
-    if (strcmp(target, "rgen") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangRayGen;     preamble.append("#define RGEN\n"); } else
-    if (strcmp(target, "isec") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangIntersect;  preamble.append("#define ISEC\n"); } else
-    if (strcmp(target, "chit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangClosestHit; preamble.append("#define CHIT\n"); } else
-    if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangAnyHit;     preamble.append("#define AHIT\n"); } else
-    if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMiss;       preamble.append("#define MISS\n"); } else
-    if (strcmp(target, "call") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangCallable;   preamble.append("#define CALL\n"); }
+      std::fstream fs;
+      fs.open(includee->name, std::fstream::in);
 
-    for (const auto& define : defines)
-    {
-      preamble.append("#define " + define.first + " " + define.second + "\n");
+      std::stringstream ss;
+      ss << fs.rdbuf();
+      includee->content = std::move(ss.str());
+
+      auto result = new shaderc_include_result;
+      result->user_data = includee;
+      result->source_name = includee->name.c_str();
+      result->source_name_length = includee->name.size();
+      result->content = includee->content.c_str();
+      result->content_length = includee->content.size();
+
+      //if(auto f = fopen(name.c_str(), "r"))
+      //{
+      //  size_t offset = (offset = ftell(f)) != -1 && !fseek(f, 0, SEEK_END) ? offset : -1;
+      //  size_t size = (size = ftell(f)) != -1 && !fseek(f, offset, SEEK_SET) ? size : -1;
+      //  char* data = (size != -1) && (data = new char[size]) != nullptr ? data : nullptr;
+      //  fread(data, size, 1, f); fclose(f); f = nullptr;
+
+      //  shaderc_ir->content = data;
+      //  shaderc_ir->content_length = size;
+      //}
+
+      return result;
     }
 
-    glslang::TShader shader(stage);
-    shader.setEnvInput(language, stage, glslang::EShClientVulkan, 100);
-    shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
-    shader.setEnvTarget(glslang::EShTargetSpv, version);
-    shader.setPreamble(preamble.c_str());
-    shader.setInvertY(true);
-    shader.setEntryPoint(entry);
-    //shader.setSourceEntryPoint(entry);
-    //shader.setNoStorageFormat(false);
-    //shader.setNanMinMaxClamp(false);
-
-    VLKIncluder includer(path);
-   
-    const auto source_str = source.c_str();
-    shader.setStrings(&source_str, 1);
-
-    TBuiltInResource resources{ 0 };
-    EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules /*| EShMsgHlslOffsets | EShMsgReadHlsl*/);
-    if (!shader.parse(&resources, 100, false, messages, includer))
+    void ReleaseInclude(shaderc_include_result* result) override
     {
-      BLAST_LOG(shader.getInfoLog());
+      if (result)
+      {
+        auto includee = reinterpret_cast<Includee*>(result->user_data);
+        if (includee) delete includee;
+        result->user_data = nullptr;
+      }
+    }
+
+  public:
+    Includer(const std::string& path)
+      : path(path)
+    {}
+    virtual ~Includer() {}
+  };
+
+  void CompileVLK(const std::string& source, const char* entry, const char* target,
+    std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
+  {
+    shaderc::Compiler compiler;
+    shaderc::CompileOptions options;
+
+    // Like -DMY_DEFINE=1
+    options.AddMacroDefinition("USE_SPIRV");
+    options.SetInvertY(true);
+    options.SetOptimizationLevel(shaderc_optimization_level_performance);
+    options.SetSourceLanguage(shaderc_source_language_hlsl);
+    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+    options.SetTargetSpirv(shaderc_spirv_version_1_0);
+    options.SetIncluder(std::make_unique<Includer>(path));
+
+    const auto kind =
+      strcmp(target, "cs_5_0") == 0 ? shaderc_compute_shader :
+      strcmp(target, "vs_5_0") == 0 ? shaderc_vertex_shader :
+      strcmp(target, "ds_5_0") == 0 ? shaderc_tess_control_shader :
+      strcmp(target, "hs_5_0") == 0 ? shaderc_tess_evaluation_shader :
+      strcmp(target, "gs_5_0") == 0 ? shaderc_geometry_shader :
+      strcmp(target, "ps_5_0") == 0 ? shaderc_fragment_shader : 
+      strcmp(target, "task") == 0 ? shaderc_task_shader : 
+      strcmp(target, "mesh") == 0 ? shaderc_mesh_shader : 
+      strcmp(target, "rgen") == 0 ? shaderc_raygen_shader :
+      strcmp(target, "isec") == 0 ? shaderc_intersection_shader :
+      strcmp(target, "chit") == 0 ? shaderc_closesthit_shader :
+      strcmp(target, "ahit") == 0 ? shaderc_anyhit_shader :
+      strcmp(target, "miss") == 0 ? shaderc_miss_shader :
+      strcmp(target, "call") == 0 ? shaderc_callable_shader :
+      -1;
+
+    if(strcmp(target, "task") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("TASK"); } else
+    if(strcmp(target, "mesh") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("MESH"); } else
+    if(strcmp(target, "rgen") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("RGEN"); } else
+    if(strcmp(target, "isec") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("ISEC"); } else
+    if(strcmp(target, "chit") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("CHIT"); } else
+    if(strcmp(target, "ahit") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("AHIT"); } else
+    if(strcmp(target, "miss") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("MISS"); } else
+    if(strcmp(target, "call") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("CALL"); }
+
+    for (const auto& define : defines) options.AddMacroDefinition(define.first, define.second);
+
+
+    const auto module = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)kind, "dummy", entry, options);
+
+    if (module.GetCompilationStatus() != shaderc_compilation_status_success)
+    {
+      BLAST_LOG(module.GetErrorMessage().c_str());
       return;
     }
 
-    glslang::TProgram program;
-    program.addShader(&shader);
-    if (!program.link(messages))
-    {
-      BLAST_LOG(program.getInfoLog());
-      return;
-    }
-
-    //if (program.buildReflection())
-    //{
-    //  program.dumpReflection();
-    //}
-
-    std::vector<unsigned int> spv;
-    spv::SpvBuildLogger logger;
-    glslang::SpvOptions options;
-    options.generateDebugInfo = false;
-    options.stripDebugInfo = false;
-    options.disableOptimizer = false;
-    options.optimizeSize = false;
-    options.disassemble = false;
-    options.validate = false;
-    glslang::GlslangToSpv(*program.getIntermediate(stage), spv, &logger, &options);
-
-
-    const auto data = spv.data();
-    const auto size = spv.cend() - spv.cbegin();
+    const auto data = module.cbegin();
+    const auto size = module.cend() - module.cbegin();
     bytecode.resize(size * sizeof(uint32_t));
     memcpy(bytecode.data(), data, bytecode.size());
-
-    glslang::FinalizeProcess();
   }
+
+  //void CompileVLK(const std::string& source, const char* entry, const char* target, 
+  //  std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
+  //{
+  //  class VLKIncluder : public glslang::TShader::Includer
+  //  {
+  //  private:
+  //    std::string path;
+
+  //  public:
+  //    // For the "system" or <>-style includes; search the "system" paths.
+  //    IncludeResult* includeSystem(const char* headerName, const char* includerName, size_t inclusionDepth) override
+  //    {
+  //      const auto file_path = path + std::string(headerName);
+
+  //      std::fstream fs;
+  //      fs.open(file_path, std::fstream::in);
+
+  //      std::stringstream ss;
+  //      ss << fs.rdbuf();
+  //      const std::string text = ss.str();
+
+  //      const auto size = text.size();
+  //      const auto data = new char[size];
+  //      //assert(data);
+
+  //      memcpy(data, text.data(), size);
+
+  //      auto result = new IncludeResult(file_path, data, size, nullptr);
+  //      //assert(result);
+
+  //      return result;
+  //    }
+
+  //    // For the "local"-only aspect of a "" include. Should not search in the
+  //    // "system" paths, because on returning a failure, the parser will
+  //    // call includeSystem() to look in the "system" locations.
+  //    IncludeResult* includeLocal(const char* headerName, const char* includerName, size_t inclusionDepth) override
+  //    {
+  //      const auto file_path = path + std::string(headerName);
+
+  //      std::fstream fs;
+  //      fs.open(file_path, std::fstream::in);
+
+  //      std::stringstream ss;
+  //      ss << fs.rdbuf();
+  //      const std::string text = ss.str();
+
+  //      const auto size = text.size();
+  //      const auto data = new char[size];
+  //      //assert(data);
+
+  //      memcpy(data, text.data(), size);
+
+  //      auto result = new IncludeResult(file_path, data, size, nullptr);
+  //      //assert(result);
+
+  //      return result;
+  //    }
+
+  //    // Signals that the parser will no longer use the contents of the
+  //    // specified IncludeResult.
+  //    void releaseInclude(IncludeResult* result) override
+  //    {
+  //      if (result)
+  //      {
+  //        if (result->headerData)
+  //        {
+  //          delete[] result->headerData;
+  //        }
+  //        delete result;
+  //      }
+  //    }
+
+  //  public:
+  //    VLKIncluder(const std::string& path) : glslang::TShader::Includer(), path(path) {}
+  //    virtual ~VLKIncluder() {}
+  //  };
+
+
+  //  glslang::InitializeProcess();
+  //  
+  //  glslang::EShTargetLanguageVersion version = glslang::EShTargetSpv_1_0;
+  //  glslang::EShSource language = glslang::EShSourceCount;
+  //  std::string preamble = "#define USE_SPIRV\n";
+
+  //  EShLanguage stage = EShLangCount;
+  //  if (strcmp(target, "cs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangCompute; } else
+  //  if (strcmp(target, "vs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangVertex; } else
+  //  if (strcmp(target, "ds_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangTessEvaluation; } else
+  //  if (strcmp(target, "hs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangTessControl; } else
+  //  if (strcmp(target, "gs_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangGeometry; } else
+  //  if (strcmp(target, "ps_5_0") == 0) { language = glslang::EShSourceHlsl; stage = EShLangFragment; } else
+  //  if (strcmp(target, "task") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangTask;       preamble.append("#define TASK\n"); } else
+  //  if (strcmp(target, "mesh") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMesh;       preamble.append("#define MESH\n"); } else
+  //  if (strcmp(target, "rgen") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangRayGen;     preamble.append("#define RGEN\n"); } else
+  //  if (strcmp(target, "isec") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangIntersect;  preamble.append("#define ISEC\n"); } else
+  //  if (strcmp(target, "chit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangClosestHit; preamble.append("#define CHIT\n"); } else
+  //  if (strcmp(target, "ahit") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangAnyHit;     preamble.append("#define AHIT\n"); } else
+  //  if (strcmp(target, "miss") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangMiss;       preamble.append("#define MISS\n"); } else
+  //  if (strcmp(target, "call") == 0) { language = glslang::EShSourceGlsl; version = glslang::EShTargetSpv_1_4; stage = EShLangCallable;   preamble.append("#define CALL\n"); }
+
+  //  for (const auto& define : defines)
+  //  {
+  //    preamble.append("#define " + define.first + " " + define.second + "\n");
+  //  }
+
+  //  glslang::TShader shader(stage);
+  //  shader.setEnvInput(language, stage, glslang::EShClientVulkan, 100);
+  //  shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
+  //  shader.setEnvTarget(glslang::EShTargetSpv, version);
+  //  shader.setPreamble(preamble.c_str());
+  //  shader.setInvertY(true);
+  //  shader.setEntryPoint(entry);
+  //  //shader.setSourceEntryPoint(entry);
+  //  //shader.setNoStorageFormat(false);
+  //  //shader.setNanMinMaxClamp(false);
+
+  //  VLKIncluder includer(path);
+  // 
+  //  const auto source_str = source.c_str();
+  //  shader.setStrings(&source_str, 1);
+
+  //  TBuiltInResource resources{ 0 };
+  //  EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules /*| EShMsgHlslOffsets | EShMsgReadHlsl*/);
+  //  if (!shader.parse(&resources, 100, false, messages, includer))
+  //  {
+  //    BLAST_LOG(shader.getInfoLog());
+  //    return;
+  //  }
+
+  //  glslang::TProgram program;
+  //  program.addShader(&shader);
+  //  if (!program.link(messages))
+  //  {
+  //    BLAST_LOG(program.getInfoLog());
+  //    return;
+  //  }
+
+  //  //if (program.buildReflection())
+  //  //{
+  //  //  program.dumpReflection();
+  //  //}
+
+  //  std::vector<unsigned int> spv;
+  //  spv::SpvBuildLogger logger;
+  //  glslang::SpvOptions options;
+  //  options.generateDebugInfo = false;
+  //  options.stripDebugInfo = false;
+  //  options.disableOptimizer = false;
+  //  options.optimizeSize = false;
+  //  options.disassemble = false;
+  //  options.validate = false;
+  //  glslang::GlslangToSpv(*program.getIntermediate(stage), spv, &logger, &options);
+
+
+  //  const auto data = spv.data();
+  //  const auto size = spv.cend() - spv.cbegin();
+  //  bytecode.resize(size * sizeof(uint32_t));
+  //  memcpy(bytecode.data(), data, bytecode.size());
+
+  //  glslang::FinalizeProcess();
+  //}
 
   void VLKConfig::Initialize()
   {
