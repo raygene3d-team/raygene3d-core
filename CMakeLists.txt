@@ -69,52 +69,12 @@ target_include_directories(${NAME}-core PUBLIC
 	${CMAKE_SOURCE_DIR}/3rdparty
 )
 
-#set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/win64)
-#set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/win64)
-
-#if(UNIX)
-#	if(APPLE)
-#		set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/macos)
-#		set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/macos)
-#	else(APPLE)
-#		set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/linux)
-#		set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/linux)
-#	endif(APPLE)
-#endif(UNIX)
-
-#IF(WIN32)
-#target_link_libraries(raygene3d-core PRIVATE
-#	debug ${GLSLANG_LIB_PATH}/MachineIndependentd.lib optimized ${GLSLANG_LIB_PATH}/MachineIndependent.lib
-#	debug ${GLSLANG_LIB_PATH}/GenericCodeGend.lib optimized ${GLSLANG_LIB_PATH}/GenericCodeGen.lib
-#	debug ${GLSLANG_LIB_PATH}/OSDependentd.lib optimized ${GLSLANG_LIB_PATH}/OSDependent.lib
-#	debug ${GLSLANG_LIB_PATH}/glslangd.lib optimized ${GLSLANG_LIB_PATH}/glslang.lib
-#)
-#target_link_libraries(raygene3d-core PRIVATE
-#	debug ${SPIRV_LIB_PATH}/SPVRemapperd.lib optimized ${SPIRV_LIB_PATH}/SPVRemapper.lib
-#	debug ${SPIRV_LIB_PATH}/SPIRVd.lib optimized ${SPIRV_LIB_PATH}/SPIRV.lib
-#)
-#ELSE(WIN32)
-#target_link_libraries(${NAME}-core PRIVATE
-#	optimized ${GLSLANG_LIB_PATH}/libMachineIndependent.a
-#	optimized ${GLSLANG_LIB_PATH}/libGenericCodeGen.a
-#	optimized ${GLSLANG_LIB_PATH}/libOSDependent.a
-#	optimized ${GLSLANG_LIB_PATH}/libglslang.a
-#)
-#target_link_libraries(${NAME}-core PRIVATE
-#	optimized ${SPIRV_LIB_PATH}/libSPVRemapper.a
-#	optimized ${SPIRV_LIB_PATH}/libSPIRV.a
-#)
-#ENDIF(WIN32)
-
-target_link_libraries(${NAME}-core INTERFACE Vulkan::Vulkan Vulkan::shaderc_combined)
-target_link_libraries(${NAME}-core PRIVATE
+target_link_libraries(${NAME}-core INTERFACE 
+    Vulkan::Vulkan Vulkan::shaderc_combined)
+target_link_libraries(${NAME}-core PRIVATE 
     debug ${Vulkan_shaderc_combined_LIBRARY}
     optimized ${Vulkan_shaderc_combined_LIBRARY}
 )
-
-#target_link_libraries(${NAME}-core INTERFACE Vulkan::Vulkan Vulkan::glslc)
-#target_link_libraries(${NAME}-core PRIVATE debug ${Vulkan_glslang_LIBRARY} optimized ${Vulkan_glslang_LIBRARY}
-#)
 
 target_link_libraries(${NAME}-core PRIVATE
 	Vulkan::Vulkan
