@@ -37,6 +37,7 @@ namespace RayGene3D
     {
       VK_KHR_SURFACE_EXTENSION_NAME,
       VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+      VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
     #ifdef __linux__
       VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
     #elif _WIN32
@@ -65,6 +66,7 @@ namespace RayGene3D
     auto create_info = VkInstanceCreateInfo{};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &application_info;
+    create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
     create_info.enabledExtensionCount = uint32_t(extension_names.size());
     create_info.ppEnabledExtensionNames = extension_names.data();
     create_info.enabledLayerCount = uint32_t(layer_names.size());
