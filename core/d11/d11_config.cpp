@@ -100,54 +100,53 @@ namespace RayGene3D
   //  output->Release();
   //}
 
+  class D11Includer : public ID3DInclude
+  {
+  private:
+    std::string path;
+
+  public:
+    HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
+    {
+      const auto file_path = path + std::string(pFileName);
+
+      std::fstream fs;
+      fs.open(file_path, std::fstream::in);
+      std::stringstream ss;
+      ss << fs.rdbuf();
+
+      const auto size = ss.str().size();
+      const auto data = new char[size];
+      BLAST_ASSERT(data);
+
+      memcpy(data, ss.str().data(), size);
+
+      *ppData = data;
+      *pBytes = size;
+
+      return S_OK;
+    }
+
+    HRESULT Close(LPCVOID pData) override
+    {
+      if (pData)
+      {
+        delete[] pData;
+      }
+
+      return S_OK;
+    }
+
+  public:
+    D11Includer(const std::string& path) : ID3DInclude(), path(path) {}
+    virtual ~D11Includer() {}
+  };
 
 
-  void D11Compile(const std::string& source, const char* entry, const char* target, 
+  static void D11Compile(const std::string& source, const char* entry, const char* target, 
     std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
   {
-    class D11Includer : public ID3DInclude
-    {
-    private:
-      std::string path;
 
-    public:
-      HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
-      {
-        const auto file_path = path + std::string(pFileName);
-
-        std::fstream fs;
-        fs.open(file_path, std::fstream::in);
-
-        std::stringstream ss;
-        ss << fs.rdbuf();
-        const std::string text = ss.str();
-
-        const auto size = text.size();
-        const auto data = new char[size];
-        BLAST_ASSERT(data);
-
-        memcpy(data, text.data(), size);
-
-        *ppData = data;
-        *pBytes = size;
-
-        return S_OK;
-      }
-
-      HRESULT Close(LPCVOID pData) override
-      {
-        if (pData)
-        {
-          delete[] pData;
-        }
-
-        return S_OK;
-      }
-
-    public:
-      D11Includer(const std::string& path) : ID3DInclude(), path(path) {}
-      virtual ~D11Includer() {}
-    };
 
     D11Includer includer(path);
 
