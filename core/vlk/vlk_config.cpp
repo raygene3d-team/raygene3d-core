@@ -35,7 +35,7 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  class Includer : public shaderc::CompileOptions::IncluderInterface
+  class VLKIncluder : public shaderc::CompileOptions::IncluderInterface
   {
     struct Includee
     {
@@ -56,7 +56,6 @@ namespace RayGene3D
 
       std::fstream fs;
       fs.open(includee->name, std::fstream::in);
-
       std::stringstream ss;
       ss << fs.rdbuf();
       includee->content = std::move(ss.str());
@@ -82,13 +81,11 @@ namespace RayGene3D
     }
 
   public:
-    Includer(const std::string& path)
-      : path(path)
-    {}
-    virtual ~Includer() {}
+    VLKIncluder(const std::string& path) : path(path) {}
+    virtual ~VLKIncluder() {}
   };
 
-  void CompileVLK(const std::string& source, const char* entry, const char* target,
+  static void CompileVLK(const std::string& source, const char* entry, const char* target,
     std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
   {    
     shaderc::CompileOptions options;
@@ -98,7 +95,7 @@ namespace RayGene3D
     options.SetSourceLanguage(shaderc_source_language_hlsl);
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
     options.SetTargetSpirv(shaderc_spirv_version_1_0);
-    options.SetIncluder(std::make_unique<Includer>(path));
+    options.SetIncluder(std::make_unique<VLKIncluder>(path));
 
     const auto kind =
       strcmp(target, "cs_5_0") == 0 ? shaderc_compute_shader :
