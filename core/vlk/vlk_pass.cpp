@@ -280,7 +280,7 @@ namespace RayGene3D
       }
     }
 
-    if (type == TYPE_RAYTRACING && device->GetRTXSupported())
+    if (type == TYPE_TRACING && device->GetRayTracingSupported())
     {
       for (const auto& config : configs)
       {

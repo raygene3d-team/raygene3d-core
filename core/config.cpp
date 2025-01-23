@@ -52,6 +52,38 @@ namespace RayGene3D
   {
   }
 
+  Config::Config(const std::string& name,
+    Pass& pass,
+    const std::string& source,
+    Config::Compilation compilation,
+    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const Config::RCState& rc_state,
+    const Config::DSState& ds_state,
+    const Config::OMState& om_state)
+    : Usable(name)
+    , pass(pass)
+    , source(source)
+    , compilation(compilation)
+    , defines(defines.first, defines.first + defines.second)
+    , rc_state(rc_state)
+    , ds_state(ds_state)
+    , om_state(om_state)
+  {
+  }
+
+  Config::Config(const std::string& name,
+    Pass& pass,
+    const std::string& source,
+    Config::Compilation compilation,
+    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines)
+    : Usable(name)
+    , pass(pass)
+    , source(source)
+    , compilation(compilation)
+    , defines(defines.first, defines.first + defines.second)
+  {
+  }
+
   Config::~Config()
   {
   }

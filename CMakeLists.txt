@@ -1,4 +1,4 @@
-find_package(Vulkan REQUIRED)
+find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 
 set(NAME raygene3d)
 
@@ -69,59 +69,12 @@ target_include_directories(${NAME}-core PUBLIC
 	${CMAKE_SOURCE_DIR}/3rdparty
 )
 
-set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/win64)
-set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/win64)
-set(SPIRVTOOLS_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/spirv-tools/lib/win64)
-
-if(UNIX)
-	if(APPLE)
-		set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/macos)
-		set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/macos)
-		set(SPIRVTOOLS_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/spirv-tools/lib/macos)
-	else(APPLE)
-		set(GLSLANG_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/glslang/lib/linux)
-		set(SPIRV_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/SPIRV/lib/linux)
-		set(SPIRVTOOLS_LIB_PATH ${CMAKE_SOURCE_DIR}/3rdparty/spirv-tools/lib/linux)
-	endif(APPLE)
-endif(UNIX)
-
-IF(WIN32)
-target_link_libraries(raygene3d-core PRIVATE
-	debug ${GLSLANG_LIB_PATH}/MachineIndependentd.lib optimized ${GLSLANG_LIB_PATH}/MachineIndependent.lib
-	debug ${GLSLANG_LIB_PATH}/GenericCodeGend.lib optimized ${GLSLANG_LIB_PATH}/GenericCodeGen.lib
-	debug ${GLSLANG_LIB_PATH}/OGLCompilerd.lib optimized ${GLSLANG_LIB_PATH}/OGLCompiler.lib
-	debug ${GLSLANG_LIB_PATH}/OSDependentd.lib optimized ${GLSLANG_LIB_PATH}/OSDependent.lib
-	debug ${GLSLANG_LIB_PATH}/glslangd.lib optimized ${GLSLANG_LIB_PATH}/glslang.lib
-	debug ${GLSLANG_LIB_PATH}/HLSLd.lib optimized ${GLSLANG_LIB_PATH}/HLSL.lib
+target_link_libraries(${NAME}-core INTERFACE 
+    Vulkan::Vulkan Vulkan::shaderc_combined)
+target_link_libraries(${NAME}-core PRIVATE 
+    debug ${Vulkan_shaderc_combined_LIBRARY}
+    optimized ${Vulkan_shaderc_combined_LIBRARY}
 )
-target_link_libraries(raygene3d-core PRIVATE
-	debug ${SPIRV_LIB_PATH}/SPVRemapperd.lib optimized ${SPIRV_LIB_PATH}/SPVRemapper.lib
-	debug ${SPIRV_LIB_PATH}/SPIRVd.lib optimized ${SPIRV_LIB_PATH}/SPIRV.lib
-)
-target_link_libraries(raygene3d-core PRIVATE
-	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-reduced.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-reduce.lib
-	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-optd.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools-opt.lib
-	debug ${SPIRVTOOLS_LIB_PATH}/SPIRV-Toolsd.lib optimized ${SPIRVTOOLS_LIB_PATH}/SPIRV-Tools.lib
-)
-ELSE(WIN32)
-target_link_libraries(${NAME}-core PRIVATE
-	optimized ${GLSLANG_LIB_PATH}/libMachineIndependent.a
-	optimized ${GLSLANG_LIB_PATH}/libGenericCodeGen.a
-	optimized ${GLSLANG_LIB_PATH}/libOGLCompiler.a
-	optimized ${GLSLANG_LIB_PATH}/libOSDependent.a
-	optimized ${GLSLANG_LIB_PATH}/libglslang.a
-	optimized ${GLSLANG_LIB_PATH}/libHLSL.a
-)
-target_link_libraries(${NAME}-core PRIVATE
-	optimized ${SPIRV_LIB_PATH}/libSPVRemapper.a
-	optimized ${SPIRV_LIB_PATH}/libSPIRV.a
-)
-target_link_libraries(${NAME}-core PRIVATE
-	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools-reduce.a
-	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools-opt.a
-	optimized ${SPIRVTOOLS_LIB_PATH}/libSPIRV-Tools.a
-)
-ENDIF(WIN32)
 
 target_link_libraries(${NAME}-core PRIVATE
 	Vulkan::Vulkan

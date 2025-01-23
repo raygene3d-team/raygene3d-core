@@ -45,7 +45,7 @@ namespace RayGene3D
       TYPE_UNKNOWN = 0,
       TYPE_GRAPHIC = 1,
       TYPE_COMPUTE = 2,
-      TYPE_RAYTRACING = 3,
+      TYPE_TRACING = 3,
     };
 
   protected:

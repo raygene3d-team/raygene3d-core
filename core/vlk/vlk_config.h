@@ -54,14 +54,23 @@ namespace RayGene3D
     VkShaderModule cs_module{ nullptr };
 
   protected:
+    VkShaderModule task_module{ nullptr };
+    VkShaderModule mesh_module{ nullptr };
+
+  protected:
     VkShaderModule rgen_module{ nullptr };
+    VkShaderModule isec_module{ nullptr };
     VkShaderModule chit_module{ nullptr };
     VkShaderModule ahit_module{ nullptr };
     VkShaderModule miss_module{ nullptr };
+    VkShaderModule call_module{ nullptr };
 
   protected:
     std::vector<VkPipelineShaderStageCreateInfo> stages;
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
+
+  protected:
+    bool use_vertex_input{ false };
 
   //public:
   //  std::shared_ptr<Pipeline> CreatePipeline(const std::string& name) override { return pipelines.emplace_back(new VLKPipeline(name, *this)); }
@@ -110,6 +119,9 @@ namespace RayGene3D
     const VkRayTracingShaderGroupCreateInfoKHR* GetGroupArray() const { return groups.data(); }
 
   public:
+    bool UseVertexInput() const { return use_vertex_input; }
+
+  public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
       const std::pair<const Batch::Entity*, uint32_t>& entities,
       const std::pair<const Batch::Sampler*, uint32_t>& samplers,
@@ -139,6 +151,19 @@ namespace RayGene3D
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
+    VLKConfig(const std::string& name,
+      Pass& pass,
+      const std::string& source,
+      Config::Compilation compilation,
+      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state);
+    VLKConfig(const std::string& name,
+      Pass& pass,
+      const std::string& source,
+      Config::Compilation compilation,
+      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines);
     virtual ~VLKConfig();
   };
 }

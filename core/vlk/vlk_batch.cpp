@@ -120,7 +120,7 @@ namespace RayGene3D
     }
 
 
-    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
     {
       {
         vkCreateRayTracingPipelinesKHR = reinterpret_cast<PFN_vkCreateRayTracingPipelinesKHR>(vkGetDeviceProcAddr(device->GetDevice(), "vkCreateRayTracingPipelinesKHR"));
@@ -773,11 +773,11 @@ namespace RayGene3D
       create_info.pStages             = config->GetStageArray();
       create_info.pVertexInputState   = &config->GetInputState();
       create_info.pInputAssemblyState = &config->GetAssemblyState();
-      create_info.pViewportState      = &config->GetViewportState();
+      create_info.pTessellationState  = &config->GetTessellationState();
+      create_info.pViewportState      = &config->GetViewportState();      
       create_info.pRasterizationState = &config->GetRasterizationState();
       create_info.pMultisampleState   = &config->GetMultisampleState();
       create_info.pDepthStencilState  = &config->GetDepthstencilState();
-      create_info.pTessellationState  = &config->GetTessellationState();
       create_info.pColorBlendState    = &config->GetColorblendState();
       create_info.pDynamicState       = nullptr;
       create_info.layout              = layout;
@@ -800,7 +800,7 @@ namespace RayGene3D
       BLAST_ASSERT(VK_SUCCESS == vkCreateComputePipelines(device->GetDevice(), VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
     }
 
-    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
     {
       VkRayTracingPipelineCreateInfoKHR create_info = {};
       create_info.sType                         = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -814,8 +814,8 @@ namespace RayGene3D
       create_info.basePipelineHandle            = VK_NULL_HANDLE;
       BLAST_ASSERT(VK_SUCCESS == vkCreateRayTracingPipelinesKHR(device->GetDevice(), {}, VK_NULL_HANDLE, 1, &create_info, nullptr, &pipeline));
 
-      const auto binding_size = device->GetRTXProperties().shaderGroupHandleSize;
-      const auto binding_align = device->GetRTXProperties().shaderGroupBaseAlignment;
+      const auto binding_size = device->GetTracingProperties().shaderGroupHandleSize;
+      const auto binding_align = device->GetTracingProperties().shaderGroupBaseAlignment;
 
       {
         const auto size = config->GetGroupCount() * binding_align;
@@ -945,7 +945,11 @@ namespace RayGene3D
           const auto aa_stride = uint32_t(sizeof(Graphic));
           const auto aa_draws = 1u;
           const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
-          vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
+          
+          if(config->UseVertexInput())
+            vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
+          else if(device->GetMeshShaderSupported())
+            vkCmdDrawMeshTasksIndirectEXT(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
         }
         else
         {
@@ -955,7 +959,15 @@ namespace RayGene3D
           const auto vtx_offset = chunk.vtx_or_grid_y.offset;
           const auto idx_count = chunk.idx_or_grid_z.length;
           const auto idx_offset = chunk.idx_or_grid_z.offset;
-          vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
+
+          const auto grid_x = chunk.ins_or_grid_x.length;
+          const auto grid_y = chunk.vtx_or_grid_y.length;
+          const auto grid_z = chunk.idx_or_grid_z.length;
+
+          if (config->UseVertexInput())
+            vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
+          else if(device->GetMeshShaderSupported())
+            vkCmdDrawMeshTasksEXT(command_buffer, grid_x, grid_y, grid_z);
         }
       }
     }
@@ -1003,7 +1015,7 @@ namespace RayGene3D
     }
 
 
-    if (pass->GetType() == Pass::TYPE_RAYTRACING && device->GetRTXSupported())
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
     {
       vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 

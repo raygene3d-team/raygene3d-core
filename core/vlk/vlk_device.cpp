@@ -37,6 +37,7 @@ namespace RayGene3D
     {
       VK_KHR_SURFACE_EXTENSION_NAME,
       VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+      VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
     #ifdef __linux__
       VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
     #elif _WIN32
@@ -65,6 +66,7 @@ namespace RayGene3D
     auto create_info = VkInstanceCreateInfo{};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &application_info;
+    create_info.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
     create_info.enabledExtensionCount = uint32_t(extension_names.size());
     create_info.ppEnabledExtensionNames = extension_names.data();
     create_info.enabledLayerCount = uint32_t(layer_names.size());
@@ -243,42 +245,36 @@ namespace RayGene3D
     };
 
     {
-      raytracing_supported = extension_check_fn(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-      raytracing_supported &= extension_check_fn(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-      raytracing_supported &= extension_check_fn(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+      ray_tracing_supported = extension_check_fn(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+      ray_tracing_supported &= extension_check_fn(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+      ray_tracing_supported &= extension_check_fn(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 
-      if (raytracing_supported)
+      if (ray_tracing_supported)
       {
-        VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtx_properties = {};
-        rtx_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+        ray_tracing_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
         VkPhysicalDeviceProperties2 device_properties = {};
         device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        device_properties.pNext = &rtx_properties;
+        device_properties.pNext = &ray_tracing_properties;
         vkGetPhysicalDeviceProperties2(adapter, &device_properties);
-        raytracing_properties = rtx_properties;
-
-        //BLAST_LOG("\
-        //==RTX capabilities==:\n\
-        //shaderGroupHandleSize: %d\n\
-        //maxRayRecursionDepth: %d\n\
-        //maxShaderGroupStride: %d\n\
-        //shaderGroupBaseAlignment: %d\n\
-        //shaderGroupHandleCaptureReplaySize: %d\n\
-        //maxRayDispatchInvocationCount: %d\n\
-        //shaderGroupHandleAlignment: %d\n\
-        //maxRayHitAttributeSize: %d\n"
-        //  , raytracing_properties.shaderGroupHandleSize
-        //  , raytracing_properties.maxRayRecursionDepth
-        //  , raytracing_properties.maxShaderGroupStride
-        //  , raytracing_properties.shaderGroupBaseAlignment
-        //  , raytracing_properties.shaderGroupHandleCaptureReplaySize
-        //  , raytracing_properties.maxRayDispatchInvocationCount
-        //  , raytracing_properties.shaderGroupHandleAlignment
-        //  , raytracing_properties.maxRayHitAttributeSize);
 
         extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
         extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
         extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+      }
+    }
+
+    {
+      mesh_shader_supported = extension_check_fn(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+
+      if (mesh_shader_supported)
+      {
+        mesh_shader_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+        VkPhysicalDeviceProperties2 device_properties = {};
+        device_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        device_properties.pNext = &mesh_shader_properties;
+        vkGetPhysicalDeviceProperties2(adapter, &device_properties);
+
+        extension_names.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
       }
     }
 
@@ -297,7 +293,16 @@ namespace RayGene3D
     bda_features.pNext = &rtp_features;
     bda_features.bufferDeviceAddress = true;
 
-    void* extention_features = raytracing_supported ? &bda_features : nullptr;
+    VkPhysicalDeviceMeshShaderFeaturesEXT ms_features = {};
+    ms_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+    ms_features.pNext = ray_tracing_supported ? &bda_features : nullptr;;
+    ms_features.meshShader = true;
+    ms_features.taskShader = true;
+
+    void* extention_features = 
+      mesh_shader_supported ? (void*) & ms_features : 
+      ray_tracing_supported ? (void*) & bda_features: 
+      nullptr;
 
     VkPhysicalDeviceFeatures enabled_features{};
     BLAST_ASSERT(features.samplerAnisotropy);          enabled_features.samplerAnisotropy = true;
@@ -328,7 +333,10 @@ namespace RayGene3D
 
     vkGetDeviceQueue(device, family, 0, &queue);
 
-    BLAST_LOG("Device is created on %s [%d extension(s)]", properties.deviceName, extension_names.size());
+    BLAST_LOG("Device is created on %s [RT:%s, MS:%s]",
+      properties.deviceName,
+      ray_tracing_supported ? "On" : "Off",
+      mesh_shader_supported ? "On" : "Off");
 
     name = std::string(properties.deviceName) + " (Vulkan API)";
   }
@@ -660,7 +668,7 @@ namespace RayGene3D
 
   void VLKDevice::CreateScratch()
   {
-    if (!raytracing_supported) return;
+    if (!ray_tracing_supported) return;
 
     const auto size = scratch_size;
     const auto usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
@@ -682,7 +690,7 @@ namespace RayGene3D
 
   void VLKDevice::DestroyScratch()
   {
-    if (!raytracing_supported) return;
+    if (!ray_tracing_supported) return;
 
     if (scratch_memory)
     {
