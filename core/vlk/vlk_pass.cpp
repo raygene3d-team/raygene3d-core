@@ -324,9 +324,9 @@ namespace RayGene3D
     Pass::Type type,
     uint32_t size_x,
     uint32_t size_y,
-    uint32_t layers,
-    const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
+    size_t layers,
+    const std::pair<const Pass::RTAttachment*, size_t>& rt_attachments,
+    const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments)
     : Pass(name, device, type, size_x, size_y, layers, rt_attachments, ds_attachments)
   {
     VLKPass:Initialize();

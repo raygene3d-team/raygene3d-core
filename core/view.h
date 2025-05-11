@@ -50,8 +50,8 @@ namespace RayGene3D
   public:
     struct Range
     {
-      uint32_t offset{ 0u };
-      uint32_t length{ 0u };
+      size_t offset{ 0u };
+      size_t length{ 0u };
     };
    
   protected:
@@ -86,8 +86,8 @@ namespace RayGene3D
     View(const std::string& name,
       Resource& resource,
       Usage usage,
-      const View::Range& mipmaps_or_count = Range{ 0, uint32_t(-1) },
-      const View::Range& layers_or_stride = Range{ 0, uint32_t(-1) },
+      const View::Range& mipmaps_or_count = Range{ 0u, size_t(-1) },
+      const View::Range& layers_or_stride = Range{ 0u, size_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN);
     virtual ~View();
   };

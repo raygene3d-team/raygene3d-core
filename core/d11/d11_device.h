@@ -56,28 +56,28 @@ namespace RayGene3D
     const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) override
     {
       return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
     }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) override
     {
       return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
     }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) override
     {
       return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
     }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) override
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) override
     {
       return resources.emplace_back(new D11Resource(name, *this, desc, hint, interops));
     }
@@ -86,9 +86,9 @@ namespace RayGene3D
       Pass::Type type,
       uint32_t size_x,
       uint32_t size_y,
-      uint32_t layers,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments) override
+      size_t layers,
+      const std::pair<const Pass::RTAttachment*, size_t>& rt_attachments,
+      const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments) override
     {
       return passes.emplace_back(new D11Pass(name, *this, type, 
         size_x, size_y, layers, rt_attachments, ds_attachments));

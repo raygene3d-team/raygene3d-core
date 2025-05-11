@@ -167,16 +167,16 @@ namespace RayGene3D
       }
     };
 
-    const auto populate_subresources_fn = [this](const std::vector<std::pair<const void*, uint32_t>>& interops)
+    const auto populate_subresources_fn = [this](const std::vector<std::pair<const uint8_t*, size_t>>& interops)
     {
-      BLAST_ASSERT(layers_or_stride * mipmaps_or_count == uint32_t(interops.size()));
+      BLAST_ASSERT(layers_or_stride * mipmaps_or_count == interops.size());
 
       auto result = std::vector<D3D11_SUBRESOURCE_DATA>(layers_or_stride * mipmaps_or_count);
-      for (uint32_t i = 0; i < layers_or_stride; ++i)
+      for (size_t i = 0; i < layers_or_stride; ++i)
       {
-        for (uint32_t j = 0; j < mipmaps_or_count; ++j)
+        for (size_t j = 0; j < mipmaps_or_count; ++j)
         {
-          const auto [data, size] = interops[i * mipmaps_or_count + j];
+          const auto& [data, size] = interops[i * mipmaps_or_count + j];
           BLAST_ASSERT(data != nullptr && size != 0);
 
           const auto mip_extent_x = std::max(1u, size_x >> j);
@@ -545,7 +545,7 @@ namespace RayGene3D
     Device& device,
     const Resource::BufferDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     D11Resource::Initialize();
@@ -555,7 +555,7 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex1DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     D11Resource::Initialize();
@@ -565,7 +565,7 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex2DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     D11Resource::Initialize();
@@ -575,7 +575,7 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex3DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     D11Resource::Initialize();

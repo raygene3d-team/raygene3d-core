@@ -1150,14 +1150,14 @@ namespace RayGene3D
 
   VLKBatch::VLKBatch(const std::string& name,
     Config& config,
-    const std::pair<const Entity*, uint32_t>& entities,
-    const std::pair<const Sampler*, uint32_t>& samplers,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
+    const std::pair<const Entity*, size_t>& entities,
+    const std::pair<const Sampler*, size_t>& samplers,
+    const std::pair<const std::shared_ptr<View>*, size_t>& ub_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& sb_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& ri_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& wi_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& rb_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& wb_views
   )
     : Batch(name, config, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
   {

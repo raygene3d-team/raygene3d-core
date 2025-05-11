@@ -48,10 +48,10 @@ namespace RayGene3D
 
     if (type == TYPE_GRAPHIC)
     {
-      const uint32_t rt_limit = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
+      const auto rt_limit = size_t(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT);
       ID3D11RenderTargetView* rt_items[rt_limit]{ nullptr };
-      const uint32_t rt_count = std::min(rt_limit, uint32_t(rt_attachments.size()));
-      for (uint32_t i = 0; i < rt_count; ++i)
+      const auto rt_count = std::min(rt_limit, rt_attachments.size());
+      for (auto i = 0; i < rt_count; ++i)
       {
         const auto& rt_view = rt_attachments[i].view;
         const auto& rt_value = rt_attachments[i].value;
@@ -68,10 +68,10 @@ namespace RayGene3D
         }
       }
 
-      const uint32_t ds_limit = 1;
+      const auto ds_limit = size_t(1);
       ID3D11DepthStencilView* ds_items[ds_limit]{ nullptr };
-      const uint32_t ds_count = std::min(ds_limit, uint32_t(ds_attachments.size()));
-      for (uint32_t i = 0; i < ds_count; ++i)
+      const auto ds_count = std::min(ds_limit, ds_attachments.size());
+      for (size_t i = 0; i < ds_count; ++i)
       {
         const auto& ds_view = ds_attachments[i].view;
         const auto& ds_value = ds_attachments[i].value;
@@ -134,9 +134,9 @@ namespace RayGene3D
     Pass::Type type,
     uint32_t size_x,
     uint32_t size_y,
-    uint32_t layers,
-    const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
+    size_t layers,
+    const std::pair<const Pass::RTAttachment*, size_t>& rt_attachments,
+    const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments)
     : Pass(name, device, type, size_x, size_y, layers, rt_attachments, ds_attachments)
   {
     D11Pass::Initialize();

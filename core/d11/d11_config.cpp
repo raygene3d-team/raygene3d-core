@@ -438,7 +438,7 @@ namespace RayGene3D
       D3D11_BLEND_DESC blend_desc;
       blend_desc.AlphaToCoverageEnable = om_state.atc_enabled;
       blend_desc.IndependentBlendEnable = false; //TODO: Implement true only
-      for (uint32_t i = 0; i < std::min(uint32_t(om_state.target_blends.size()), 8u); ++i)
+      for (size_t i = 0; i < std::min(om_state.target_blends.size(), size_t(8u)); ++i)
       {
         blend_desc.RenderTarget[i].BlendEnable = om_state.target_blends[i].blend_enabled;
         blend_desc.RenderTarget[i].SrcBlend = get_operand(om_state.target_blends[i].src_color);
@@ -471,9 +471,9 @@ namespace RayGene3D
 
     primitive_topology = get_topology(ia_state.topology);
 
-    const auto vp_count = uint32_t(rc_state.viewports.size());
-    vp_items.resize(std::min(vp_count, uint32_t(D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
-    for (uint32_t i = 0; i < uint32_t(vp_items.size()); ++i)
+    const auto vp_count = rc_state.viewports.size();
+    vp_items.resize(std::min(vp_count, size_t(D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
+    for (size_t i = 0; i < vp_items.size(); ++i)
     {
       if (i < vp_count)
       {
@@ -620,7 +620,7 @@ namespace RayGene3D
   D11Config::D11Config(const std::string& name,
     Pass& pass,
     const std::string& source, Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
     const Config::IAState& ia_state,
     const Config::RCState& rc_state,
     const Config::DSState& ds_state,
@@ -633,7 +633,7 @@ namespace RayGene3D
   D11Config::D11Config(const std::string& name,
     Pass& pass,
     const std::string& source, Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
     const Config::RCState& rc_state,
     const Config::DSState& ds_state,
     const Config::OMState& om_state)
@@ -645,7 +645,7 @@ namespace RayGene3D
   D11Config::D11Config(const std::string& name,
     Pass& pass,
     const std::string& source, Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines)
+    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines)
     : Config(name, pass, source, compilation, defines)
   {
     D11Config::Initialize();

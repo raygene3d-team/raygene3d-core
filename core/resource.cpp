@@ -35,7 +35,7 @@ namespace RayGene3D
     Device& device,
     const Resource::BufferDesc& desc,
     Resource::Hint hint, 
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Usable(name)
     , device(device)
     , type(TYPE_BUFFER)
@@ -48,7 +48,7 @@ namespace RayGene3D
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    Resource::Hint hint, const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX1D)
@@ -63,7 +63,7 @@ namespace RayGene3D
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    Resource::Hint hint, const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX2D)
@@ -79,7 +79,7 @@ namespace RayGene3D
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    Resource::Hint hint, const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX3D)

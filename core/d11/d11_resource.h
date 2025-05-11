@@ -68,8 +68,8 @@ namespace RayGene3D
   public:
     const std::shared_ptr<View>& CreateView(const std::string& name,
       Usage usage, 
-      const View::Range& mipmaps_or_count = View::Range{ 0, uint32_t(-1) },
-      const View::Range& layers_or_stride = View::Range{ 0, uint32_t(-1) },
+      const View::Range& mipmaps_or_count = View::Range{ 0u, size_t(-1) },
+      const View::Range& layers_or_stride = View::Range{ 0u, size_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN) override
     {
       return views.emplace_back(new D11View(name, *this, usage, mipmaps_or_count, layers_or_stride, bind));
@@ -85,22 +85,22 @@ namespace RayGene3D
       Device& device,
       const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
     D11Resource(const std::string& name,
       Device& device,
       const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
     D11Resource(const std::string& name,
       Device& device,
       const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
     D11Resource(const std::string& name,
       Device& device,
       const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
     virtual ~D11Resource();
   };
 }

@@ -57,7 +57,7 @@ namespace RayGene3D
     char adapter_name[256];
     size_t adapter_size = 0;
     wcstombs_s(&adapter_size, adapter_name, adapter_desc.Description, 256);
-    name = std::string(adapter_name) + " (D3D11 API)";
+    name = std::string(adapter_name) + " (D3D11 API)\n";
 
     const uint32_t device_flags = debug ? D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_SINGLETHREADED : 0;
     const D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_11_1;

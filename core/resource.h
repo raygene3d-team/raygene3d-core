@@ -63,8 +63,8 @@ namespace RayGene3D
     Usage usage{ USAGE_UNKNOWN };
 
   protected:
-    uint32_t mipmaps_or_count{ 0 };
-    uint32_t layers_or_stride{ 0 };
+    size_t mipmaps_or_count{ 0 };
+    size_t layers_or_stride{ 0 };
 
   protected:
     Format format{ FORMAT_UNKNOWN };
@@ -80,21 +80,21 @@ namespace RayGene3D
     std::list<std::shared_ptr<View>> views;
 
   protected:
-    std::vector<std::pair<const void*, uint32_t>> interops;
+    std::vector<std::pair<const uint8_t*, size_t>> interops;
 
   public:
     struct BufferDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      uint32_t stride{ 0 };
-      uint32_t count{ 0 };
+      size_t stride{ 0 };
+      size_t count{ 0 };
     };
 
     struct Tex1DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      uint32_t mipmaps{ 0 };
-      uint32_t layers{ 0 };
+      size_t mipmaps{ 0 };
+      size_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
     };
@@ -102,8 +102,8 @@ namespace RayGene3D
     struct Tex2DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      uint32_t mipmaps{ 0 };
-      uint32_t layers{ 0 };
+      size_t mipmaps{ 0 };
+      size_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
       uint32_t size_y{ 0 };
@@ -112,8 +112,8 @@ namespace RayGene3D
     struct Tex3DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      uint32_t mipmaps{ 0 };
-      uint32_t layers{ 0 };
+      size_t mipmaps{ 0 };
+      size_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
       uint32_t size_y{ 0 };
@@ -172,10 +172,10 @@ namespace RayGene3D
     };
 
   public:
-    void SetInteropCount(uint32_t count) { interops.resize(count); }
-    uint32_t GetInteropCount() const { return uint32_t(interops.size()); }
-    void SetInteropItem(uint32_t index, std::pair<const void*, uint32_t> item) { interops.at(index) = item; }
-    std::pair<const void*, uint32_t> GetInteropItem(uint32_t index) { return interops.at(index); }
+    void SetInteropCount(size_t count) { interops.resize(count); }
+    size_t GetInteropCount() const { return interops.size(); }
+    void SetInteropItem(size_t index, std::pair<const uint8_t*, size_t> item) { interops.at(index) = item; }
+    std::pair<const uint8_t*, size_t> GetInteropItem(size_t index) { return interops.at(index); }
 
   public:
     void Initialize() override = 0;
@@ -186,19 +186,19 @@ namespace RayGene3D
     Resource(const std::string& name,
       Device& device, const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
     Resource(const std::string& name,
       Device& device, const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
     Resource(const std::string& name,
       Device& device, const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
     Resource(const std::string& name,
       Device& device, const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
     virtual ~Resource();
   };
 

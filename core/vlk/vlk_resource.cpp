@@ -109,8 +109,8 @@ namespace RayGene3D
 
       if (!interops.empty())
       {
-        auto size = 0u;
-        for (uint32_t i = 0; i < uint32_t(interops.size()); ++i)
+        auto size = size_t(0);
+        for (size_t i = 0; i < interops.size(); ++i)
         {
           const auto [interop_data, interop_size] = interops[i];
           BLAST_ASSERT(interop_data != nullptr && interop_size != 0);
@@ -133,35 +133,35 @@ namespace RayGene3D
         VkBuffer staging_buffer = device->GetStagingBuffer();
         VkDeviceMemory staging_memory = device->GetStagingMemory();
 
-        const auto src_count = uint32_t(interops.size());
-        const auto dst_count = (size - 1) / uint32_t(staging_size) + 1;
+        const auto src_count = interops.size();
+        const auto dst_count = (size - 1) / staging_size + 1;
 
-        auto dst_index = 0u;
-        auto src_index = 0u;
+        auto dst_index = size_t(0u);
+        auto src_index = size_t(0u);
 
-        auto dst_offset = 0u;
-        auto src_offset = 0u;
+        auto dst_offset = size_t(0u);
+        auto src_offset = size_t(0u);
 
         while (dst_index < dst_count)
         {
           void* mapped = nullptr;
           BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), staging_memory, 0, VK_WHOLE_SIZE, 0, &mapped));
 
-          const auto dst_data = reinterpret_cast<uint8_t*>(mapped);
-          const auto dst_size = uint32_t(staging_size);
+          const auto dst_data = mapped;
+          const auto dst_size = staging_size;
 
           while(src_index < src_count)
           {
-            const auto [interop_data, interop_size] = interops[src_index];
+            const auto& [interop_data, interop_size] = interops[src_index];
 
-            const auto src_data = reinterpret_cast<const uint8_t*>(interop_data);
+            const auto src_data = interop_data;
             const auto src_size = interop_size;
 
             const auto src_range = src_size - src_offset;
             const auto dst_range = dst_size - dst_offset;
 
             const auto range = std::min(src_range, dst_range);
-            memcpy(dst_data + dst_offset, src_data + src_offset, range);
+            memcpy(reinterpret_cast<uint8_t*>(dst_data) + dst_offset, reinterpret_cast<const uint8_t*>(src_data) + src_offset, range);
 
             src_offset += range;
             dst_offset += range;
@@ -410,11 +410,11 @@ namespace RayGene3D
         VkCommandBuffer commandBuffer;
         BLAST_ASSERT(VK_SUCCESS == vkAllocateCommandBuffers(device->GetDevice(), &allocInfo, &commandBuffer));
 
-        for (uint32_t i = 0; i < layers_or_stride; ++i)
+        for (size_t i = 0; i < layers_or_stride; ++i)
         {
-          for (uint32_t j = 0; j < mipmaps_or_count; ++j)
+          for (size_t j = 0; j < mipmaps_or_count; ++j)
           {
-            const auto [raw_data, raw_size] = interops.at(i * mipmaps_or_count + j);
+            const auto& [raw_data, raw_size] = interops.at(i * mipmaps_or_count + j);
             BLAST_ASSERT(raw_size <= staging_size);
 
             void* mapped = nullptr;
@@ -427,11 +427,11 @@ namespace RayGene3D
             beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
             BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(commandBuffer, &beginInfo));
 
-            const uint32_t layer = i;
-            const uint32_t mipmap = j;
-            const uint32_t extent_x = std::max(1u, size_x >> j);
-            const uint32_t extent_y = std::max(1u, size_y >> j);
-            const uint32_t extent_z = std::max(1u, size_z >> j);
+            const auto layer = i;
+            const auto mipmap = j;
+            const auto extent_x = std::max(1u, size_x >> j);
+            const auto extent_y = std::max(1u, size_y >> j);
+            const auto extent_z = std::max(1u, size_z >> j);
 
             {
               VkImageMemoryBarrier barrier = {};
@@ -605,7 +605,7 @@ namespace RayGene3D
     Device& device,
     const Resource::BufferDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     VLKResource::Initialize();
@@ -615,7 +615,7 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex1DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     VLKResource::Initialize();
@@ -625,7 +625,7 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex2DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     VLKResource::Initialize();
@@ -635,7 +635,7 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex3DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
     : Resource(name, device, desc, hint, interops)
   {
     VLKResource::Initialize();

@@ -85,19 +85,19 @@ namespace RayGene3D
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {}) = 0;
+      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) = 0;
     void VisitResource(std::function<bool(const std::shared_ptr<Resource>&)> visitor) const
     {
       for (const auto& resource : resources) if (visitor(resource)) return;
@@ -119,9 +119,9 @@ namespace RayGene3D
       Pass::Type type,
       uint32_t size_x,
       uint32_t size_y,
-      uint32_t layers,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments) = 0;
+      size_t layers,
+      const std::pair<const Pass::RTAttachment*, size_t>& rt_attachments,
+      const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments) = 0;
     void VisitPass(std::function<bool(const std::shared_ptr<Pass>&)> visitor)
     { 
       for (const auto& pass : passes) if (visitor(pass)) return;

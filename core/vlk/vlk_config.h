@@ -123,14 +123,14 @@ namespace RayGene3D
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
-      const std::pair<const Batch::Entity*, uint32_t>& entities,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
+      const std::pair<const Batch::Entity*, size_t>& entities,
+      const std::pair<const Batch::Sampler*, size_t>& samplers,
+      const std::pair<const std::shared_ptr<View>*, size_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& wb_views
     ) override
     {
       return batches.emplace_back(new VLKBatch(name, *this, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
@@ -146,7 +146,7 @@ namespace RayGene3D
       Pass& pass,
       const std::string& source,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
       const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
@@ -155,7 +155,7 @@ namespace RayGene3D
       Pass& pass,
       const std::string& source,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
@@ -163,7 +163,7 @@ namespace RayGene3D
       Pass& pass,
       const std::string& source,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines);
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines);
     virtual ~VLKConfig();
   };
 }

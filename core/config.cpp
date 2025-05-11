@@ -35,7 +35,7 @@ namespace RayGene3D
     Pass& pass,
     const std::string& source,
     Config::Compilation compilation, 
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
     const Config::IAState& ia_state,
     const Config::RCState& rc_state,
     const Config::DSState& ds_state,
@@ -56,7 +56,7 @@ namespace RayGene3D
     Pass& pass,
     const std::string& source,
     Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
     const Config::RCState& rc_state,
     const Config::DSState& ds_state,
     const Config::OMState& om_state)
@@ -75,7 +75,7 @@ namespace RayGene3D
     Pass& pass,
     const std::string& source,
     Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines)
+    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines)
     : Usable(name)
     , pass(pass)
     , source(source)
