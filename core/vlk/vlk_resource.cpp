@@ -50,12 +50,12 @@ namespace RayGene3D
       const auto get_bind = [this]()
       {
         uint32_t bind = 0;
-        bind = usage & USAGE_SHADER_RESOURCE        ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
-        bind = usage & USAGE_UNORDERED_ACCESS       ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
+        bind = usage & USAGE_SHADER_RESOURCE    ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
+        bind = usage & USAGE_UNORDERED_ACCESS   ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : bind;
         bind = usage & USAGE_VERTEX_ARRAY       ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) : bind;
         bind = usage & USAGE_INDEX_ARRAY        ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT) : bind;
-        bind = usage & USAGE_CONSTANT_DATA       ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) : bind;
-        bind = usage & USAGE_ARGUMENT_LIST  ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) : bind;
+        bind = usage & USAGE_CONSTANT_DATA      ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT) : bind;
+        bind = usage & USAGE_ARGUMENT_LIST      ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT) : bind;
         bind = usage & USAGE_RAYTRACING_INPUT   ? bind | (VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR) : bind;
 
         return bind;
@@ -112,7 +112,7 @@ namespace RayGene3D
         auto size = size_t(0);
         for (size_t i = 0; i < interops.size(); ++i)
         {
-          const auto [interop_data, interop_size] = interops[i];
+          const auto& [interop_data, interop_size] = interops[i];
           BLAST_ASSERT(interop_data != nullptr && interop_size != 0);
 
           size += interop_size;
@@ -129,9 +129,9 @@ namespace RayGene3D
         VkCommandBuffer commandBuffer;
         BLAST_ASSERT(VK_SUCCESS == vkAllocateCommandBuffers(device->GetDevice(), &allocInfo, &commandBuffer));
 
-        VkDeviceSize staging_size = device->GetStagingSize();
-        VkBuffer staging_buffer = device->GetStagingBuffer();
-        VkDeviceMemory staging_memory = device->GetStagingMemory();
+        const auto staging_size = device->GetStagingSize();
+        const auto staging_buffer = device->GetStagingBuffer();
+        const auto staging_memory = device->GetStagingMemory();
 
         const auto src_count = interops.size();
         const auto dst_count = (size - 1) / staging_size + 1;
@@ -395,9 +395,9 @@ namespace RayGene3D
         this->memory = memory;
       }
 
-      VkBuffer staging_buffer = device->GetStagingBuffer();
-      VkDeviceMemory staging_memory = device->GetStagingMemory();
-      VkDeviceSize staging_size = device->GetStagingSize();
+      const auto staging_buffer = device->GetStagingBuffer();
+      const auto staging_memory = device->GetStagingMemory();
+      const auto staging_size = device->GetStagingSize();
 
       if (interops.size() == layers_or_stride * mipmaps_or_count)
       {

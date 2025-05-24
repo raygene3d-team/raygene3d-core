@@ -184,7 +184,7 @@ namespace RayGene3D
 
           result[i * mipmaps_or_count + j].pSysMem = data;
           result[i * mipmaps_or_count + j].SysMemPitch = size / mip_extent_y;
-          result[i * mipmaps_or_count + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+          result[i * mipmaps_or_count + j].SysMemSlicePitch = size / size_t(mip_extent_x * mip_extent_y);
         }
       }
       return result;
@@ -205,7 +205,7 @@ namespace RayGene3D
       std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(interops.size());
       for (size_t i = 0; i < arr_sd_items.size(); ++i)
       {
-        const auto [data, size] = interops[i];
+        const auto& [data, size] = interops[i];
         BLAST_ASSERT(data != nullptr && size != 0);
 
         arr_sd_items[i].pSysMem = data;
