@@ -605,8 +605,8 @@ namespace RayGene3D
     Device& device,
     const Resource::BufferDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
-    : Resource(name, device, desc, hint, interops)
+    std::pair<const uint8_t*, size_t> interop)
+    : Resource(name, device, desc, hint, interop)
   {
     VLKResource::Initialize();
   }
@@ -615,8 +615,8 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex1DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
-    : Resource(name, device, desc, hint, interops)
+    std::pair<const uint8_t*, size_t> interop)
+    : Resource(name, device, desc, hint, interop)
   {
     VLKResource::Initialize();
   }
@@ -625,8 +625,8 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex2DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
-    : Resource(name, device, desc, hint, interops)
+    std::pair<const uint8_t*, size_t> interop)
+    : Resource(name, device, desc, hint, interop)
   {
     VLKResource::Initialize();
   }
@@ -635,8 +635,8 @@ namespace RayGene3D
     Device& device,
     const Resource::Tex3DDesc& desc,
     Resource::Hint hint,
-    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
-    : Resource(name, device, desc, hint, interops)
+    std::pair<const uint8_t*, size_t> interop)
+    : Resource(name, device, desc, hint, interop)
   {
     VLKResource::Initialize();
   }

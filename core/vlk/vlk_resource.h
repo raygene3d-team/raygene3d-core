@@ -84,21 +84,21 @@ namespace RayGene3D
       Device& device,
       const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     VLKResource(const std::string& name,
       Device& device,
       const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     VLKResource(const std::string& name,
       Device& device,
       const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     VLKResource(const std::string& name,
       Device& device, const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     virtual ~VLKResource();
   };
 }

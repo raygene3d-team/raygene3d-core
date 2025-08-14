@@ -80,7 +80,7 @@ namespace RayGene3D
     std::list<std::shared_ptr<View>> views;
 
   protected:
-    std::vector<std::pair<const uint8_t*, size_t>> interops;
+    std::pair<const uint8_t*, size_t> interop;
 
   public:
     struct BufferDesc
@@ -171,11 +171,9 @@ namespace RayGene3D
       if(view) views.remove(view);
     };
 
-  public:
-    void SetInteropCount(size_t count) { interops.resize(count); }
-    size_t GetInteropCount() const { return interops.size(); }
-    void SetInteropItem(size_t index, std::pair<const uint8_t*, size_t> item) { interops.at(index) = item; }
-    std::pair<const uint8_t*, size_t> GetInteropItem(size_t index) { return interops.at(index); }
+  //public:
+  //  void SetInterop(std::pair<const uint8_t*, size_t> interop) { this->interop = interop; }
+  //  std::pair<const uint8_t*, size_t> GetInterop() const { return interop; }
 
   public:
     void Initialize() override = 0;
@@ -186,19 +184,19 @@ namespace RayGene3D
     Resource(const std::string& name,
       Device& device, const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     Resource(const std::string& name,
       Device& device, const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     Resource(const std::string& name,
       Device& device, const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     Resource(const std::string& name,
       Device& device, const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     virtual ~Resource();
   };
 

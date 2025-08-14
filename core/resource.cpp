@@ -35,7 +35,7 @@ namespace RayGene3D
     Device& device,
     const Resource::BufferDesc& desc,
     Resource::Hint hint, 
-    const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
+    std::pair<const uint8_t*, size_t> interop)
     : Usable(name)
     , device(device)
     , type(TYPE_BUFFER)
@@ -43,12 +43,12 @@ namespace RayGene3D
     , layers_or_stride(desc.stride)
     , mipmaps_or_count(desc.count)
     , hint(hint)
-    , interops(interops.first, interops.first + interops.second)
+    , interop(interop)
   {
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
+    Resource::Hint hint, std::pair<const uint8_t*, size_t> interop)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX1D)
@@ -58,12 +58,12 @@ namespace RayGene3D
     , format(desc.format)
     , size_x(desc.size_x)
     , hint(hint)
-    , interops(interops.first, interops.first + interops.second)
+    , interop(interop)
   {
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
+    Resource::Hint hint, std::pair<const uint8_t*, size_t> interop)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX2D)
@@ -74,12 +74,12 @@ namespace RayGene3D
     , size_x(desc.size_x)
     , size_y(desc.size_y)
     , hint(hint)
-    , interops(interops.first, interops.first + interops.second)
+    , interop(interop)
   {
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops)
+    Resource::Hint hint, std::pair<const uint8_t*, size_t> interop)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX3D)
@@ -91,7 +91,7 @@ namespace RayGene3D
     , size_y(desc.size_y)
     , size_z(desc.size_z)
     , hint(hint)
-    , interops(interops.first, interops.first + interops.second)
+    , interop(interop)
   {
   }
 
