@@ -167,35 +167,59 @@ namespace RayGene3D
       }
     };
 
-    const auto populate_subresources_fn = 
+    const auto populate_texture_subresources_fn =
       [this](std::pair<const uint8_t*, size_t> interop)
       {
-        BitCount
-        BLAST_ASSERT(layers_or_stride * mipmaps_or_count == interops.size());
+        {
+          auto x = size_x;
+          auto y = size_y;
+          auto z = size_z;
+          auto layers = layers_or_stride;
+          auto mipmap = mipmaps_or_count;
 
-        Get
-        
+          auto count = 0ull;
+          while (--mipmap > 0u)
+          {
+            count += size_t(x * y * z);
+            x = std::max(1u, x >> 1);
+            y = std::max(1u, y >> 1);
+            z = std::max(1u, z >> 1);
+          }
+          BLAST_ASSERT(layers * count * BitCount(format) / 8 == interop.second);
+        }
+
         auto offset = 0ull;
-
         auto result = std::vector<D3D11_SUBRESOURCE_DATA>(layers_or_stride * mipmaps_or_count);
         for (size_t i = 0; i < layers_or_stride; ++i)
         {
           for (size_t j = 0; j < mipmaps_or_count; ++j)
           {
-          
-            //BLAST_ASSERT(data != nullptr && size != 0);
+            const auto mip_size_x = std::max(1u, size_x >> j);
+            const auto mip_size_y = std::max(1u, size_y >> j);
+            const auto mip_size_z = std::max(1u, size_z >> j);
 
-            const auto mip_size_x = size_x > 1 ? size_x >> i : 1;
-            const auto mip_size_y = size_y > 1 ? size_y >> i : 1;
-
-            const auto& [data, size] = interops[i * mipmaps_or_count + j];
+            const auto size = mip_size_x * mip_size_y * mip_size_z * BitCount(format) / 8;
+            const auto data = interop.first + offset;
 
             result[i * mipmaps_or_count + j].pSysMem = data;
             result[i * mipmaps_or_count + j].SysMemPitch = size / mip_size_y;
             result[i * mipmaps_or_count + j].SysMemSlicePitch = size / size_t(mip_size_x * mip_size_y);
+
+            offset += size;
           }
         }
         return result;
+      };
+
+    const auto populate_buffer_subresources_fn = 
+      [this](std::pair<const uint8_t*, size_t> interop)
+      {
+        D3D11_SUBRESOURCE_DATA subres_data = {};
+        subres_data.pSysMem = interop.first;
+        subres_data.SysMemPitch = 0;
+        subres_data.SysMemSlicePitch = 0;
+        
+        return subres_data;
       };
 
     switch (type)
@@ -210,19 +234,18 @@ namespace RayGene3D
       buffer_desc.MiscFlags = get_misc();
       buffer_desc.StructureByteStride = layers_or_stride;
 
-      if (interop.first != nullptr && interop.second > 0)
+      if (interop.first == nullptr || interop.second == 0)
       {
-        D3D11_SUBRESOURCE_DATA subres_data = {};
-        subres_data.pSysMem = interop.first;
-        subres_data.SysMemPitch = 0;
-        subres_data.SysMemSlicePitch = 0;
-
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateBuffer(&buffer_desc, &subres_data, reinterpret_cast<ID3D11Buffer**>(&resource)));
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateBuffer(&buffer_desc,
+          nullptr, reinterpret_cast<ID3D11Buffer**>(&resource)));        
       }
       else
       {
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateBuffer(&buffer_desc, nullptr, reinterpret_cast<ID3D11Buffer**>(&resource)));
+        const auto subresource = populate_buffer_subresources_fn(interop);
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateBuffer(&buffer_desc, 
+          &subresource, reinterpret_cast<ID3D11Buffer**>(&resource)));
       }
+
       GetBuffer()->GetDesc(&info.buffer_desc);
       break;
     }
@@ -259,7 +282,7 @@ namespace RayGene3D
       }
       else
       {
-        const auto subresources = populate_subresources_fn(interops);
+        const auto subresources = populate_texture_subresources_fn(interop);
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture1D(&tex1d_desc, 
           subresources.data(), reinterpret_cast<ID3D11Texture1D**>(&resource)));
       }
@@ -317,7 +340,7 @@ namespace RayGene3D
       }
       else
       {
-        const auto subresources = populate_subresources_fn(interops);
+        const auto subresources = populate_texture_subresources_fn(interop);
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture2D(&tex2d_desc,
           subresources.data(), reinterpret_cast<ID3D11Texture2D**>(&resource)));
       }
@@ -360,7 +383,7 @@ namespace RayGene3D
       }
       else
       {
-        const auto subresources = populate_subresources_fn(interop);
+        const auto subresources = populate_texture_subresources_fn(interop);
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture3D(&tex3d_desc,
           subresources.data(), reinterpret_cast<ID3D11Texture3D**>(&resource)));
       }

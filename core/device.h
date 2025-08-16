@@ -85,19 +85,19 @@ namespace RayGene3D
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) = 0;
+      std::pair<const uint8_t*, size_t> interop = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) = 0;
+      std::pair<const uint8_t*, size_t> interop = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) = 0;
+      std::pair<const uint8_t*, size_t> interop = {}) = 0;
     virtual const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) = 0;
+      std::pair<const uint8_t*, size_t> interop = {}) = 0;
     void VisitResource(std::function<bool(const std::shared_ptr<Resource>&)> visitor) const
     {
       for (const auto& resource : resources) if (visitor(resource)) return;

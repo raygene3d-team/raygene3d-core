@@ -104,30 +104,30 @@ namespace RayGene3D
     const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) override
+      std::pair<const uint8_t*, size_t> interop = {}) override
     {
-      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interops));
+      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interop));
     }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) override
+      std::pair<const uint8_t*, size_t> interop = {}) override
     {
-      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interops));
+      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interop));
     }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) override
+      std::pair<const uint8_t*, size_t> interop = {}) override
     {
-      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interops));
+      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interop));
     }
     const std::shared_ptr<Resource>& CreateResource(const std::string& name,
       const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const uint8_t*, size_t>*, size_t>& interops = {}) override
+      std::pair<const uint8_t*, size_t> interop = {}) override
     {
-      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interops));
+      return resources.emplace_back(new VLKResource(name, *this, desc, hint, interop));
     }
 
     const std::shared_ptr<Pass>& CreatePass(const std::string& name,
