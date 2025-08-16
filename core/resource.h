@@ -68,9 +68,9 @@ namespace RayGene3D
 
   protected:
     Format format{ FORMAT_UNKNOWN };
-    uint32_t size_x{ 0 };
-    uint32_t size_y{ 0 };
-    uint32_t size_z{ 0 };
+    uint32_t size_x{ 1 };
+    uint32_t size_y{ 1 };
+    uint32_t size_z{ 1 };
 
   protected:
     Type type{ TYPE_UNKNOWN };

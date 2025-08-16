@@ -306,18 +306,16 @@ namespace RayGene3D
         auto x = size_x;
         auto y = size_y;
         auto z = size_z;
-        auto layers = layers_or_stride;
-        auto mipmap = mipmaps_or_count;
 
         auto count = 0ull;
-        while (--mipmap > 0u)
+        for (auto i = 0ull; i < mipmaps_or_count; ++i)
         {
           count += size_t(x * y * z);
           x = std::max(1u, x >> 1);
           y = std::max(1u, y >> 1);
           z = std::max(1u, z >> 1);
         }
-        BLAST_ASSERT(layers * count * BitCount(format) / 8 == interop.second);
+        BLAST_ASSERT(layers_or_stride * count * BitCount(format) / 8 == interop.second);
       }
 
       const auto staging_buffer = device->GetStagingBuffer();
