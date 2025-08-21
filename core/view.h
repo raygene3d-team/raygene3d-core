@@ -46,13 +46,6 @@ namespace RayGene3D
       BIND_CUBEMAP_ARRAY = 0x8L,
       BIND_FORCE_UINT = 0xffffffff
     };
-
-  public:
-    struct Range
-    {
-      size_t offset{ 0u };
-      size_t length{ 0u };
-    };
    
   protected:
     Resource& resource;
