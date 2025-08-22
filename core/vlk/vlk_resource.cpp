@@ -300,28 +300,15 @@ namespace RayGene3D
 
         this->image = image;
         this->memory = memory;
-      }
-      
-      {
-        auto x = size_x;
-        auto y = size_y;
-        auto z = size_z;
+      }      
 
-        auto count = 0ull;
-        for (auto i = 0ull; i < levels_or_length; ++i)
-        {
-          count += size_t(x * y * z);
-          x = std::max(1u, x >> 1);
-          y = std::max(1u, y >> 1);
-          z = std::max(1u, z >> 1);
-        }
-        BLAST_ASSERT(layers_or_stride * count * Stride(format) / 8 == interop.second);
-      }
+      BLAST_ASSERT(Size(format, size_x, size_y, size_z, {0, levels_or_length}) * layers_or_stride == interop.second);
 
       const auto staging_buffer = device->GetStagingBuffer();
       const auto staging_memory = device->GetStagingMemory();
       const auto staging_size = device->GetStagingSize();
 
+      BLAST_ASSERT(Size(format, size_x, size_y, size_z, { 0, 1 }) <= staging_size);
 
       VkCommandBufferAllocateInfo allocInfo{};
       allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -337,14 +324,8 @@ namespace RayGene3D
       {
         for (size_t j = 0; j < levels_or_length; ++j)
         {
-          const auto mip_size_x = std::max(1u, size_x >> j);
-          const auto mip_size_y = std::max(1u, size_y >> j);
-          const auto mip_size_z = std::max(1u, size_z >> j);
-
           const auto data = interop.first + offset;
-          const auto size = mip_size_x * mip_size_y * mip_size_z * Stride(format) / 8;
-          
-          BLAST_ASSERT(size <= staging_size);
+          const auto size = Size(format, size_x, size_y, size_z, { j, 1 });
 
           uint8_t* mapped = nullptr;
           BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), staging_memory, 0, VK_WHOLE_SIZE, 0, reinterpret_cast<void**>(&mapped)));
@@ -387,7 +368,7 @@ namespace RayGene3D
           region.imageSubresource.baseArrayLayer = i;
           region.imageSubresource.layerCount = 1;
           region.imageOffset = { 0, 0, 0 };
-          region.imageExtent = { mip_size_x, mip_size_y, mip_size_z };
+          region.imageExtent = { Mip(size_x, j), Mip(size_y, j), Mip(size_z, j) };
           vkCmdCopyBufferToImage(commandBuffer, staging_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
 

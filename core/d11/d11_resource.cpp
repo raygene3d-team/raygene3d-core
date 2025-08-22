@@ -170,21 +170,7 @@ namespace RayGene3D
     const auto populate_texture_subresources_fn =
       [this](std::pair<const uint8_t*, size_t> interop)
       {
-        {
-          auto x = size_x;
-          auto y = size_y;
-          auto z = size_z;
-
-          auto count = 0ull;
-          for (auto i = 0ull; i < levels_or_length; ++i)
-          {
-            count += size_t(x * y * z);
-            x = std::max(1u, x >> 1);
-            y = std::max(1u, y >> 1);
-            z = std::max(1u, z >> 1);
-          }
-          BLAST_ASSERT(layers_or_stride * count * Stride(format) / 8 == interop.second);
-        }
+        BLAST_ASSERT(layers_or_stride * Size(format, size_x, size_y, size_z, { 0, levels_or_length }) == interop.second);
 
         auto offset = 0ull;
         auto result = std::vector<D3D11_SUBRESOURCE_DATA>(layers_or_stride * levels_or_length);
@@ -192,16 +178,12 @@ namespace RayGene3D
         {
           for (size_t j = 0; j < levels_or_length; ++j)
           {
-            const auto mip_size_x = std::max(1u, size_x >> j);
-            const auto mip_size_y = std::max(1u, size_y >> j);
-            const auto mip_size_z = std::max(1u, size_z >> j);
-
-            const auto size = mip_size_x * mip_size_y * mip_size_z * Stride(format) / 8;
+            const auto size = Size(format, size_x, size_y, size_z, { j, 1 });
             const auto data = interop.first + offset;
 
             result[i * levels_or_length + j].pSysMem = data;
-            result[i * levels_or_length + j].SysMemPitch = size / mip_size_y;
-            result[i * levels_or_length + j].SysMemSlicePitch = size / size_t(mip_size_x * mip_size_y);
+            result[i * levels_or_length + j].SysMemPitch = size / Mip(size_x, j);
+            result[i * levels_or_length + j].SysMemSlicePitch = size / size_t(Mip(size_x, j) * Mip(size_y, j));
 
             offset += size;
           }
