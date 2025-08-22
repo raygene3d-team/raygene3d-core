@@ -71,9 +71,9 @@ namespace RayGene3D
       std::vector<std::shared_ptr<View>> va_views; //vertex arrays
       std::vector<std::shared_ptr<View>> ia_views; //index_arrays
       std::shared_ptr<View> arg_view;
-      View::Range ins_or_grid_x;
-      View::Range vtx_or_grid_y;
-      View::Range idx_or_grid_z;
+      Range ins_or_grid_x;
+      Range vtx_or_grid_y;
+      Range idx_or_grid_z;
       SBOffset sb_offset{ std::nullopt };
       PushData push_data{ std::nullopt };
     };

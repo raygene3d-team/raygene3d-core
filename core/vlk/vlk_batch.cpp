@@ -586,8 +586,8 @@ namespace RayGene3D
       {
         auto& buffer_info = buffer_infos.at(i);
         buffer_info.buffer = (reinterpret_cast<VLKResource*>(&ub_views.at(i)->GetResource()))->GetBuffer();
-        buffer_info.offset = ub_views.at(i)->GetMipmapsOrCount().offset;        
-        buffer_info.range = ub_views.at(i)->GetMipmapsOrCount().length == uint32_t(-1) ? VK_WHOLE_SIZE : ub_views.at(i)->GetMipmapsOrCount().length;
+        buffer_info.offset = ub_views.at(i)->GetLevelsOrLength().offset;
+        buffer_info.range = ub_views.at(i)->GetLevelsOrLength().length == uint32_t(-1) ? VK_WHOLE_SIZE : ub_views.at(i)->GetLevelsOrLength().length;
 
         auto& descriptor = descriptors.at(i);
         descriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -612,8 +612,8 @@ namespace RayGene3D
       {
         auto& buffer_info = buffer_infos.at(i);
         buffer_info.buffer = (reinterpret_cast<VLKResource*>(&sb_views.at(i)->GetResource()))->GetBuffer();
-        buffer_info.offset = sb_views.at(i)->GetMipmapsOrCount().offset;
-        buffer_info.range = sb_views.at(i)->GetMipmapsOrCount().length == uint32_t(-1) ? VK_WHOLE_SIZE : sb_views.at(i)->GetMipmapsOrCount().length;
+        buffer_info.offset = sb_views.at(i)->GetLevelsOrLength().offset;
+        buffer_info.range = sb_views.at(i)->GetLevelsOrLength().length == uint32_t(-1) ? VK_WHOLE_SIZE : sb_views.at(i)->GetLevelsOrLength().length;
 
         auto& descriptor = descriptors.at(i);
         descriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -902,7 +902,7 @@ namespace RayGene3D
             if (va_view)
             {
               va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
-              va_offsets[i] = va_view->GetMipmapsOrCount().offset;
+              va_offsets[i] = va_view->GetLevelsOrLength().offset;
             }
           }
 
@@ -925,7 +925,7 @@ namespace RayGene3D
             if (ia_view)
             {
               ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
-              ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
+              ia_offsets[i] = ia_view->GetLevelsOrLength().offset;
               ia_formats[i] = config->GetIAState().indexer
                 == Config::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
                 : Config::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
@@ -944,7 +944,7 @@ namespace RayGene3D
           const auto aa_buffer = (reinterpret_cast<VLKResource*>(&chunk.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Graphic));
           const auto aa_draws = 1u;
-          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
+          const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
           
           if(config->UseVertexInput())
             vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
@@ -1001,7 +1001,7 @@ namespace RayGene3D
         {
           const auto aa_buffer = (reinterpret_cast<VLKResource*>(&chunk.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Compute));
-          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
+          const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
           vkCmdDispatchIndirect(command_buffer, aa_buffer, aa_offset);
         }
         else

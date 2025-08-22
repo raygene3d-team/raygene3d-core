@@ -57,7 +57,7 @@ namespace RayGene3D
     Bind bind{ BIND_UNKNOWN };
 
   protected:
-    Range mipmaps_or_count;
+    Range levels_or_length;
     Range layers_or_stride;
 
   public:
@@ -68,7 +68,7 @@ namespace RayGene3D
     Bind GetBind() const { return bind; }
 
   public:
-    const Range& GetMipmapsOrCount() const { return mipmaps_or_count; }
+    const Range& GetLevelsOrLength() const { return levels_or_length; }
     const Range& GetLayersOrStride() const { return layers_or_stride; }
 
   public:
@@ -79,8 +79,8 @@ namespace RayGene3D
     View(const std::string& name,
       Resource& resource,
       Usage usage,
-      const View::Range& mipmaps_or_count = Range{ 0u, size_t(-1) },
-      const View::Range& layers_or_stride = Range{ 0u, size_t(-1) },
+      const Range& levels_or_length = Range{ 0u, size_t(-1) },
+      const Range& layers_or_stride = Range{ 0u, size_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN);
     virtual ~View();
   };

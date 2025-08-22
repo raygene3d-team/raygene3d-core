@@ -176,32 +176,32 @@ namespace RayGene3D
           auto z = size_z;
 
           auto count = 0ull;
-          for (auto i = 0ull; i < mipmaps_or_count; ++i)
+          for (auto i = 0ull; i < levels_or_length; ++i)
           {
             count += size_t(x * y * z);
             x = std::max(1u, x >> 1);
             y = std::max(1u, y >> 1);
             z = std::max(1u, z >> 1);
           }
-          BLAST_ASSERT(layers_or_stride * count * BitCount(format) / 8 == interop.second);
+          BLAST_ASSERT(layers_or_stride * count * Stride(format) / 8 == interop.second);
         }
 
         auto offset = 0ull;
-        auto result = std::vector<D3D11_SUBRESOURCE_DATA>(layers_or_stride * mipmaps_or_count);
+        auto result = std::vector<D3D11_SUBRESOURCE_DATA>(layers_or_stride * levels_or_length);
         for (size_t i = 0; i < layers_or_stride; ++i)
         {
-          for (size_t j = 0; j < mipmaps_or_count; ++j)
+          for (size_t j = 0; j < levels_or_length; ++j)
           {
             const auto mip_size_x = std::max(1u, size_x >> j);
             const auto mip_size_y = std::max(1u, size_y >> j);
             const auto mip_size_z = std::max(1u, size_z >> j);
 
-            const auto size = mip_size_x * mip_size_y * mip_size_z * BitCount(format) / 8;
+            const auto size = mip_size_x * mip_size_y * mip_size_z * Stride(format) / 8;
             const auto data = interop.first + offset;
 
-            result[i * mipmaps_or_count + j].pSysMem = data;
-            result[i * mipmaps_or_count + j].SysMemPitch = size / mip_size_y;
-            result[i * mipmaps_or_count + j].SysMemSlicePitch = size / size_t(mip_size_x * mip_size_y);
+            result[i * levels_or_length + j].pSysMem = data;
+            result[i * levels_or_length + j].SysMemPitch = size / mip_size_y;
+            result[i * levels_or_length + j].SysMemSlicePitch = size / size_t(mip_size_x * mip_size_y);
 
             offset += size;
           }
@@ -225,7 +225,7 @@ namespace RayGene3D
     case TYPE_BUFFER:
     {
       D3D11_BUFFER_DESC buffer_desc = {};
-      buffer_desc.ByteWidth = mipmaps_or_count * layers_or_stride;
+      buffer_desc.ByteWidth = levels_or_length * layers_or_stride;
       buffer_desc.Usage = get_usage();
       buffer_desc.BindFlags = get_bind();
       buffer_desc.CPUAccessFlags = get_access();
@@ -252,7 +252,7 @@ namespace RayGene3D
     {
       D3D11_TEXTURE1D_DESC tex1d_desc = {};
       tex1d_desc.Width = size_x;
-      tex1d_desc.MipLevels = mipmaps_or_count;
+      tex1d_desc.MipLevels = levels_or_length;
       tex1d_desc.ArraySize = layers_or_stride;
       tex1d_desc.Format = get_format();
       tex1d_desc.Usage = get_usage();
@@ -269,9 +269,9 @@ namespace RayGene3D
       //  const auto mip_extent_x = size_x >> j;
       //  const auto mip_extent_y = size_y >> j;
 
-      //  arr_sd_items[i * mipmaps_or_count + j].pSysMem = data;
-      //  arr_sd_items[i * mipmaps_or_count + j].SysMemPitch = size / mip_extent_y;
-      //  arr_sd_items[i * mipmaps_or_count + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+      //  arr_sd_items[i * levels_or_length + j].pSysMem = data;
+      //  arr_sd_items[i * levels_or_length + j].SysMemPitch = size / mip_extent_y;
+      //  arr_sd_items[i * levels_or_length + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
       //}
       if (interop.first == nullptr || interop.second == 0)
       {
@@ -294,7 +294,7 @@ namespace RayGene3D
       D3D11_TEXTURE2D_DESC tex2d_desc = {};
       tex2d_desc.Width = size_x;
       tex2d_desc.Height = size_y;
-      tex2d_desc.MipLevels = mipmaps_or_count;
+      tex2d_desc.MipLevels = levels_or_length;
       tex2d_desc.ArraySize = layers_or_stride;
       tex2d_desc.Format = get_format();
       tex2d_desc.SampleDesc = { 1, 0 };
@@ -314,10 +314,10 @@ namespace RayGene3D
         }
       }
 
-      //std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(mipmaps_or_count * layers_or_stride);
+      //std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(levels_or_length * layers_or_stride);
       //for (uint32_t i = 0; i < layers_or_stride; ++i)
       //{
-      //  for (uint32_t j = 0; j < mipmaps_or_count; ++j)
+      //  for (uint32_t j = 0; j < levels_or_length; ++j)
       //  {
       //    const auto [data, size] = interops[i];
       //    BLAST_ASSERT(data != nullptr && size != 0);
@@ -325,9 +325,9 @@ namespace RayGene3D
       //    const auto mip_extent_x = size_x >> j;
       //    const auto mip_extent_y = size_y >> j;
 
-      //    arr_sd_items[i * mipmaps_or_count + j].pSysMem = data;
-      //    arr_sd_items[i * mipmaps_or_count + j].SysMemPitch = size / mip_extent_y;
-      //    arr_sd_items[i * mipmaps_or_count + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+      //    arr_sd_items[i * levels_or_length + j].pSysMem = data;
+      //    arr_sd_items[i * levels_or_length + j].SysMemPitch = size / mip_extent_y;
+      //    arr_sd_items[i * levels_or_length + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
       //  }
       //}
 
@@ -353,7 +353,7 @@ namespace RayGene3D
       tex3d_desc.Width = size_x;
       tex3d_desc.Height = size_x;
       tex3d_desc.Depth = size_x;
-      tex3d_desc.MipLevels = mipmaps_or_count;
+      tex3d_desc.MipLevels = levels_or_length;
       tex3d_desc.Format = get_format();
       tex3d_desc.Usage = get_usage();
       tex3d_desc.BindFlags = get_bind();
@@ -369,9 +369,9 @@ namespace RayGene3D
       //  const auto mip_extent_x = size_x >> j;
       //  const auto mip_extent_y = size_y >> j;
 
-      //  arr_sd_items[i * mipmaps_or_count + j].pSysMem = data;
-      //  arr_sd_items[i * mipmaps_or_count + j].SysMemPitch = size / mip_extent_y;
-      //  arr_sd_items[i * mipmaps_or_count + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+      //  arr_sd_items[i * levels_or_length + j].pSysMem = data;
+      //  arr_sd_items[i * levels_or_length + j].SysMemPitch = size / mip_extent_y;
+      //  arr_sd_items[i * levels_or_length + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
       //}
 
       if (interop.first == nullptr || interop.second == 0)
@@ -430,7 +430,7 @@ namespace RayGene3D
     //switch (type)
     //{
     //case TYPE_BUFFER:
-    //  if (size == mipmaps_or_count * layers_or_stride)
+    //  if (size == levels_or_length * layers_or_stride)
     //  {
     //    device->GetContext()->UpdateSubresource(resource, index, nullptr, data, 0, 0);
     //  }

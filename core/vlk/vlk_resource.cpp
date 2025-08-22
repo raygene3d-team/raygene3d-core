@@ -63,7 +63,7 @@ namespace RayGene3D
 
       {
         const auto addressable = hint & HINT_ADDRESS_BUFFER && device->GetRayTracingSupported();
-        const auto size = mipmaps_or_count * layers_or_stride;
+        const auto size = levels_or_length * layers_or_stride;
         const auto usage = get_bind() | (addressable ? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT : 0);
         const auto buffer = device->CreateBuffer(size, usage);
         const auto requirements = device->GetRequirements(buffer);
@@ -113,7 +113,7 @@ namespace RayGene3D
         BLAST_ASSERT(interop_data != nullptr);
 
         const auto interop_size = interop.second;
-        BLAST_ASSERT(interop_size == mipmaps_or_count * layers_or_stride);
+        BLAST_ASSERT(interop_size == levels_or_length * layers_or_stride);
 
         VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -285,11 +285,11 @@ namespace RayGene3D
         const auto type = get_type();
         const auto format = get_format();
         const auto extent = get_extent();
-        const auto mipmap = mipmaps_or_count;
+        const auto levels = levels_or_length;
         const auto layers = layers_or_stride;
         const auto usage = get_bind();
         const auto flags = get_flags();
-        const auto image = device->CreateImage(type, format, extent, mipmap, layers, usage, flags);
+        const auto image = device->CreateImage(type, format, extent, levels, layers, usage, flags);
         const auto requirements = device->GetRequirements(image);
         const auto property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         const auto index = device->GetMemoryIndex(property, requirements.memoryTypeBits);
@@ -308,14 +308,14 @@ namespace RayGene3D
         auto z = size_z;
 
         auto count = 0ull;
-        for (auto i = 0ull; i < mipmaps_or_count; ++i)
+        for (auto i = 0ull; i < levels_or_length; ++i)
         {
           count += size_t(x * y * z);
           x = std::max(1u, x >> 1);
           y = std::max(1u, y >> 1);
           z = std::max(1u, z >> 1);
         }
-        BLAST_ASSERT(layers_or_stride * count * BitCount(format) / 8 == interop.second);
+        BLAST_ASSERT(layers_or_stride * count * Stride(format) / 8 == interop.second);
       }
 
       const auto staging_buffer = device->GetStagingBuffer();
@@ -335,14 +335,14 @@ namespace RayGene3D
       auto offset = 0ull;
       for (size_t i = 0; i < layers_or_stride; ++i)
       {
-        for (size_t j = 0; j < mipmaps_or_count; ++j)
+        for (size_t j = 0; j < levels_or_length; ++j)
         {
           const auto mip_size_x = std::max(1u, size_x >> j);
           const auto mip_size_y = std::max(1u, size_y >> j);
           const auto mip_size_z = std::max(1u, size_z >> j);
 
           const auto data = interop.first + offset;
-          const auto size = mip_size_x * mip_size_y * mip_size_z * BitCount(format) / 8;
+          const auto size = mip_size_x * mip_size_y * mip_size_z * Stride(format) / 8;
           
           BLAST_ASSERT(size <= staging_size);
 

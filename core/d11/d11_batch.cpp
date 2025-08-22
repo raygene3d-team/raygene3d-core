@@ -203,7 +203,7 @@ namespace RayGene3D
           if (va_view)
           {
             va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
-            va_offsets[i] = va_view->GetMipmapsOrCount().offset;
+            va_offsets[i] = va_view->GetLevelsOrLength().offset;
             va_strides[i] = config->GetStrides().at(i);
           }
         }
@@ -220,7 +220,7 @@ namespace RayGene3D
           if (ia_view)
           {
             ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
-            ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
+            ia_offsets[i] = ia_view->GetLevelsOrLength().offset;
             ia_formats[i] = config->GetIAState().indexer
               == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
               : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
@@ -265,7 +265,7 @@ namespace RayGene3D
           const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Graphic));
           const auto aa_draws = 1u;
-          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
+          const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
           device->GetContext()->DrawIndexedInstancedIndirect(aa_buffer, aa_offset);
         }
         else
@@ -328,7 +328,7 @@ namespace RayGene3D
         {
           const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Compute));
-          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
+          const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
           device->GetContext()->DispatchIndirect(aa_buffer, aa_offset);
         }
         else

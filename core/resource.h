@@ -63,7 +63,7 @@ namespace RayGene3D
     Usage usage{ USAGE_UNKNOWN };
 
   protected:
-    size_t mipmaps_or_count{ 0 };
+    size_t levels_or_length{ 0 };
     size_t layers_or_stride{ 0 };
 
   protected:
@@ -87,13 +87,13 @@ namespace RayGene3D
     {
       Usage usage{ USAGE_UNKNOWN };
       size_t stride{ 0 };
-      size_t count{ 0 };
+      size_t length{ 0 };
     };
 
     struct Tex1DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      size_t mipmaps{ 0 };
+      size_t levels{ 0 };
       size_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
@@ -102,7 +102,7 @@ namespace RayGene3D
     struct Tex2DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      size_t mipmaps{ 0 };
+      size_t levels{ 0 };
       size_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
@@ -112,7 +112,7 @@ namespace RayGene3D
     struct Tex3DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
-      size_t mipmaps{ 0 };
+      size_t levels{ 0 };
       size_t layers{ 0 };
       Format format{ FORMAT_UNKNOWN };
       uint32_t size_x{ 0 };
@@ -127,7 +127,7 @@ namespace RayGene3D
     Usage GetUsage() const { return usage; }
 
   public:
-    uint32_t GetMipmapsOrCount() const { return mipmaps_or_count; }
+    uint32_t GetLevelsOrLength() const { return levels_or_length; }
     uint32_t GetLayersOrStride() const { return layers_or_stride; }
 
   public:
@@ -158,8 +158,8 @@ namespace RayGene3D
   public:
     virtual const std::shared_ptr<View>& CreateView(const std::string& name,
       Usage usage, 
-      const View::Range& mipmaps_or_count = View::Range{ 0, uint32_t(-1) },
-      const View::Range& layers_or_stride = View::Range{ 0, uint32_t(-1) },
+      const Range& levels_or_length = Range{ 0, uint32_t(-1) },
+      const Range& layers_or_stride = Range{ 0, uint32_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN
     ) = 0;
     //void VisitView(std::function<bool(const std::shared_ptr<View>&)> visitor)
