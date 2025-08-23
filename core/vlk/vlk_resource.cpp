@@ -107,7 +107,7 @@ namespace RayGene3D
 
       //BLAST_ASSERT(VK_SUCCESS == vkBindBufferMemory(device->GetDevice(), buffer, memory, 0));
 
-      if (interop.first == nullptr || interop.second == 0)
+      if (interop.first != nullptr && interop.second > 0)
       {
         const auto interop_data = interop.first;
         BLAST_ASSERT(interop_data != nullptr);
@@ -300,112 +300,115 @@ namespace RayGene3D
 
         this->image = image;
         this->memory = memory;
-      }      
-
-      BLAST_ASSERT(Size(format, size_x, size_y, size_z, {0, levels_or_length}) * layers_or_stride == interop.second);
-
-      const auto staging_buffer = device->GetStagingBuffer();
-      const auto staging_memory = device->GetStagingMemory();
-      const auto staging_size = device->GetStagingSize();
-
-      BLAST_ASSERT(Size(format, size_x, size_y, size_z, { 0, 1 }) <= staging_size);
-
-      VkCommandBufferAllocateInfo allocInfo{};
-      allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-      allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-      allocInfo.commandPool = device->GetCommandPool();
-      allocInfo.commandBufferCount = 1;
-
-      VkCommandBuffer commandBuffer;
-      BLAST_ASSERT(VK_SUCCESS == vkAllocateCommandBuffers(device->GetDevice(), &allocInfo, &commandBuffer));
-
-      auto offset = 0ull;
-      for (size_t i = 0; i < layers_or_stride; ++i)
-      {
-        for (size_t j = 0; j < levels_or_length; ++j)
-        {
-          const auto data = interop.first + offset;
-          const auto size = Size(format, size_x, size_y, size_z, { j, 1 });
-
-          uint8_t* mapped = nullptr;
-          BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), staging_memory, 0, VK_WHOLE_SIZE, 0, reinterpret_cast<void**>(&mapped)));
-          memcpy(mapped, data, size);
-          vkUnmapMemory(device->GetDevice(), staging_memory);
-
-          VkCommandBufferBeginInfo beginInfo{};
-          beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-          beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-          BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(commandBuffer, &beginInfo));
-
-          {
-            VkImageMemoryBarrier barrier = {};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = image;
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseMipLevel = j;
-            barrier.subresourceRange.levelCount = 1;
-            barrier.subresourceRange.baseArrayLayer = i;
-            barrier.subresourceRange.layerCount = 1;
-            vkCmdPipelineBarrier(commandBuffer,
-              VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-              0, nullptr,
-              0, nullptr,
-              1, &barrier);
-          }
-
-          VkBufferImageCopy region = {};
-          region.bufferOffset = 0;
-          region.bufferRowLength = 0;
-          region.bufferImageHeight = 0;
-          region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-          region.imageSubresource.mipLevel = j;
-          region.imageSubresource.baseArrayLayer = i;
-          region.imageSubresource.layerCount = 1;
-          region.imageOffset = { 0, 0, 0 };
-          region.imageExtent = { Mip(size_x, j), Mip(size_y, j), Mip(size_z, j) };
-          vkCmdCopyBufferToImage(commandBuffer, staging_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-
-          {
-            VkImageMemoryBarrier barrier = {};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = 0;
-            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = image;
-            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            barrier.subresourceRange.baseMipLevel = j;
-            barrier.subresourceRange.levelCount = 1;
-            barrier.subresourceRange.baseArrayLayer = i;
-            barrier.subresourceRange.layerCount = 1;
-            vkCmdPipelineBarrier(commandBuffer,
-              VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-              0, nullptr,
-              0, nullptr,
-              1, &barrier);
-          }
-          BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(commandBuffer));
-
-          VkSubmitInfo submitInfo{};
-          submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-          submitInfo.commandBufferCount = 1;
-          submitInfo.pCommandBuffers = &commandBuffer;
-
-          BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE));
-          BLAST_ASSERT(VK_SUCCESS == vkQueueWaitIdle(device->GetQueue()));
-        }
       }
 
-      vkFreeCommandBuffers(device->GetDevice(), device->GetCommandPool(), 1, &commandBuffer);
+      if (interop.first != nullptr && interop.second > 0)
+      {
+        BLAST_ASSERT(Size(format, size_x, size_y, size_z, { 0, levels_or_length }) * layers_or_stride == interop.second);
+
+        const auto staging_buffer = device->GetStagingBuffer();
+        const auto staging_memory = device->GetStagingMemory();
+        const auto staging_size = device->GetStagingSize();
+
+        BLAST_ASSERT(Size(format, size_x, size_y, size_z, { 0, 1 }) <= staging_size);
+
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = device->GetCommandPool();
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        BLAST_ASSERT(VK_SUCCESS == vkAllocateCommandBuffers(device->GetDevice(), &allocInfo, &commandBuffer));
+
+        auto offset = 0ull;
+        for (size_t i = 0; i < layers_or_stride; ++i)
+        {
+          for (size_t j = 0; j < levels_or_length; ++j)
+          {
+            const auto data = interop.first + offset;
+            const auto size = Size(format, size_x, size_y, size_z, { j, 1 });
+
+            uint8_t* mapped = nullptr;
+            BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), staging_memory, 0, VK_WHOLE_SIZE, 0, reinterpret_cast<void**>(&mapped)));
+            memcpy(mapped, data, size);
+            vkUnmapMemory(device->GetDevice(), staging_memory);
+
+            VkCommandBufferBeginInfo beginInfo{};
+            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT; // VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+            BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(commandBuffer, &beginInfo));
+
+            {
+              VkImageMemoryBarrier barrier = {};
+              barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+              barrier.srcAccessMask = 0;
+              barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+              barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+              barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+              barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+              barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+              barrier.image = image;
+              barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+              barrier.subresourceRange.baseMipLevel = j;
+              barrier.subresourceRange.levelCount = 1;
+              barrier.subresourceRange.baseArrayLayer = i;
+              barrier.subresourceRange.layerCount = 1;
+              vkCmdPipelineBarrier(commandBuffer,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+            }
+
+            VkBufferImageCopy region = {};
+            region.bufferOffset = 0;
+            region.bufferRowLength = 0;
+            region.bufferImageHeight = 0;
+            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            region.imageSubresource.mipLevel = j;
+            region.imageSubresource.baseArrayLayer = i;
+            region.imageSubresource.layerCount = 1;
+            region.imageOffset = { 0, 0, 0 };
+            region.imageExtent = { Mip(size_x, j), Mip(size_y, j), Mip(size_z, j) };
+            vkCmdCopyBufferToImage(commandBuffer, staging_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+
+            {
+              VkImageMemoryBarrier barrier = {};
+              barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+              barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+              barrier.dstAccessMask = 0;
+              barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+              barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+              barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+              barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+              barrier.image = image;
+              barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+              barrier.subresourceRange.baseMipLevel = j;
+              barrier.subresourceRange.levelCount = 1;
+              barrier.subresourceRange.baseArrayLayer = i;
+              barrier.subresourceRange.layerCount = 1;
+              vkCmdPipelineBarrier(commandBuffer,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier);
+            }
+            BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(commandBuffer));
+
+            VkSubmitInfo submitInfo{};
+            submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &commandBuffer;
+
+            BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE));
+            BLAST_ASSERT(VK_SUCCESS == vkQueueWaitIdle(device->GetQueue()));
+          }
+        }
+
+        vkFreeCommandBuffers(device->GetDevice(), device->GetCommandPool(), 1, &commandBuffer);
+      }
     }
     break;
     }
