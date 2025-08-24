@@ -158,8 +158,8 @@ namespace RayGene3D
   public:
     virtual const std::shared_ptr<View>& CreateView(const std::string& name,
       Usage usage, 
-      const Range& levels_or_length = Range{ 0, uint32_t(-1) },
-      const Range& layers_or_stride = Range{ 0, uint32_t(-1) },
+      const Range& levels_or_length = Range{ 0, size_t(-1) },
+      const Range& layers_or_stride = Range{ 0, size_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN
     ) = 0;
     //void VisitView(std::function<bool(const std::shared_ptr<View>&)> visitor)
