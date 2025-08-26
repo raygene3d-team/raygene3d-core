@@ -328,6 +328,8 @@ namespace RayGene3D
           {
             const auto data = interop.first + offset;
             const auto size = Size(format, size_x, size_y, size_z, { j, 1 });
+            
+            offset += size;
 
             uint8_t* mapped = nullptr;
             BLAST_ASSERT(VK_SUCCESS == vkMapMemory(device->GetDevice(), staging_memory, 0, VK_WHOLE_SIZE, 0, reinterpret_cast<void**>(&mapped)));
