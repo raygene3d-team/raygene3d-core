@@ -401,7 +401,7 @@ namespace RayGene3D
   }
 
 
-  void D11Resource::Commit(uint32_t index)
+  void D11Resource::Commit()
   {
     D11Device* device = reinterpret_cast<D11Device*>(&this->GetDevice());
 
@@ -442,7 +442,7 @@ namespace RayGene3D
   }
 
 
-  void D11Resource::Retrieve(uint32_t index)
+  void D11Resource::Retrieve()
   {
     D11Device* device = reinterpret_cast<D11Device*>(&this->GetDevice());
 

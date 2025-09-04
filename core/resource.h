@@ -141,12 +141,15 @@ namespace RayGene3D
     Hint GetHint() const { return hint; }
 
   public:
-    virtual void Commit(uint32_t index) = 0;
-    //virtual void Commit(uint32_t index, uint32_t offset_x, uint32_t offset_y, uint32_t offset_z, uint32_t count_x, uint32_t count_y, uint32_t count_z) = 0;
-    virtual void Retrieve(uint32_t index) = 0;
-    //virtual void Retrieve(uint32_t index, uint32_t offset_x, uint32_t offset_y, uint32_t offset_z, uint32_t count_x, uint32_t count_y, uint32_t count_z) = 0;
+    virtual void Commit() = 0;
+    //virtual void Commit(Range layers_or_stride, Range levels_or_length = { 0u, size_t(-1) }, 
+    // uint32_t offset_x, uint32_t offset_y, uint32_t offset_z, uint32_t count_x, uint32_t count_y, uint32_t count_z) = 0;
+    virtual void Retrieve() = 0;
+    //virtual void Retrieve(Range layers_or_stride, Range levels_or_length = { 0u, size_t(-1) },
+    // uint32_t offset_x, uint32_t offset_y, uint32_t offset_z, uint32_t count_x, uint32_t count_y, uint32_t count_z) = 0;
     virtual void Blit(const std::shared_ptr<Resource>& resource) = 0;
-    //virtual void Blit(const std::shared_ptr<Resource>& resource, uint32_t index, uint32_t offset_x, uint32_t offset_y, uint32_t offset_z, uint32_t count_x, uint32_t count_y, uint32_t count_z) = 0;
+    //virtual void Blit(const std::shared_ptr<Resource>& resource, Range layers_or_stride, Range levels_or_length = { 0u, size_t(-1) }, 
+    // uint32_t offset_x, uint32_t offset_y, uint32_t offset_z, uint32_t count_x, uint32_t count_y, uint32_t count_z) = 0;
 
     virtual void* Map() = 0;
     //virtual void* Map(void** data, uint32_t offset, uint32_t count) = 0;

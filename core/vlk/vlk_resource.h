@@ -66,8 +66,8 @@ namespace RayGene3D
     VkImage GetImage() const { return image; }
 
   public:
-    void Commit(uint32_t index) override;
-    void Retrieve(uint32_t index) override;
+    void Commit() override;
+    void Retrieve() override;
     void Blit(const std::shared_ptr<Resource>& resource) override;
 
   public:
