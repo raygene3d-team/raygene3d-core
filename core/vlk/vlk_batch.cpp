@@ -119,6 +119,11 @@ namespace RayGene3D
       }
     }
 
+    if (pass->GetType() == Pass::TYPE_GRAPHIC && device->GetMeshShaderSupported())
+    {
+      vkCmdDrawMeshTasksEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksEXT>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdDrawMeshTasksEXT"));
+      vkCmdDrawMeshTasksIndirectEXT = reinterpret_cast<PFN_vkCmdDrawMeshTasksIndirectEXT>(vkGetDeviceProcAddr(device->GetDevice(), "vkCmdDrawMeshTasksIndirectEXT"));
+    }
 
     if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
     {
@@ -415,8 +420,7 @@ namespace RayGene3D
           descriptor.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT 
-            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -429,8 +433,7 @@ namespace RayGene3D
           descriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -443,8 +446,7 @@ namespace RayGene3D
           descriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -457,8 +459,7 @@ namespace RayGene3D
           descriptor.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -471,8 +472,7 @@ namespace RayGene3D
           descriptor.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -485,8 +485,7 @@ namespace RayGene3D
           descriptor.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -499,8 +498,7 @@ namespace RayGene3D
           descriptor.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -513,8 +511,7 @@ namespace RayGene3D
           descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
           descriptor.descriptorCount = 1;
           descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS | VK_SHADER_STAGE_COMPUTE_BIT
-            | VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_ANY_HIT_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
@@ -874,8 +871,10 @@ namespace RayGene3D
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), 0, nullptr);
       }
 
-      for (const auto& chunk : entities)
+      for (size_t i = 0; i < entities.size(); ++i)
       {
+        const auto& entity = entities[i];
+
         if (!sb_views.empty())
         {
           const auto sb_limit = 4u;
@@ -884,7 +883,7 @@ namespace RayGene3D
           uint32_t sb_offsets[sb_limit] = {};
           for (uint32_t i = 0; i < sb_count; ++i)
           {
-            sb_offsets[i] = chunk.sb_offset ? chunk.sb_offset.value()[i] : 0u;
+            sb_offsets[i] = entity.sb_offset ? entity.sb_offset.value()[i] : 0u;
           }
           vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), sb_count, sb_offsets);
         }
@@ -895,10 +894,10 @@ namespace RayGene3D
           std::array<VkDeviceSize, va_limit> va_offsets;
           std::array<VkBuffer, va_limit> va_items;
 
-          const auto va_count = std::min(va_limit, uint32_t(chunk.va_views.size()));
+          const auto va_count = std::min(va_limit, uint32_t(entity.va_views.size()));
           for (uint32_t i = 0; i < va_count; ++i)
           {
-            const auto& va_view = chunk.va_views[i];
+            const auto& va_view = entity.va_views[i];
             if (va_view)
             {
               va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
@@ -918,10 +917,10 @@ namespace RayGene3D
           std::array<VkDeviceSize, ia_limit> ia_offsets;
           std::array<VkBuffer, ia_limit> ia_items;
 
-          const auto ia_count = std::min(ia_limit, uint32_t(chunk.ia_views.size()));
+          const auto ia_count = std::min(ia_limit, uint32_t(entity.ia_views.size()));
           for (uint32_t i = 0; i < ia_count; ++i)
           {
-            const auto& ia_view = chunk.ia_views[i];
+            const auto& ia_view = entity.ia_views[i];
             if (ia_view)
             {
               ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
@@ -939,12 +938,12 @@ namespace RayGene3D
           }
         }
 
-        if (chunk.arg_view)
+        if (entity.arg_view)
         {
-          const auto aa_buffer = (reinterpret_cast<VLKResource*>(&chunk.arg_view->GetResource()))->GetBuffer();
+          const auto aa_buffer = (reinterpret_cast<VLKResource*>(&entity.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Graphic));
           const auto aa_draws = 1u;
-          const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
+          const auto aa_offset = entity.arg_view->GetLevelsOrLength().offset;
           
           if(config->UseVertexInput())
             vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
@@ -953,16 +952,18 @@ namespace RayGene3D
         }
         else
         {
-          const auto ins_count = chunk.ins_or_grid_x.length;
-          const auto ins_offset = chunk.ins_or_grid_x.offset;
-          const auto vtx_count = chunk.vtx_or_grid_y.length;
-          const auto vtx_offset = chunk.vtx_or_grid_y.offset;
-          const auto idx_count = chunk.idx_or_grid_z.length;
-          const auto idx_offset = chunk.idx_or_grid_z.offset;
+          const auto ins_count = entity.ins_or_grid_x.length;
+          const auto ins_offset = entity.ins_or_grid_x.offset;
+          const auto vtx_count = entity.vtx_or_grid_y.length;
+          const auto vtx_offset = entity.vtx_or_grid_y.offset;
+          const auto idx_count = entity.idx_or_grid_z.length;
+          const auto idx_offset = entity.idx_or_grid_z.offset;
 
-          const auto grid_x = chunk.ins_or_grid_x.length;
-          const auto grid_y = chunk.vtx_or_grid_y.length;
-          const auto grid_z = chunk.idx_or_grid_z.length;
+          const auto grid_x = entity.ins_or_grid_x.length;
+          const auto grid_y = entity.vtx_or_grid_y.length;
+          const auto grid_z = entity.idx_or_grid_z.length;
+
+          BLAST_LOG(std::to_string(i).c_str());
 
           if (config->UseVertexInput())
             vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
