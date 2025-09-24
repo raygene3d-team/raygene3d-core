@@ -85,48 +85,59 @@ namespace RayGene3D
     virtual ~VLKIncluder() {}
   };
 
-  static void CompileVLK(const std::string& source, const char* entry, const char* target,
-    std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
-  {    
+  static void CompileVLK(const std::string& path, const std::string& file, std::string& source, 
+    const char* target, const std::map<std::string, std::string>& defines, std::vector<char>& bytecode)
+  {   
+    if (source.empty())
+    {
+      std::fstream fs;
+      fs.open(path + file, std::fstream::in);
+      std::stringstream ss;
+      ss << fs.rdbuf();
+      fs.close();
+      source = ss.str();
+    }
+
     shaderc::CompileOptions options;
     options.AddMacroDefinition("USE_SPIRV");
     options.SetInvertY(true);
     options.SetOptimizationLevel(shaderc_optimization_level_performance);
-    options.SetSourceLanguage(shaderc_source_language_hlsl);
+    options.SetSourceLanguage(shaderc_source_language_glsl);
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-    options.SetTargetSpirv(shaderc_spirv_version_1_0);
+    options.SetTargetSpirv(shaderc_spirv_version_1_4);
     options.SetIncluder(std::make_unique<VLKIncluder>(path));
 
-    const auto kind =
-      strcmp(target, "cs_5_0") == 0 ? shaderc_compute_shader :
-      strcmp(target, "vs_5_0") == 0 ? shaderc_vertex_shader :
-      strcmp(target, "ds_5_0") == 0 ? shaderc_tess_control_shader :
-      strcmp(target, "hs_5_0") == 0 ? shaderc_tess_evaluation_shader :
-      strcmp(target, "gs_5_0") == 0 ? shaderc_geometry_shader :
-      strcmp(target, "ps_5_0") == 0 ? shaderc_fragment_shader : 
-      strcmp(target, "task") == 0 ? shaderc_task_shader : 
-      strcmp(target, "mesh") == 0 ? shaderc_mesh_shader : 
-      strcmp(target, "rgen") == 0 ? shaderc_raygen_shader :
-      strcmp(target, "isec") == 0 ? shaderc_intersection_shader :
-      strcmp(target, "chit") == 0 ? shaderc_closesthit_shader :
-      strcmp(target, "ahit") == 0 ? shaderc_anyhit_shader :
-      strcmp(target, "miss") == 0 ? shaderc_miss_shader :
-      strcmp(target, "call") == 0 ? shaderc_callable_shader :
-      -1;
+    auto kind = shaderc_glsl_infer_from_source;
+    if (strcmp(target, "comp") == 0) { options.AddMacroDefinition("COMP"); kind = shaderc_compute_shader; } else
+    if (strcmp(target, "vert") == 0) { options.AddMacroDefinition("VERT"); kind = shaderc_vertex_shader; } else
+    if (strcmp(target, "tesc") == 0) { options.AddMacroDefinition("TESC"); kind = shaderc_tess_control_shader; } else
+    if (strcmp(target, "tese") == 0) { options.AddMacroDefinition("TESE"); kind = shaderc_tess_evaluation_shader; } else
+    if (strcmp(target, "geom") == 0) { options.AddMacroDefinition("GEOM"); kind = shaderc_geometry_shader; } else
+    if (strcmp(target, "frag") == 0) { options.AddMacroDefinition("FRAG"); kind = shaderc_fragment_shader; } else
+    if (strcmp(target, "task") == 0) { options.AddMacroDefinition("TASK"); kind = shaderc_task_shader; } else
+    if (strcmp(target, "mesh") == 0) { options.AddMacroDefinition("MESH"); kind = shaderc_mesh_shader; } else
+    if (strcmp(target, "rgen") == 0) { options.AddMacroDefinition("RGEN"); kind = shaderc_raygen_shader; } else
+    if (strcmp(target, "isec") == 0) { options.AddMacroDefinition("ISEC"); kind = shaderc_intersection_shader; } else
+    if (strcmp(target, "chit") == 0) { options.AddMacroDefinition("CHIT"); kind = shaderc_closesthit_shader; } else
+    if (strcmp(target, "ahit") == 0) { options.AddMacroDefinition("AHIT"); kind = shaderc_anyhit_shader; } else
+    if (strcmp(target, "miss") == 0) { options.AddMacroDefinition("MISS"); kind = shaderc_miss_shader; } else
+    if (strcmp(target, "call") == 0) { options.AddMacroDefinition("CALL"); kind = shaderc_callable_shader; }
 
-    if(strcmp(target, "task") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("TASK"); } else
-    if(strcmp(target, "mesh") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("MESH"); } else
-    if(strcmp(target, "rgen") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("RGEN"); } else
-    if(strcmp(target, "isec") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("ISEC"); } else
-    if(strcmp(target, "chit") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("CHIT"); } else
-    if(strcmp(target, "ahit") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("AHIT"); } else
-    if(strcmp(target, "miss") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("MISS"); } else
-    if(strcmp(target, "call") == 0) { options.SetSourceLanguage(shaderc_source_language_glsl); options.SetTargetSpirv(shaderc_spirv_version_1_4); options.AddMacroDefinition("CALL"); }
+    auto entry = "main";
+    if(source.find("#version 460") == source.npos)
+    {
+      if(strcmp(target, "comp") == 0) { entry = "cs_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
+      if(strcmp(target, "vert") == 0) { entry = "vs_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
+      if(strcmp(target, "tesc") == 0) { entry = "hs_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
+      if(strcmp(target, "tese") == 0) { entry = "ds_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
+      if(strcmp(target, "geom") == 0) { entry = "gs_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
+      if(strcmp(target, "frag") == 0) { entry = "ps_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); }
+    }
 
     for (const auto& define : defines) options.AddMacroDefinition(define.first, define.second);
 
     shaderc::Compiler compiler;
-    const auto module = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)kind, "dummy", entry, options);
+    const auto module = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)kind, file.c_str(), entry, options);
 
     if (module.GetCompilationStatus() != shaderc_compilation_status_success)
     {
@@ -147,12 +158,12 @@ namespace RayGene3D
 
     const auto& path = device->GetPath();
 
-    cs_bytecode.clear();
-    vs_bytecode.clear();
-    hs_bytecode.clear();
-    ds_bytecode.clear();
-    gs_bytecode.clear();
-    ps_bytecode.clear();
+    comp_bytecode.clear();
+    vert_bytecode.clear();
+    tesc_bytecode.clear();
+    tese_bytecode.clear();
+    geom_bytecode.clear();
+    frag_bytecode.clear();
     task_bytecode.clear();
     mesh_bytecode.clear();
     rgen_bytecode.clear();
@@ -162,20 +173,20 @@ namespace RayGene3D
     ahit_bytecode.clear();
     call_bytecode.clear();
 
-    if (compilation & COMPILATION_CS) { CompileVLK(source, "cs_main", "cs_5_0", defines, path, cs_bytecode); BLAST_ASSERT(!cs_bytecode.empty()); }
-    if (compilation & COMPILATION_VS) { CompileVLK(source, "vs_main", "vs_5_0", defines, path, vs_bytecode); BLAST_ASSERT(!vs_bytecode.empty()); }
-    if (compilation & COMPILATION_HS) { CompileVLK(source, "hs_main", "hs_5_0", defines, path, hs_bytecode); BLAST_ASSERT(!hs_bytecode.empty()); }
-    if (compilation & COMPILATION_DS) { CompileVLK(source, "ds_main", "ds_5_0", defines, path, ds_bytecode); BLAST_ASSERT(!ds_bytecode.empty()); }
-    if (compilation & COMPILATION_GS) { CompileVLK(source, "gs_main", "gs_5_0", defines, path, gs_bytecode); BLAST_ASSERT(!gs_bytecode.empty()); }
-    if (compilation & COMPILATION_PS) { CompileVLK(source, "ps_main", "ps_5_0", defines, path, ps_bytecode); BLAST_ASSERT(!ps_bytecode.empty()); }
-    if (compilation & COMPILATION_TASK) { CompileVLK(source, "main", "task", defines, path, task_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
-    if (compilation & COMPILATION_MESH) { CompileVLK(source, "main", "mesh", defines, path, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
-    if (compilation & COMPILATION_RGEN) { CompileVLK(source, "main", "rgen", defines, path, rgen_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
-    if (compilation & COMPILATION_ISEC) { CompileVLK(source, "main", "isec", defines, path, isec_bytecode); BLAST_ASSERT(!isec_bytecode.empty()); }
-    if (compilation & COMPILATION_MISS) { CompileVLK(source, "main", "miss", defines, path, miss_bytecode); BLAST_ASSERT(!miss_bytecode.empty()); }
-    if (compilation & COMPILATION_CHIT) { CompileVLK(source, "main", "chit", defines, path, chit_bytecode); BLAST_ASSERT(!chit_bytecode.empty()); }
-    if (compilation & COMPILATION_AHIT) { CompileVLK(source, "main", "ahit", defines, path, ahit_bytecode); BLAST_ASSERT(!ahit_bytecode.empty()); }
-    if (compilation & COMPILATION_CALL) { CompileVLK(source, "main", "call", defines, path, call_bytecode); BLAST_ASSERT(!call_bytecode.empty()); }
+    if (compilation & COMPILATION_COMP) { CompileVLK(path, file, source, "comp", defines, comp_bytecode); BLAST_ASSERT(!comp_bytecode.empty()); }
+    if (compilation & COMPILATION_VERT) { CompileVLK(path, file, source, "vert", defines, vert_bytecode); BLAST_ASSERT(!vert_bytecode.empty()); }
+    if (compilation & COMPILATION_TESC) { CompileVLK(path, file, source, "tesc", defines, tesc_bytecode); BLAST_ASSERT(!tesc_bytecode.empty()); }
+    if (compilation & COMPILATION_TESE) { CompileVLK(path, file, source, "tese", defines, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
+    if (compilation & COMPILATION_GEOM) { CompileVLK(path, file, source, "geom", defines, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
+    if (compilation & COMPILATION_FRAG) { CompileVLK(path, file, source, "frag", defines, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
+    if (compilation & COMPILATION_TASK) { CompileVLK(path, file, source, "task", defines, task_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
+    if (compilation & COMPILATION_MESH) { CompileVLK(path, file, source, "mesh", defines, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
+    if (compilation & COMPILATION_RGEN) { CompileVLK(path, file, source, "rgen", defines, rgen_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
+    if (compilation & COMPILATION_ISEC) { CompileVLK(path, file, source, "isec", defines, isec_bytecode); BLAST_ASSERT(!isec_bytecode.empty()); }
+    if (compilation & COMPILATION_MISS) { CompileVLK(path, file, source, "miss", defines, miss_bytecode); BLAST_ASSERT(!miss_bytecode.empty()); }
+    if (compilation & COMPILATION_CHIT) { CompileVLK(path, file, source, "chit", defines, chit_bytecode); BLAST_ASSERT(!chit_bytecode.empty()); }
+    if (compilation & COMPILATION_AHIT) { CompileVLK(path, file, source, "ahit", defines, ahit_bytecode); BLAST_ASSERT(!ahit_bytecode.empty()); }
+    if (compilation & COMPILATION_CALL) { CompileVLK(path, file, source, "call", defines, call_bytecode); BLAST_ASSERT(!call_bytecode.empty()); }
 
     {
       const auto create_shader_module = [device](const std::vector<char>& bytecode)
@@ -191,80 +202,80 @@ namespace RayGene3D
         return shader_module;
       };
 
-      if (!cs_bytecode.empty())
+      if (!comp_bytecode.empty())
       {
-        cs_module = create_shader_module(cs_bytecode);
+        comp_module = create_shader_module(comp_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-        create_info.module = cs_module;
-        create_info.pName = "cs_main";
+        create_info.module = comp_module;
+        create_info.pName = source.find("#version 460") == source.npos ? "cs_main" : "main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
 
-      if (!vs_bytecode.empty())
+      if (!vert_bytecode.empty())
       {
-        vs_module = create_shader_module(vs_bytecode);
+        vert_module = create_shader_module(vert_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        create_info.module = vs_module;
-        create_info.pName = "vs_main";
+        create_info.module = vert_module;
+        create_info.pName = source.find("#version 460") == source.npos ? "vs_main" : "main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
 
-      if (!hs_bytecode.empty())
+      if (!tesc_bytecode.empty())
       {
-        hs_module = create_shader_module(hs_bytecode);
+        tesc_module = create_shader_module(tesc_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-        create_info.module = hs_module;
-        create_info.pName = "hs_main";
+        create_info.module = tesc_module;
+        create_info.pName = source.find("#version 460") == source.npos ? "hs_main" : "main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
 
-      if (!ds_bytecode.empty())
+      if (!tese_bytecode.empty())
       {
-        ds_module = create_shader_module(ds_bytecode);
+        tese_module = create_shader_module(tese_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-        create_info.module = ds_module;
-        create_info.pName = "ds_main";
+        create_info.module = tese_module;
+        create_info.pName = source.find("#version 460") == source.npos ? "ds_main" : "main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
 
-      if (!gs_bytecode.empty())
+      if (!geom_bytecode.empty())
       {
-        gs_module = create_shader_module(gs_bytecode);
+        geom_module = create_shader_module(geom_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-        create_info.module = gs_module;
-        create_info.pName = "gs_main";
+        create_info.module = geom_module;
+        create_info.pName = source.find("#version 460") == source.npos ? "gs_main" : "main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
 
-      if (!ps_bytecode.empty())
+      if (!frag_bytecode.empty())
       {
-        ps_module = create_shader_module(ps_bytecode);
+        frag_module = create_shader_module(frag_bytecode);
 
         auto create_info = VkPipelineShaderStageCreateInfo{};
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        create_info.module = ps_module;
-        create_info.pName = "ps_main";
+        create_info.module = frag_module;
+        create_info.pName = source.find("#version 460") == source.npos ? "ps_main" : "main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -538,7 +549,7 @@ namespace RayGene3D
     {
       switch (topology)
       {
-      default:                          return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+      default:                          return VkPrimitiveTopology(-1);
       case TOPOLOGY_POINTLIST:          return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
       case TOPOLOGY_LINELIST:           return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
       case TOPOLOGY_LINESTRIP:          return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
@@ -817,40 +828,40 @@ namespace RayGene3D
 
     stages.clear();
     
-    if (vs_module)
+    if (vert_module)
     {
-      vkDestroyShaderModule(device->GetDevice(), vs_module, nullptr);
-      vs_module = nullptr;
+      vkDestroyShaderModule(device->GetDevice(), vert_module, nullptr);
+      vert_module = nullptr;
     }
 
-    if (hs_module)
+    if (tesc_module)
     {
-      vkDestroyShaderModule(device->GetDevice(), hs_module, nullptr);
-      hs_module = nullptr;
+      vkDestroyShaderModule(device->GetDevice(), tesc_module, nullptr);
+      tesc_module = nullptr;
     }
 
-    if (ds_module)
+    if (tese_module)
     {
-      vkDestroyShaderModule(device->GetDevice(), ds_module, nullptr);
-      ds_module = nullptr;
+      vkDestroyShaderModule(device->GetDevice(), tese_module, nullptr);
+      tese_module = nullptr;
     }
 
-    if (gs_module)
+    if (geom_module)
     {
-      vkDestroyShaderModule(device->GetDevice(), gs_module, nullptr);
-      gs_module = nullptr;
+      vkDestroyShaderModule(device->GetDevice(), geom_module, nullptr);
+      geom_module = nullptr;
     }
 
-    if (ps_module)
+    if (frag_module)
     {
-      vkDestroyShaderModule(device->GetDevice(), ps_module, nullptr);
-      ps_module = nullptr;
+      vkDestroyShaderModule(device->GetDevice(), frag_module, nullptr);
+      frag_module = nullptr;
     }
 
-    if (cs_module)
+    if (comp_module)
     {
-      vkDestroyShaderModule(device->GetDevice(), cs_module, nullptr);
-      cs_module = nullptr;
+      vkDestroyShaderModule(device->GetDevice(), comp_module, nullptr);
+      comp_module = nullptr;
     }
 
     //RTX shaders
@@ -895,26 +906,28 @@ namespace RayGene3D
 
   VLKConfig::VLKConfig(const std::string& name,
     Pass& pass,
-    const std::string& source,
+    const std::string& path,
+    const std::string& file,
     Config::Compilation compilation,
     const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+    const Config::IAState& ia_state,
     const Config::RCState& rc_state,
     const Config::DSState& ds_state,
     const Config::OMState& om_state)
-    : Config(name, pass, source, compilation, defines, rc_state, ds_state, om_state)
+    : Config(name, pass, path, file, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
     VLKConfig::Initialize();
   }
 
-  VLKConfig::VLKConfig(const std::string& name,
-    Pass& pass,
-    const std::string& source,
-    Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines)
-    : Config(name, pass, source, compilation, defines)
-  {
-    VLKConfig::Initialize();
-  }
+  //VLKConfig::VLKConfig(const std::string& name,
+  //  Pass& pass,
+  //  const std::string& source,
+  //  Config::Compilation compilation,
+  //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines)
+  //  : Config(name, pass, source, compilation, defines)
+  //{
+  //  VLKConfig::Initialize();
+  //}
 
   VLKConfig::~VLKConfig()
   {

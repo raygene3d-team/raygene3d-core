@@ -46,12 +46,12 @@ namespace RayGene3D
   class VLKConfig : public Config
   {
   protected:
-    VkShaderModule vs_module{ nullptr };
-    VkShaderModule hs_module{ nullptr };
-    VkShaderModule ds_module{ nullptr };
-    VkShaderModule gs_module{ nullptr };
-    VkShaderModule ps_module{ nullptr };
-    VkShaderModule cs_module{ nullptr };
+    VkShaderModule vert_module{ nullptr };
+    VkShaderModule tesc_module{ nullptr };
+    VkShaderModule tese_module{ nullptr };
+    VkShaderModule geom_module{ nullptr };
+    VkShaderModule frag_module{ nullptr };
+    VkShaderModule comp_module{ nullptr };
 
   protected:
     VkShaderModule task_module{ nullptr };
@@ -76,12 +76,12 @@ namespace RayGene3D
   //  std::shared_ptr<Pipeline> CreatePipeline(const std::string& name) override { return pipelines.emplace_back(new VLKPipeline(name, *this)); }
 
   public:
-    VkShaderModule GetVSModule() const { return vs_module; }
-    VkShaderModule GetHSModule() const { return hs_module; }
-    VkShaderModule GetDSModule() const { return ds_module; }
-    VkShaderModule GetGSModule() const { return gs_module; }
-    VkShaderModule GetPSModule() const { return ps_module; }
-    VkShaderModule GetCSModule() const { return cs_module; }
+    VkShaderModule GetVSModule() const { return vert_module; }
+    VkShaderModule GetHSModule() const { return tesc_module; }
+    VkShaderModule GetDSModule() const { return tese_module; }
+    VkShaderModule GetGSModule() const { return geom_module; }
+    VkShaderModule GetPSModule() const { return frag_module; }
+    VkShaderModule GetCSModule() const { return comp_module; }
 
   protected:
     std::vector<VkVertexInputBindingDescription> input_bindings;
@@ -153,17 +153,19 @@ namespace RayGene3D
       const Config::OMState& om_state);
     VLKConfig(const std::string& name,
       Pass& pass,
-      const std::string& source,
+      const std::string& path,
+      const std::string& file,
       Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+      const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
-    VLKConfig(const std::string& name,
-      Pass& pass,
-      const std::string& source,
-      Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines);
+    //VLKConfig(const std::string& name,
+    //  Pass& pass,
+    //  const std::string& source,
+    //  Config::Compilation compilation,
+    //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines);
     virtual ~VLKConfig();
   };
 }

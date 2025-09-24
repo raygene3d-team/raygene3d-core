@@ -101,6 +101,15 @@ namespace RayGene3D
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state) = 0;
+    virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,
+      const std::string& path,
+      const std::string& file,
+      Config::Compilation compilation,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state) = 0;
     //void VisitConfig(std::function<void(const std::shared_ptr<Config>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
     void DestroyConfig(const std::shared_ptr<Config>& config) 
     { 

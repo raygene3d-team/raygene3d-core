@@ -60,6 +60,18 @@ namespace RayGene3D
     {
       return configs.emplace_back(new D11Config(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
+    const std::shared_ptr<Config>& CreateConfig(const std::string& name,
+      const std::string& path,
+      const std::string& file,
+      Config::Compilation compilation,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state) override
+    {
+      return configs.emplace_back(new D11Config(name, *this, path, file, compilation, defines, ia_state, rc_state, ds_state, om_state));
+    }
 
   public:
     D11Pass(const std::string& name,

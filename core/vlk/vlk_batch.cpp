@@ -871,10 +871,8 @@ namespace RayGene3D
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), 0, nullptr);
       }
 
-      for (size_t i = 0; i < entities.size(); ++i)
+      for (const auto& entity : entities)
       {
-        const auto& entity = entities[i];
-
         if (!sb_views.empty())
         {
           const auto sb_limit = 4u;
@@ -962,8 +960,6 @@ namespace RayGene3D
           const auto grid_x = entity.ins_or_grid_x.length;
           const auto grid_y = entity.vtx_or_grid_y.length;
           const auto grid_z = entity.idx_or_grid_z.length;
-
-          BLAST_LOG(std::to_string(i).c_str());
 
           if (config->UseVertexInput())
             vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);

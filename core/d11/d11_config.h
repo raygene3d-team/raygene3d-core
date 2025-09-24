@@ -39,12 +39,12 @@ namespace RayGene3D
   class D11Config : public Config
   {
   protected:
-    ID3D11VertexShader* vs_shader{ nullptr };
-    ID3D11HullShader* hs_shader{ nullptr };
-    ID3D11DomainShader* ds_shader{ nullptr };
-    ID3D11GeometryShader* gs_shader{ nullptr };
-    ID3D11PixelShader* ps_shader{ nullptr };
-    ID3D11ComputeShader* cs_shader{ nullptr };
+    ID3D11VertexShader* vert_shader{ nullptr };
+    ID3D11HullShader* tesc_shader{ nullptr };
+    ID3D11DomainShader* tese_shader{ nullptr };
+    ID3D11GeometryShader* geom_shader{ nullptr };
+    ID3D11PixelShader* frag_shader{ nullptr };
+    ID3D11ComputeShader* comp_shader{ nullptr };
 
   //public:
   //  std::vector<char> CompileVSSource(const std::string& source) override;
@@ -106,17 +106,27 @@ namespace RayGene3D
       const Config::OMState& om_state);
     D11Config(const std::string& name,
       Pass& pass,
-      const std::string& source,
+      const std::string& path,
+      const std::string& file,
       Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+      const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
-    D11Config(const std::string& name,
-      Pass& pass,
-      const std::string& source,
-      Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines);
+    //D11Config(const std::string& name,
+    //  Pass& pass,
+    //  const std::string& source,
+    //  Config::Compilation compilation,
+    //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+    //  const Config::RCState& rc_state,
+    //  const Config::DSState& ds_state,
+    //  const Config::OMState& om_state);
+    //D11Config(const std::string& name,
+    //  Pass& pass,
+    //  const std::string& source,
+    //  Config::Compilation compilation,
+    //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines);
     virtual ~D11Config();
   };
 }
