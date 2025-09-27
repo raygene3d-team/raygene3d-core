@@ -137,7 +137,7 @@ namespace RayGene3D
     for (const auto& define : defines) options.AddMacroDefinition(define.first, define.second);
 
     shaderc::Compiler compiler;
-    const auto module = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)kind, file.c_str(), entry, options);
+    const auto module = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)kind, file.empty() ? "unknown" : file.c_str(), entry, options);
 
     if (module.GetCompilationStatus() != shaderc_compilation_status_success)
     {
@@ -887,6 +887,18 @@ namespace RayGene3D
     {
       vkDestroyShaderModule(device->GetDevice(), miss_module, nullptr);
       miss_module = nullptr;
+    }
+
+    if (task_module)
+    {
+      vkDestroyShaderModule(device->GetDevice(), task_module, nullptr);
+      task_module = nullptr;
+    }
+    
+    if (mesh_module)
+    {
+      vkDestroyShaderModule(device->GetDevice(), mesh_module, nullptr);
+      mesh_module = nullptr;
     }
   }
 
