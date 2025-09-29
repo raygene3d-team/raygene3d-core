@@ -28,6 +28,7 @@ THE SOFTWARE.
 
 
 #include "batch.h"
+#include "resource.h"
 
 namespace RayGene3D
 {
@@ -56,5 +57,18 @@ namespace RayGene3D
 
   Batch::~Batch()
   {
+    for (const auto& entity : entities)
+    {
+      for (const auto& view : entity.va_views) if (view) view->GetResource().DestroyView(view);
+      for (const auto& view : entity.ia_views) if (view) view->GetResource().DestroyView(view);
+      const auto& view = entity.arg_view; if (view) view->GetResource().DestroyView(view);
+    }
+
+    for (const auto& view : ub_views) view->GetResource().DestroyView(view);
+    for (const auto& view : sb_views) view->GetResource().DestroyView(view);
+    for (const auto& view : ri_views) view->GetResource().DestroyView(view);
+    for (const auto& view : wi_views) view->GetResource().DestroyView(view);
+    for (const auto& view : rb_views) view->GetResource().DestroyView(view);
+    for (const auto& view : wb_views) view->GetResource().DestroyView(view);
   }
 }

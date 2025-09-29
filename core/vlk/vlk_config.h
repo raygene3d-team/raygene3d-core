@@ -70,7 +70,7 @@ namespace RayGene3D
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
 
   protected:
-    bool use_vertex_input{ false };
+    bool use_mesh_pipeline{ false };
 
   //public:
   //  std::shared_ptr<Pipeline> CreatePipeline(const std::string& name) override { return pipelines.emplace_back(new VLKPipeline(name, *this)); }
@@ -119,7 +119,7 @@ namespace RayGene3D
     const VkRayTracingShaderGroupCreateInfoKHR* GetGroupArray() const { return groups.data(); }
 
   public:
-    bool UseVertexInput() const { return use_vertex_input; }
+    bool UseMeshPipeline() const { return use_mesh_pipeline; }
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,

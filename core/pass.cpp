@@ -28,6 +28,7 @@ THE SOFTWARE.
 
 
 #include "pass.h"
+#include "resource.h"
 
 namespace RayGene3D
 {
@@ -52,5 +53,7 @@ namespace RayGene3D
   
   Pass::~Pass()
   {
+    for (const auto& attachment : rt_attachments) if(attachment.view) attachment.view->GetResource().DestroyView(attachment.view);
+    for (const auto& attachment : rt_attachments) if(attachment.view) attachment.view->GetResource().DestroyView(attachment.view);
   }
 }

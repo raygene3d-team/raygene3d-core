@@ -542,7 +542,7 @@ namespace RayGene3D
     input_state.vertexAttributeDescriptionCount = uint32_t(input_attributes.size());
     input_state.pVertexAttributeDescriptions = input_attributes.data();
 
-    use_vertex_input = !input_bindings.empty() && !input_attributes.empty();
+    use_mesh_pipeline = ia_state.topology == TOPOLOGY_UNKNOWN;
 
     // input assembly
     const auto get_topology = [](Topology topology)

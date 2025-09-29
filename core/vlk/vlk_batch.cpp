@@ -886,85 +886,94 @@ namespace RayGene3D
           vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, sets.size(), sets.data(), sb_count, sb_offsets);
         }
 
+        if (config->UseMeshPipeline() && device->GetMeshShaderSupported())
         {
-          const auto va_limit = 16u;
-          std::array<uint32_t, va_limit> va_strides;
-          std::array<VkDeviceSize, va_limit> va_offsets;
-          std::array<VkBuffer, va_limit> va_items;
-
-          const auto va_count = std::min(va_limit, uint32_t(entity.va_views.size()));
-          for (uint32_t i = 0; i < va_count; ++i)
+          if (entity.arg_view)
           {
-            const auto& va_view = entity.va_views[i];
-            if (va_view)
-            {
-              va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
-              va_offsets[i] = va_view->GetLevelsOrLength().offset;
-            }
-          }
-
-          if (va_count > 0)
-          {
-            vkCmdBindVertexBuffers(command_buffer, 0, va_count, va_items.data(), va_offsets.data());
-          }
-        }
-
-        {
-          const auto ia_limit = 1u;
-          std::array<VkIndexType, ia_limit> ia_formats;
-          std::array<VkDeviceSize, ia_limit> ia_offsets;
-          std::array<VkBuffer, ia_limit> ia_items;
-
-          const auto ia_count = std::min(ia_limit, uint32_t(entity.ia_views.size()));
-          for (uint32_t i = 0; i < ia_count; ++i)
-          {
-            const auto& ia_view = entity.ia_views[i];
-            if (ia_view)
-            {
-              ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
-              ia_offsets[i] = ia_view->GetLevelsOrLength().offset;
-              ia_formats[i] = config->GetIAState().indexer
-                == Config::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
-                : Config::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
-                : VK_INDEX_TYPE_MAX_ENUM;
-            }
-          }
-
-          if (ia_count > 0)
-          {
-            vkCmdBindIndexBuffer(command_buffer, ia_items[0], ia_offsets[0], ia_formats[0]);
-          }
-        }
-
-        if (entity.arg_view)
-        {
-          const auto aa_buffer = (reinterpret_cast<VLKResource*>(&entity.arg_view->GetResource()))->GetBuffer();
-          const auto aa_stride = uint32_t(sizeof(Graphic));
-          const auto aa_draws = 1u;
-          const auto aa_offset = entity.arg_view->GetLevelsOrLength().offset;
-          
-          if(config->UseVertexInput())
-            vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
-          else if(device->GetMeshShaderSupported())
+            const auto aa_buffer = (reinterpret_cast<VLKResource*>(&entity.arg_view->GetResource()))->GetBuffer();
+            const auto aa_stride = uint32_t(sizeof(Graphic));
+            const auto aa_draws = 1u;
+            const auto aa_offset = entity.arg_view->GetLevelsOrLength().offset;
             vkCmdDrawMeshTasksIndirectEXT(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
+          }
+          else
+          {
+            const auto grid_x = entity.ins_or_grid_x.length;
+            const auto grid_y = entity.vtx_or_grid_y.length;
+            const auto grid_z = entity.idx_or_grid_z.length;
+            vkCmdDrawMeshTasksEXT(command_buffer, grid_x, grid_y, grid_z);
+          }
         }
         else
         {
-          const auto ins_count = entity.ins_or_grid_x.length;
-          const auto ins_offset = entity.ins_or_grid_x.offset;
-          const auto vtx_count = entity.vtx_or_grid_y.length;
-          const auto vtx_offset = entity.vtx_or_grid_y.offset;
-          const auto idx_count = entity.idx_or_grid_z.length;
-          const auto idx_offset = entity.idx_or_grid_z.offset;
+          {
+            const auto va_limit = 16u;
+            std::array<uint32_t, va_limit> va_strides;
+            std::array<VkDeviceSize, va_limit> va_offsets;
+            std::array<VkBuffer, va_limit> va_items;
 
-          const auto grid_x = entity.ins_or_grid_x.length;
-          const auto grid_y = entity.vtx_or_grid_y.length;
-          const auto grid_z = entity.idx_or_grid_z.length;
+            const auto va_count = std::min(va_limit, uint32_t(entity.va_views.size()));
+            for (uint32_t i = 0; i < va_count; ++i)
+            {
+              const auto& va_view = entity.va_views[i];
+              if (va_view)
+              {
+                va_items[i] = (reinterpret_cast<VLKResource*>(&va_view->GetResource()))->GetBuffer();
+                va_offsets[i] = va_view->GetLevelsOrLength().offset;
+              }
+            }
 
-          if (config->UseVertexInput())
+            if (va_count > 0)
+            {
+              vkCmdBindVertexBuffers(command_buffer, 0, va_count, va_items.data(), va_offsets.data());
+            }
+          }
+
+          {
+            const auto ia_limit = 1u;
+            std::array<VkIndexType, ia_limit> ia_formats;
+            std::array<VkDeviceSize, ia_limit> ia_offsets;
+            std::array<VkBuffer, ia_limit> ia_items;
+
+            const auto ia_count = std::min(ia_limit, uint32_t(entity.ia_views.size()));
+            for (uint32_t i = 0; i < ia_count; ++i)
+            {
+              const auto& ia_view = entity.ia_views[i];
+              if (ia_view)
+              {
+                ia_items[i] = (reinterpret_cast<VLKResource*>(&ia_view->GetResource()))->GetBuffer();
+                ia_offsets[i] = ia_view->GetLevelsOrLength().offset;
+                ia_formats[i] = config->GetIAState().indexer
+                  == Config::INDEXER_32_BIT ? VK_INDEX_TYPE_UINT32
+                  : Config::INDEXER_16_BIT ? VK_INDEX_TYPE_UINT16
+                  : VK_INDEX_TYPE_MAX_ENUM;
+              }
+            }
+
+            if (ia_count > 0)
+            {
+              vkCmdBindIndexBuffer(command_buffer, ia_items[0], ia_offsets[0], ia_formats[0]);
+            }
+          }
+
+          if (entity.arg_view)
+          {
+            const auto aa_buffer = (reinterpret_cast<VLKResource*>(&entity.arg_view->GetResource()))->GetBuffer();
+            const auto aa_stride = uint32_t(sizeof(Graphic));
+            const auto aa_draws = 1u;
+            const auto aa_offset = entity.arg_view->GetLevelsOrLength().offset;
+            vkCmdDrawIndexedIndirect(command_buffer, aa_buffer, aa_offset, aa_draws, aa_stride);
+          }
+          else
+          {
+            const auto ins_count = entity.ins_or_grid_x.length;
+            const auto ins_offset = entity.ins_or_grid_x.offset;
+            const auto vtx_count = entity.vtx_or_grid_y.length;
+            const auto vtx_offset = entity.vtx_or_grid_y.offset;
+            const auto idx_count = entity.idx_or_grid_z.length;
+            const auto idx_offset = entity.idx_or_grid_z.offset;
             vkCmdDrawIndexed(command_buffer, idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
-          else if(device->GetMeshShaderSupported())
-            vkCmdDrawMeshTasksEXT(command_buffer, grid_x, grid_y, grid_z);
+          }
         }
       }
     }
