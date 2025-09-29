@@ -646,27 +646,6 @@ namespace RayGene3D
     D11Config::Initialize();
   }
 
-  //D11Config::D11Config(const std::string& name,
-  //  Pass& pass,
-  //  const std::string& source, Config::Compilation compilation,
-  //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
-  //  const Config::RCState& rc_state,
-  //  const Config::DSState& ds_state,
-  //  const Config::OMState& om_state)
-  //  : Config(name, pass, source, compilation, defines, rc_state, ds_state, om_state)
-  //{
-  //  D11Config::Initialize();
-  //}
-
-  //D11Config::D11Config(const std::string& name,
-  //  Pass& pass,
-  //  const std::string& source, Config::Compilation compilation,
-  //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines)
-  //  : Config(name, pass, source, compilation, defines)
-  //{
-  //  D11Config::Initialize();
-  //}
-
   D11Config::~D11Config()
   {
     D11Config::Discard();

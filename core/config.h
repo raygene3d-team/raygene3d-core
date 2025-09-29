@@ -361,24 +361,19 @@ namespace RayGene3D
       const std::string& source,
       Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
-      const Config::IAState& ia_state = {},
-      const Config::RCState& rc_state = {},
-      const Config::DSState& ds_state = {},
-      const Config::OMState& om_state = {});
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state);
     Config(const std::string& name,
       Pass& pass,
       const std::string& path, const std::string& file,
       Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
-      const Config::IAState& ia_state = {},
-      const Config::RCState& rc_state = {},
-      const Config::DSState& ds_state = {},
-      const Config::OMState& om_state = {});
-    //Config(const std::string& name,
-    //  Pass& pass,
-    //  const std::string& source,
-    //  Config::Compilation compilation,
-    //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines);
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state);
     virtual ~Config();
   };
 

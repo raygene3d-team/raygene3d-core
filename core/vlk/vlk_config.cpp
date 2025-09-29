@@ -931,16 +931,6 @@ namespace RayGene3D
     VLKConfig::Initialize();
   }
 
-  //VLKConfig::VLKConfig(const std::string& name,
-  //  Pass& pass,
-  //  const std::string& source,
-  //  Config::Compilation compilation,
-  //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines)
-  //  : Config(name, pass, source, compilation, defines)
-  //{
-  //  VLKConfig::Initialize();
-  //}
-
   VLKConfig::~VLKConfig()
   {
     VLKConfig::Discard();

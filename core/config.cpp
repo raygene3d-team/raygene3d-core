@@ -74,19 +74,6 @@ namespace RayGene3D
   {
   }
 
-  //Config::Config(const std::string& name,
-  //  Pass& pass,
-  //  const std::string& source,
-  //  Config::Compilation compilation,
-  //  const std::pair<const std::pair<std::string, std::string>*, size_t>& defines)
-  //  : Usable(name)
-  //  , pass(pass)
-  //  , source(source)
-  //  , compilation(compilation)
-  //  , defines(defines.first, defines.first + defines.second)
-  //{
-  //}
-
   Config::~Config()
   {
   }
