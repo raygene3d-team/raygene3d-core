@@ -28,6 +28,7 @@ THE SOFTWARE.
 
 
 #include "pass.h"
+#include "resource.h"
 
 namespace RayGene3D
 {
@@ -36,9 +37,9 @@ namespace RayGene3D
     Pass::Type type,
     uint32_t size_x,
     uint32_t size_y,
-    uint32_t layers,
-    const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-    const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments)
+    size_t layers,
+    const std::pair<const Pass::RTAttachment*, size_t>& rt_attachments,
+    const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments)
     : Usable(name)
     , device(device)
     , type(type)
@@ -52,5 +53,7 @@ namespace RayGene3D
   
   Pass::~Pass()
   {
+    for (const auto& attachment : rt_attachments) if(attachment.view) attachment.view->GetResource().DestroyView(attachment.view);
+    for (const auto& attachment : rt_attachments) if(attachment.view) attachment.view->GetResource().DestroyView(attachment.view);
   }
 }

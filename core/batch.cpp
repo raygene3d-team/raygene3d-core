@@ -28,19 +28,20 @@ THE SOFTWARE.
 
 
 #include "batch.h"
+#include "resource.h"
 
 namespace RayGene3D
 {
   Batch::Batch(const std::string& name,
     Config& config,
-    const std::pair<const Entity*, uint32_t>& entities,
-    const std::pair<const Sampler*, uint32_t>& samplers,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views)
+    const std::pair<const Entity*, size_t>& entities,
+    const std::pair<const Sampler*, size_t>& samplers,
+    const std::pair<const std::shared_ptr<View>*, size_t>& ub_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& sb_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& ri_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& wi_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& rb_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& wb_views)
     : Usable(name)
     , config(config)
     , entities(entities.first, entities.first + entities.second)
@@ -56,5 +57,18 @@ namespace RayGene3D
 
   Batch::~Batch()
   {
+    for (const auto& entity : entities)
+    {
+      for (const auto& view : entity.va_views) if (view) view->GetResource().DestroyView(view);
+      for (const auto& view : entity.ia_views) if (view) view->GetResource().DestroyView(view);
+      const auto& view = entity.arg_view; if (view) view->GetResource().DestroyView(view);
+    }
+
+    for (const auto& view : ub_views) view->GetResource().DestroyView(view);
+    for (const auto& view : sb_views) view->GetResource().DestroyView(view);
+    for (const auto& view : ri_views) view->GetResource().DestroyView(view);
+    for (const auto& view : wi_views) view->GetResource().DestroyView(view);
+    for (const auto& view : rb_views) view->GetResource().DestroyView(view);
+    for (const auto& view : wb_views) view->GetResource().DestroyView(view);
   }
 }

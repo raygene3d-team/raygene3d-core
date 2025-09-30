@@ -39,12 +39,12 @@ namespace RayGene3D
   class D11Config : public Config
   {
   protected:
-    ID3D11VertexShader* vs_shader{ nullptr };
-    ID3D11HullShader* hs_shader{ nullptr };
-    ID3D11DomainShader* ds_shader{ nullptr };
-    ID3D11GeometryShader* gs_shader{ nullptr };
-    ID3D11PixelShader* ps_shader{ nullptr };
-    ID3D11ComputeShader* cs_shader{ nullptr };
+    ID3D11VertexShader* vert_shader{ nullptr };
+    ID3D11HullShader* tesc_shader{ nullptr };
+    ID3D11DomainShader* tese_shader{ nullptr };
+    ID3D11GeometryShader* geom_shader{ nullptr };
+    ID3D11PixelShader* frag_shader{ nullptr };
+    ID3D11ComputeShader* comp_shader{ nullptr };
 
   //public:
   //  std::vector<char> CompileVSSource(const std::string& source) override;
@@ -76,14 +76,14 @@ namespace RayGene3D
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
-      const std::pair<const Batch::Entity*, uint32_t>& entities,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
+      const std::pair<const Batch::Entity*, size_t>& entities,
+      const std::pair<const Batch::Sampler*, size_t>& samplers,
+      const std::pair<const std::shared_ptr<View>*, size_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& wb_views
     ) override
     {
       return batches.emplace_back(new D11Batch(name, *this, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
@@ -99,24 +99,21 @@ namespace RayGene3D
       Pass& pass,
       const std::string& source,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
       const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
     D11Config(const std::string& name,
       Pass& pass,
-      const std::string& source,
+      const std::string& path,
+      const std::string& file,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+      const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
-    D11Config(const std::string& name,
-      Pass& pass,
-      const std::string& source,
-      Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines);
     virtual ~D11Config();
   };
 }

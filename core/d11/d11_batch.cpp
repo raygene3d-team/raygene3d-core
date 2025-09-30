@@ -107,9 +107,9 @@ namespace RayGene3D
     }
 
 
-    const auto ub_count = uint32_t(ub_views.size());
-    ub_items.resize(std::min(ub_count, uint32_t(D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)), nullptr);
-    for (uint32_t i = 0; i < uint32_t(ub_items.size()); ++i)
+    const auto ub_count = ub_views.size();
+    ub_items.resize(std::min(ub_count, size_t(D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)), nullptr);
+    for (size_t i = 0; i < ub_items.size(); ++i)
     {
       if (i < ub_count)
       {
@@ -121,9 +121,9 @@ namespace RayGene3D
       }
     }
 
-    const auto sb_count = uint32_t(sb_views.size());
-    sb_items.resize(std::min(sb_count, uint32_t(D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)), nullptr);
-    for (uint32_t i = 0; i < uint32_t(sb_items.size()); ++i)
+    const auto sb_count = sb_views.size();
+    sb_items.resize(std::min(sb_count, size_t(D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)), nullptr);
+    for (size_t i = 0; i < sb_items.size(); ++i)
     {
       if (i < sb_count)
       {
@@ -135,28 +135,28 @@ namespace RayGene3D
       }
     }
 
-    const auto rr_count = uint32_t(rb_views.size() + ri_views.size());
-    rr_items.resize(std::min(rr_count, uint32_t(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)), nullptr);
-    for (uint32_t i = 0; i < uint32_t(rr_items.size()); ++i)
+    const auto rr_count = rb_views.size() + ri_views.size();
+    rr_items.resize(std::min(rr_count, size_t(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)), nullptr);
+    for (size_t i = 0; i < rr_items.size(); ++i)
     {
       if (i < rr_count)
       {
-        uint32_t offset = 0;
+        size_t offset = 0u;
         if (i - offset < rb_views.size() && rb_views[i - offset]) { rr_items[i] = (reinterpret_cast<D11View*>(rb_views[i - offset].get()))->GetSRView(); continue; }
-        offset += uint32_t(rb_views.size());
+        offset += rb_views.size();
         if (i - offset < ri_views.size() && ri_views[i - offset]) { rr_items[i] = (reinterpret_cast<D11View*>(ri_views[i - offset].get()))->GetSRView(); continue; }
       }
     }
 
-    const auto wr_count = uint32_t(wb_views.size() + wi_views.size());
-    wr_items.resize(std::min(wr_count, uint32_t(D3D11_PS_CS_UAV_REGISTER_COUNT)), nullptr);
-    for (uint32_t i = 0; i < uint32_t(wr_items.size()); ++i)
+    const auto wr_count = wb_views.size() + wi_views.size();
+    wr_items.resize(std::min(wr_count, size_t(D3D11_PS_CS_UAV_REGISTER_COUNT)), nullptr);
+    for (size_t i = 0; i < wr_items.size(); ++i)
     {
       if (i < wr_count)
       {
-        uint32_t offset = 0;
+        size_t offset = 0u;
         if (i - offset < wb_views.size() && wb_views[i - offset]) { wr_items[i] = (reinterpret_cast<D11View*>(wb_views[i - offset].get()))->GetUAView(); continue; }
-        offset += uint32_t(wb_views.size());
+        offset += wb_views.size();
         if (i - offset < wi_views.size() && wi_views[i - offset]) { wr_items[i] = (reinterpret_cast<D11View*>(wi_views[i - offset].get()))->GetUAView(); continue; }
       }
     }
@@ -192,35 +192,35 @@ namespace RayGene3D
 
       for (const auto& chunk : entities)
       {
-        const uint32_t va_limit = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+        const size_t va_limit = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
         uint32_t va_strides[va_limit]{ 0 };
         uint32_t va_offsets[va_limit]{ 0 };
         ID3D11Buffer* va_items[va_limit]{ nullptr };
-        const uint32_t va_count = std::min(va_limit, uint32_t(chunk.va_views.size()));
-        for (uint32_t i = 0; i < va_count; ++i)
+        const auto va_count = std::min(va_limit, chunk.va_views.size());
+        for (size_t i = 0; i < va_count; ++i)
         {
           const auto& va_view = chunk.va_views.at(i);
           if (va_view)
           {
             va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
-            va_offsets[i] = va_view->GetMipmapsOrCount().offset;
+            va_offsets[i] = va_view->GetLevelsOrLength().offset;
             va_strides[i] = config->GetStrides().at(i);
           }
         }
         device->GetContext()->IASetVertexBuffers(0, va_count, va_items, va_strides, va_offsets);
 
-        const uint32_t ia_limit = 1;
+        const size_t ia_limit = 1u;
         uint32_t ia_offsets[ia_limit]{ 0 };
         DXGI_FORMAT ia_formats[ia_limit]{ DXGI_FORMAT_UNKNOWN };
         ID3D11Buffer* ia_items[ia_limit]{ nullptr };
-        const uint32_t ia_count = std::min(ia_limit, uint32_t(chunk.ia_views.size()));
-        for (uint32_t i = 0; i < ia_count; ++i)
+        const auto ia_count = std::min(ia_limit, chunk.ia_views.size());
+        for (size_t i = 0; i < ia_count; ++i)
         {
           const auto& ia_view = chunk.ia_views.at(i);
           if (ia_view)
           {
             ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
-            ia_offsets[i] = ia_view->GetMipmapsOrCount().offset;
+            ia_offsets[i] = ia_view->GetLevelsOrLength().offset;
             ia_formats[i] = config->GetIAState().indexer
               == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
               : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
@@ -231,13 +231,13 @@ namespace RayGene3D
 
           if (!sb_views.empty())
         {
-          const auto sb_limit = 4u;
-          const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
+          const auto sb_limit = size_t(4u);
+          const auto sb_count = std::min(sb_limit, sb_views.size());
 
           uint32_t sb_offsets[sb_limit] = {};
           uint32_t sb_strides[sb_limit] = {};
 
-          for (uint32_t i = 0; i < sb_count; ++i)
+          for (size_t i = 0; i < sb_count; ++i)
           {
             const auto& sb_view = sb_views[i];
             if (sb_view)
@@ -265,7 +265,7 @@ namespace RayGene3D
           const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Graphic));
           const auto aa_draws = 1u;
-          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
+          const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
           device->GetContext()->DrawIndexedInstancedIndirect(aa_buffer, aa_offset);
         }
         else
@@ -294,13 +294,13 @@ namespace RayGene3D
       {
         if (!sb_views.empty())
         {
-          const auto sb_limit = 4u;
-          const auto sb_count = std::min(sb_limit, uint32_t(sb_views.size()));
+          const auto sb_limit = size_t(4u);
+          const auto sb_count = std::min(sb_limit, sb_views.size());
 
           uint32_t sb_offsets[sb_limit] = {};
           uint32_t sb_strides[sb_limit] = {};
 
-          for (uint32_t i = 0; i < sb_count; ++i)
+          for (size_t i = 0; i < sb_count; ++i)
           {
             const auto& sb_view = sb_views[i];
             if (sb_view)
@@ -328,7 +328,7 @@ namespace RayGene3D
         {
           const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
           const auto aa_stride = uint32_t(sizeof(Compute));
-          const auto aa_offset = chunk.arg_view->GetMipmapsOrCount().offset;
+          const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
           device->GetContext()->DispatchIndirect(aa_buffer, aa_offset);
         }
         else
@@ -356,14 +356,14 @@ namespace RayGene3D
 
   D11Batch::D11Batch(const std::string& name,
     Config& config,
-    const std::pair<const Entity*, uint32_t>& entities,
-    const std::pair<const Sampler*, uint32_t>& samplers,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-    const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
+    const std::pair<const Entity*, size_t>& entities,
+    const std::pair<const Sampler*, size_t>& samplers,
+    const std::pair<const std::shared_ptr<View>*, size_t>& ub_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& sb_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& ri_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& wi_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& rb_views,
+    const std::pair<const std::shared_ptr<View>*, size_t>& wb_views
   )
     : Batch(name, config, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views)
   {

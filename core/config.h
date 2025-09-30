@@ -45,30 +45,31 @@ namespace RayGene3D
     enum Compilation
     {
       COMPILATION_UNKNOWN = 0x00000000,
-      COMPILATION_VS = 0x00000001,
-      COMPILATION_HS = 0x00000002,
-      COMPILATION_DS = 0x00000004,
-      COMPILATION_GS = 0x00000008,
-      COMPILATION_PS = 0x00000010,
-      COMPILATION_CS = 0x00000100,
-      COMPILATION_RGEN = 0x00001000,
-      COMPILATION_ISEC = 0x00002000,
-      COMPILATION_CHIT = 0x00004000,
-      COMPILATION_AHIT = 0x00008000,
-      COMPILATION_MISS = 0x00010000,
-      COMPILATION_CALL = 0x00020000,
-      COMPILATION_TASK = 0x00100000,
-      COMPILATION_MESH = 0x00200000,
+      COMPILATION_VERT = 0x00000001,
+      COMPILATION_TESC = 0x00000002,
+      COMPILATION_TESE = 0x00000004,
+      COMPILATION_GEOM = 0x00000008,
+      COMPILATION_FRAG = 0x00000010,
+      COMPILATION_COMP = 0x00000020,
+      COMPILATION_TASK = 0x00000040,
+      COMPILATION_MESH = 0x00000080,
+      COMPILATION_RGEN = 0x00000100,
+      COMPILATION_CALL = 0x00000200,
+      COMPILATION_ISEC = 0x00001000,
+      COMPILATION_CHIT = 0x00002000,
+      COMPILATION_AHIT = 0x00004000,
+      COMPILATION_MISS = 0x00008000,
+ 
     };
 
   protected:
-    std::vector<char> cs_bytecode;
+    std::vector<char> comp_bytecode;
 
-    std::vector<char> vs_bytecode;
-    std::vector<char> hs_bytecode;
-    std::vector<char> ds_bytecode;
-    std::vector<char> gs_bytecode;
-    std::vector<char> ps_bytecode;
+    std::vector<char> vert_bytecode;
+    std::vector<char> tesc_bytecode;
+    std::vector<char> tese_bytecode;
+    std::vector<char> geom_bytecode;
+    std::vector<char> frag_bytecode;
 
     std::vector<char> task_bytecode;
     std::vector<char> mesh_bytecode;
@@ -81,6 +82,8 @@ namespace RayGene3D
     std::vector<char> call_bytecode;
 
   protected:
+    std::string path;
+    std::string file;
     std::string source;
     Compilation compilation;
     std::map<std::string, std::string> defines;
@@ -326,14 +329,14 @@ namespace RayGene3D
 
   public:
     virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
-      const std::pair<const Batch::Entity*, uint32_t>& entities,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+      const std::pair<const Batch::Entity*, size_t>& entities,
+      const std::pair<const Batch::Sampler*, size_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& wb_views = {}
     ) = 0;
     //void VisitBatch(std::function<void(const std::shared_ptr<Batch>&)> visitor) { for (const auto& batch : batches) visitor(batch); }
     void DestroyBatch(const std::shared_ptr<Batch>& batch) 
@@ -357,24 +360,20 @@ namespace RayGene3D
       Pass& pass,
       const std::string& source,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
       const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
     Config(const std::string& name,
       Pass& pass,
-      const std::string& source,
+      const std::string& path, const std::string& file,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+      const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
-    Config(const std::string& name,
-      Pass& pass,
-      const std::string& source,
-      Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines);
     virtual ~Config();
   };
 

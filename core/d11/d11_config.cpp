@@ -185,19 +185,19 @@ namespace RayGene3D
 
     const auto& path = device->GetPath();
 
-    cs_bytecode.clear();
-    vs_bytecode.clear();
-    hs_bytecode.clear();
-    ds_bytecode.clear();
-    gs_bytecode.clear();
-    ps_bytecode.clear();
+    comp_bytecode.clear();
+    vert_bytecode.clear();
+    tesc_bytecode.clear();
+    tese_bytecode.clear();
+    geom_bytecode.clear();
+    frag_bytecode.clear();
 
-    if (compilation & COMPILATION_CS) { D11Compile(source, "cs_main", "cs_5_0", defines, path, cs_bytecode); BLAST_ASSERT(!cs_bytecode.empty()); }
-    if (compilation & COMPILATION_VS) { D11Compile(source, "vs_main", "vs_5_0", defines, path, vs_bytecode); BLAST_ASSERT(!vs_bytecode.empty()); }
-    if (compilation & COMPILATION_HS) { D11Compile(source, "hs_main", "hs_5_0", defines, path, hs_bytecode); BLAST_ASSERT(!hs_bytecode.empty()); }
-    if (compilation & COMPILATION_DS) { D11Compile(source, "ds_main", "ds_5_0", defines, path, ds_bytecode); BLAST_ASSERT(!ds_bytecode.empty()); }
-    if (compilation & COMPILATION_GS) { D11Compile(source, "gs_main", "gs_5_0", defines, path, gs_bytecode); BLAST_ASSERT(!gs_bytecode.empty()); }
-    if (compilation & COMPILATION_PS) { D11Compile(source, "ps_main", "ps_5_0", defines, path, ps_bytecode); BLAST_ASSERT(!ps_bytecode.empty()); }
+    if (compilation & COMPILATION_COMP) { D11Compile(source, "cs_main", "cs_5_0", defines, path, comp_bytecode); BLAST_ASSERT(!comp_bytecode.empty()); }
+    if (compilation & COMPILATION_VERT) { D11Compile(source, "vs_main", "vs_5_0", defines, path, vert_bytecode); BLAST_ASSERT(!vert_bytecode.empty()); }
+    if (compilation & COMPILATION_TESC) { D11Compile(source, "hs_main", "hs_5_0", defines, path, tesc_bytecode); BLAST_ASSERT(!tesc_bytecode.empty()); }
+    if (compilation & COMPILATION_TESE) { D11Compile(source, "ds_main", "ds_5_0", defines, path, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
+    if (compilation & COMPILATION_GEOM) { D11Compile(source, "gs_main", "gs_5_0", defines, path, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
+    if (compilation & COMPILATION_FRAG) { D11Compile(source, "ps_main", "ps_5_0", defines, path, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
 
     const auto get_format = [this](Format format)
     {
@@ -307,7 +307,7 @@ namespace RayGene3D
         }
 
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateInputLayout(element_descs.data(), uint32_t(element_descs.size()),
-          vs_bytecode.data(), vs_bytecode.size(), &input_layout));
+          vert_bytecode.data(), vert_bytecode.size(), &input_layout));
       }
 
       const auto get_fill = [](Fill fill)
@@ -438,7 +438,7 @@ namespace RayGene3D
       D3D11_BLEND_DESC blend_desc;
       blend_desc.AlphaToCoverageEnable = om_state.atc_enabled;
       blend_desc.IndependentBlendEnable = false; //TODO: Implement true only
-      for (uint32_t i = 0; i < std::min(uint32_t(om_state.target_blends.size()), 8u); ++i)
+      for (size_t i = 0; i < std::min(om_state.target_blends.size(), size_t(8u)); ++i)
       {
         blend_desc.RenderTarget[i].BlendEnable = om_state.target_blends[i].blend_enabled;
         blend_desc.RenderTarget[i].SrcBlend = get_operand(om_state.target_blends[i].src_color);
@@ -471,9 +471,9 @@ namespace RayGene3D
 
     primitive_topology = get_topology(ia_state.topology);
 
-    const auto vp_count = uint32_t(rc_state.viewports.size());
-    vp_items.resize(std::min(vp_count, uint32_t(D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
-    for (uint32_t i = 0; i < uint32_t(vp_items.size()); ++i)
+    const auto vp_count = rc_state.viewports.size();
+    vp_items.resize(std::min(vp_count, size_t(D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
+    for (size_t i = 0; i < vp_items.size(); ++i)
     {
       if (i < vp_count)
       {
@@ -482,34 +482,34 @@ namespace RayGene3D
       }
     }
 
-    if (!vs_bytecode.empty())
+    if (!vert_bytecode.empty())
     {
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateVertexShader(vs_bytecode.data(), vs_bytecode.size(), nullptr, &vs_shader));
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateVertexShader(vert_bytecode.data(), vert_bytecode.size(), nullptr, &vert_shader));
     }
 
-    if (!hs_bytecode.empty())
+    if (!tesc_bytecode.empty())
     {
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateHullShader(hs_bytecode.data(), hs_bytecode.size(), nullptr, &hs_shader));
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateHullShader(tesc_bytecode.data(), tesc_bytecode.size(), nullptr, &tesc_shader));
     }
 
-    if (!ds_bytecode.empty())
+    if (!tese_bytecode.empty())
     {
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateDomainShader(ds_bytecode.data(), ds_bytecode.size(), nullptr, &ds_shader));
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateDomainShader(tese_bytecode.data(), tese_bytecode.size(), nullptr, &tese_shader));
     }
 
-    if (!gs_bytecode.empty())
+    if (!geom_bytecode.empty())
     {
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateGeometryShader(gs_bytecode.data(), gs_bytecode.size(), nullptr, &gs_shader));
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateGeometryShader(geom_bytecode.data(), geom_bytecode.size(), nullptr, &geom_shader));
     }
 
-    if (!ps_bytecode.empty())
+    if (!frag_bytecode.empty())
     {
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreatePixelShader(ps_bytecode.data(), ps_bytecode.size(), nullptr, &ps_shader));
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreatePixelShader(frag_bytecode.data(), frag_bytecode.size(), nullptr, &frag_shader));
     }
 
-    if (!cs_bytecode.empty())
+    if (!comp_bytecode.empty())
     {
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateComputeShader(cs_bytecode.data(), cs_bytecode.size(), nullptr, &cs_shader));
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateComputeShader(comp_bytecode.data(), comp_bytecode.size(), nullptr, &comp_shader));
     }
   }
 
@@ -522,11 +522,11 @@ namespace RayGene3D
     if (pass->GetType() == Pass::TYPE_GRAPHIC)
     {
 
-      device->GetContext()->VSSetShader(vs_shader, nullptr, 0);
-      device->GetContext()->HSSetShader(hs_shader, nullptr, 0);
-      device->GetContext()->DSSetShader(ds_shader, nullptr, 0);
-      device->GetContext()->GSSetShader(gs_shader, nullptr, 0);
-      device->GetContext()->PSSetShader(ps_shader, nullptr, 0);
+      device->GetContext()->VSSetShader(vert_shader, nullptr, 0);
+      device->GetContext()->HSSetShader(tesc_shader, nullptr, 0);
+      device->GetContext()->DSSetShader(tese_shader, nullptr, 0);
+      device->GetContext()->GSSetShader(geom_shader, nullptr, 0);
+      device->GetContext()->PSSetShader(frag_shader, nullptr, 0);
 
       device->GetContext()->IASetPrimitiveTopology(primitive_topology);
       device->GetContext()->IASetInputLayout(input_layout);
@@ -545,7 +545,7 @@ namespace RayGene3D
 
     if (pass->GetType() == Pass::TYPE_COMPUTE)
     {
-      device->GetContext()->CSSetShader(cs_shader, nullptr, 0);
+      device->GetContext()->CSSetShader(comp_shader, nullptr, 0);
     }
 
     for (const auto& batch : batches)
@@ -580,47 +580,48 @@ namespace RayGene3D
       input_layout = nullptr;
     }
 
-    if (cs_shader)
+    if (comp_shader)
     {
-      cs_shader->Release();
-      cs_shader = nullptr;
+      comp_shader->Release();
+      comp_shader = nullptr;
     }
 
-    if (ps_shader)
+    if (frag_shader)
     {
-      ps_shader->Release();
-      ps_shader = nullptr;
+      frag_shader->Release();
+      frag_shader = nullptr;
     }
 
-    if (gs_shader)
+    if (geom_shader)
     {
-      gs_shader->Release();
-      gs_shader = nullptr;
+      geom_shader->Release();
+      geom_shader = nullptr;
     }
 
-    if (ds_shader)
+    if (tese_shader)
     {
-      ds_shader->Release();
-      ds_shader = nullptr;
+      tese_shader->Release();
+      tese_shader = nullptr;
     }
 
-    if (hs_shader)
+    if (tesc_shader)
     {
-      hs_shader->Release();
-      hs_shader = nullptr;
+      tesc_shader->Release();
+      tesc_shader = nullptr;
     }
 
-    if (vs_shader)
+    if (vert_shader)
     {
-      vs_shader->Release();
-      vs_shader = nullptr;
+      vert_shader->Release();
+      vert_shader = nullptr;
     }
   }
 
   D11Config::D11Config(const std::string& name,
     Pass& pass,
-    const std::string& source, Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const std::string& source,
+    Config::Compilation compilation,
+    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
     const Config::IAState& ia_state,
     const Config::RCState& rc_state,
     const Config::DSState& ds_state,
@@ -632,21 +633,15 @@ namespace RayGene3D
 
   D11Config::D11Config(const std::string& name,
     Pass& pass,
-    const std::string& source, Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+    const std::string& path,
+    const std::string& file,
+    Config::Compilation compilation,
+    const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+    const Config::IAState& ia_state,
     const Config::RCState& rc_state,
     const Config::DSState& ds_state,
     const Config::OMState& om_state)
-    : Config(name, pass, source, compilation, defines, rc_state, ds_state, om_state)
-  {
-    D11Config::Initialize();
-  }
-
-  D11Config::D11Config(const std::string& name,
-    Pass& pass,
-    const std::string& source, Config::Compilation compilation,
-    const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines)
-    : Config(name, pass, source, compilation, defines)
+    : Config(name, pass, path, file, compilation, defines, ia_state, rc_state, ds_state, om_state)
   {
     D11Config::Initialize();
   }

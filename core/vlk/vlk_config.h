@@ -46,12 +46,12 @@ namespace RayGene3D
   class VLKConfig : public Config
   {
   protected:
-    VkShaderModule vs_module{ nullptr };
-    VkShaderModule hs_module{ nullptr };
-    VkShaderModule ds_module{ nullptr };
-    VkShaderModule gs_module{ nullptr };
-    VkShaderModule ps_module{ nullptr };
-    VkShaderModule cs_module{ nullptr };
+    VkShaderModule vert_module{ nullptr };
+    VkShaderModule tesc_module{ nullptr };
+    VkShaderModule tese_module{ nullptr };
+    VkShaderModule geom_module{ nullptr };
+    VkShaderModule frag_module{ nullptr };
+    VkShaderModule comp_module{ nullptr };
 
   protected:
     VkShaderModule task_module{ nullptr };
@@ -70,18 +70,18 @@ namespace RayGene3D
     std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
 
   protected:
-    bool use_vertex_input{ false };
+    bool use_mesh_pipeline{ false };
 
   //public:
   //  std::shared_ptr<Pipeline> CreatePipeline(const std::string& name) override { return pipelines.emplace_back(new VLKPipeline(name, *this)); }
 
   public:
-    VkShaderModule GetVSModule() const { return vs_module; }
-    VkShaderModule GetHSModule() const { return hs_module; }
-    VkShaderModule GetDSModule() const { return ds_module; }
-    VkShaderModule GetGSModule() const { return gs_module; }
-    VkShaderModule GetPSModule() const { return ps_module; }
-    VkShaderModule GetCSModule() const { return cs_module; }
+    VkShaderModule GetVSModule() const { return vert_module; }
+    VkShaderModule GetHSModule() const { return tesc_module; }
+    VkShaderModule GetDSModule() const { return tese_module; }
+    VkShaderModule GetGSModule() const { return geom_module; }
+    VkShaderModule GetPSModule() const { return frag_module; }
+    VkShaderModule GetCSModule() const { return comp_module; }
 
   protected:
     std::vector<VkVertexInputBindingDescription> input_bindings;
@@ -119,18 +119,18 @@ namespace RayGene3D
     const VkRayTracingShaderGroupCreateInfoKHR* GetGroupArray() const { return groups.data(); }
 
   public:
-    bool UseVertexInput() const { return use_vertex_input; }
+    bool UseMeshPipeline() const { return use_mesh_pipeline; }
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
-      const std::pair<const Batch::Entity*, uint32_t>& entities,
-      const std::pair<const Batch::Sampler*, uint32_t>& samplers,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views,
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views
+      const std::pair<const Batch::Entity*, size_t>& entities,
+      const std::pair<const Batch::Sampler*, size_t>& samplers,
+      const std::pair<const std::shared_ptr<View>*, size_t>& ub_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& sb_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& ri_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& wi_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& rb_views,
+      const std::pair<const std::shared_ptr<View>*, size_t>& wb_views
     ) override
     {
       return batches.emplace_back(new VLKBatch(name, *this, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
@@ -146,24 +146,21 @@ namespace RayGene3D
       Pass& pass,
       const std::string& source,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
       const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
     VLKConfig(const std::string& name,
       Pass& pass,
-      const std::string& source,
+      const std::string& path,
+      const std::string& file,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+      const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
-    VLKConfig(const std::string& name,
-      Pass& pass,
-      const std::string& source,
-      Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines);
     virtual ~VLKConfig();
   };
 }

@@ -71,9 +71,9 @@ namespace RayGene3D
       std::vector<std::shared_ptr<View>> va_views; //vertex arrays
       std::vector<std::shared_ptr<View>> ia_views; //index_arrays
       std::shared_ptr<View> arg_view;
-      View::Range ins_or_grid_x;
-      View::Range vtx_or_grid_y;
-      View::Range idx_or_grid_z;
+      Range ins_or_grid_x;
+      Range vtx_or_grid_y;
+      Range idx_or_grid_z;
       SBOffset sb_offset{ std::nullopt };
       PushData push_data{ std::nullopt };
     };
@@ -162,14 +162,14 @@ namespace RayGene3D
   public:
     Batch(const std::string& name,
       Config& config,
-      const std::pair<const Entity*, uint32_t>& entities,
-      const std::pair<const Sampler*, uint32_t>& samplers = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ub_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& sb_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& ri_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wi_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& rb_views = {},
-      const std::pair<const std::shared_ptr<View>*, uint32_t>& wb_views = {}
+      const std::pair<const Entity*, size_t>& entities,
+      const std::pair<const Sampler*, size_t>& samplers = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& ub_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& sb_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& ri_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& wi_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& rb_views = {},
+      const std::pair<const std::shared_ptr<View>*, size_t>& wb_views = {}
     );
     virtual ~Batch();
   };

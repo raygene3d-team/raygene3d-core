@@ -265,6 +265,7 @@ namespace RayGene3D
 
     {
       mesh_shader_supported = extension_check_fn(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+      mesh_shader_supported &= extension_check_fn(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
 
       if (mesh_shader_supported)
       {
@@ -275,6 +276,7 @@ namespace RayGene3D
         vkGetPhysicalDeviceProperties2(adapter, &device_properties);
 
         extension_names.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+        extension_names.push_back(VK_KHR_8BIT_STORAGE_EXTENSION_NAME);
       }
     }
 
@@ -295,12 +297,17 @@ namespace RayGene3D
 
     VkPhysicalDeviceMeshShaderFeaturesEXT ms_features = {};
     ms_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
-    ms_features.pNext = ray_tracing_supported ? &bda_features : nullptr;;
+    ms_features.pNext = ray_tracing_supported ? &bda_features : nullptr;
     ms_features.meshShader = true;
     ms_features.taskShader = true;
 
+    VkPhysicalDevice8BitStorageFeatures b8_features = {};
+    b8_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_8BIT_STORAGE_FEATURES;
+    b8_features.pNext = &ms_features;
+    b8_features.storageBuffer8BitAccess = true;
+
     void* extention_features = 
-      mesh_shader_supported ? (void*) & ms_features : 
+      mesh_shader_supported ? (void*) & b8_features : 
       ray_tracing_supported ? (void*) & bda_features: 
       nullptr;
 
@@ -433,7 +440,6 @@ namespace RayGene3D
   {
     auto src_image = reinterpret_cast<VLKResource*>(screen.get())->GetImage();
     {
-
       {
         auto begin_info = VkCommandBufferBeginInfo{};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

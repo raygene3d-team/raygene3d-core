@@ -35,63 +35,63 @@ namespace RayGene3D
     Device& device,
     const Resource::BufferDesc& desc,
     Resource::Hint hint, 
-    const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    std::pair<const uint8_t*, size_t> interop)
     : Usable(name)
     , device(device)
     , type(TYPE_BUFFER)
     , usage(desc.usage)
     , layers_or_stride(desc.stride)
-    , mipmaps_or_count(desc.count)
+    , levels_or_length(desc.length)
     , hint(hint)
-    , interops(interops.first, interops.first + interops.second)
+    , interop(interop)
   {
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex1DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    Resource::Hint hint, std::pair<const uint8_t*, size_t> interop)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX1D)
     , usage(desc.usage)
-    , mipmaps_or_count(desc.mipmaps)
+    , levels_or_length(desc.levels)
     , layers_or_stride(desc.layers)
     , format(desc.format)
     , size_x(desc.size_x)
     , hint(hint)
-    , interops(interops.first, interops.first + interops.second)
+    , interop(interop)
   {
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex2DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    Resource::Hint hint, std::pair<const uint8_t*, size_t> interop)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX2D)
     , usage(desc.usage)
-    , mipmaps_or_count(desc.mipmaps)
+    , levels_or_length(desc.levels)
     , layers_or_stride(desc.layers)
     , format(desc.format)
     , size_x(desc.size_x)
     , size_y(desc.size_y)
     , hint(hint)
-    , interops(interops.first, interops.first + interops.second)
+    , interop(interop)
   {
   }
 
   Resource::Resource(const std::string& name, Device& device, const Resource::Tex3DDesc& desc,
-    Resource::Hint hint, const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops)
+    Resource::Hint hint, std::pair<const uint8_t*, size_t> interop)
     : Usable(name)
     , device(device)
     , type(TYPE_TEX3D)
     , usage(desc.usage)
-    , mipmaps_or_count(desc.mipmaps)
+    , levels_or_length(desc.levels)
     , layers_or_stride(desc.layers)
     , format(desc.format)
     , size_x(desc.size_x)
     , size_y(desc.size_y)
     , size_z(desc.size_z)
     , hint(hint)
-    , interops(interops.first, interops.first + interops.second)
+    , interop(interop)
   {
   }
 

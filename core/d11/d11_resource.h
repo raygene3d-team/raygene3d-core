@@ -50,8 +50,8 @@ namespace RayGene3D
     } info;
 
   public:
-    void Commit(uint32_t index) override;
-    void Retrieve(uint32_t index) override;
+    void Commit() override;
+    void Retrieve() override;
     void Blit(const std::shared_ptr<Resource>& resource) override;
 
     void* Map() override;
@@ -68,11 +68,11 @@ namespace RayGene3D
   public:
     const std::shared_ptr<View>& CreateView(const std::string& name,
       Usage usage, 
-      const View::Range& mipmaps_or_count = View::Range{ 0, uint32_t(-1) },
-      const View::Range& layers_or_stride = View::Range{ 0, uint32_t(-1) },
+      const Range& levels_or_length = Range{ 0u, size_t(-1) },
+      const Range& layers_or_stride = Range{ 0u, size_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN) override
     {
-      return views.emplace_back(new D11View(name, *this, usage, mipmaps_or_count, layers_or_stride, bind));
+      return views.emplace_back(new D11View(name, *this, usage, levels_or_length, layers_or_stride, bind));
     }
 
   public:
@@ -85,22 +85,22 @@ namespace RayGene3D
       Device& device,
       const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     D11Resource(const std::string& name,
       Device& device,
       const Resource::Tex1DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     D11Resource(const std::string& name,
       Device& device,
       const Resource::Tex2DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     D11Resource(const std::string& name,
       Device& device,
       const Resource::Tex3DDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
-      const std::pair<std::pair<const void*, uint32_t>*, uint32_t>& interops = {});
+      std::pair<const uint8_t*, size_t> interop = {});
     virtual ~D11Resource();
   };
 }

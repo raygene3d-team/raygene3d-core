@@ -96,7 +96,16 @@ namespace RayGene3D
     virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,
       const std::string& source,
       Config::Compilation compilation,
-      const std::pair<const std::pair<std::string, std::string>*, uint32_t>& defines,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
+      const Config::IAState& ia_state,
+      const Config::RCState& rc_state,
+      const Config::DSState& ds_state,
+      const Config::OMState& om_state) = 0;
+    virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,
+      const std::string& path,
+      const std::string& file,
+      Config::Compilation compilation,
+      const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
       const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
@@ -118,9 +127,9 @@ namespace RayGene3D
       Pass::Type type,
       uint32_t size_x,
       uint32_t size_y,
-      uint32_t layers,
-      const std::pair<const Pass::RTAttachment*, uint32_t>& rt_attachments,
-      const std::pair<const Pass::DSAttachment*, uint32_t>& ds_attachments
+      size_t layers,
+      const std::pair<const Pass::RTAttachment*, size_t>& rt_attachments,
+      const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments
     );
     virtual ~Pass();
   };

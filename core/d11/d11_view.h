@@ -65,12 +65,8 @@ namespace RayGene3D
     D11View(const std::string& name,
       Resource& resource,
       Usage usage,
-      const View::Range& bytes = Range{ 0, uint32_t(-1) });
-    D11View(const std::string& name,
-      Resource& resource,
-      Usage usage,
-      const View::Range& mipmaps_or_count = Range{ 0, uint32_t(-1) },
-      const View::Range& layers_or_stride = Range{ 0, uint32_t(-1) },
+      const Range& levels_or_length = Range{ 0u, size_t(-1) },
+      const Range& layers_or_stride = Range{ 0u, size_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN);
     virtual ~D11View();
   };
