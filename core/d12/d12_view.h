@@ -38,7 +38,7 @@ namespace RayGene3D
   class D12View : public View
   {
   protected:
-    ID3D11View* view{ nullptr };
+    D3D12_CPU_DESCRIPTOR_HANDLE handle;
 
     union Info
     {
@@ -49,12 +49,12 @@ namespace RayGene3D
     } info;
 
   public:
-    void SetView(ID3D11View* view) { this->view = view; }
-    ID3D11View* GetView() { return view; }
-    ID3D11ShaderResourceView* GetSRView() const { return reinterpret_cast<ID3D11ShaderResourceView*>(view); }
-    ID3D11RenderTargetView* GetRTView() const { return reinterpret_cast<ID3D11RenderTargetView*>(view); }
-    ID3D11DepthStencilView* GetDSView() const { return reinterpret_cast<ID3D11DepthStencilView*>(view); }
-    ID3D11UnorderedAccessView* GetUAView() const { return reinterpret_cast<ID3D11UnorderedAccessView*>(view); }
+  //  void SetView(D3D12_CPU_DESCRIPTOR_HANDLE view) { this->view = view; }
+    D3D12_CPU_DESCRIPTOR_HANDLE GetView() const { return handle; }
+  //  ID3D11ShaderResourceView* GetSRView() const { return reinterpret_cast<ID3D11ShaderResourceView*>(view); }
+  //  ID3D11RenderTargetView* GetRTView() const { return reinterpret_cast<ID3D11RenderTargetView*>(view); }
+  //  ID3D11DepthStencilView* GetDSView() const { return reinterpret_cast<ID3D11DepthStencilView*>(view); }
+  //  ID3D11UnorderedAccessView* GetUAView() const { return reinterpret_cast<ID3D11UnorderedAccessView*>(view); }
 
   public:
     void Initialize() override;

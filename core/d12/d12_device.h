@@ -41,10 +41,20 @@ namespace RayGene3D
   {
   protected:
     ID3D12Device* device{ nullptr };
-    ID3D12CommandQueue* queue{ nullptr };
-    ID3D11DeviceContext* context{ nullptr };
+    ID3D12CommandQueue* command_queue{ nullptr };
+    ID3D12CommandAllocator* command_allocator{ nullptr };
+    ID3D12GraphicsCommandList* command_list{ nullptr };
     IDXGISwapChain* swapchain{ nullptr };
-    ID3D12Resource* backbuffer{ nullptr };
+    ID3D12Resource* back_buffer{ nullptr };
+    ID3D12Resource* screen_buffer{ nullptr };
+    ID3D12Resource* staging_buffer{ nullptr };
+
+  protected:
+    ID3D12DescriptorHeap* cbv_srv_uav_heap{ nullptr };
+    ID3D12DescriptorHeap* sampler_heap{ nullptr };
+
+  protected:
+    size_t staging_size{ 64 * 1024 * 1024 };
 
   public:
     void Update(std::pair<void*, size_t> src, std::pair<std::shared_ptr<Resource>, uint32_t> dst);
@@ -96,8 +106,14 @@ namespace RayGene3D
     }
 
   public:
-    ID3D11Device* GetDevice() const { return device; }
-    ID3D11DeviceContext* GetContext() const { return context; }
+    ID3D12Device* GetDevice() const { return device; }
+    ID3D12CommandQueue* GetCommandQueue() const { return command_queue; }
+    ID3D12CommandAllocator* GetCommandAllocator() const { return command_allocator; }
+    ID3D12GraphicsCommandList* GetCommandList() const { return command_list; }
+
+  public:
+    size_t GetStagingSize() const { return staging_size; }
+    ID3D12Resource* GetStagingBuffer() const { return staging_buffer; }
 
   public:
     void Initialize() override;

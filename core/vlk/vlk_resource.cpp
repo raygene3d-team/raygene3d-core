@@ -128,7 +128,6 @@ namespace RayGene3D
         const auto staging_buffer = device->GetStagingBuffer();
         const auto staging_memory = device->GetStagingMemory();
 
-        auto offset = size_t(0u);
         for (auto i = 0u; i < (interop_size + staging_size - 1) / staging_size; ++i)
         {
           const auto data = interop_data + i * staging_size;
@@ -145,20 +144,20 @@ namespace RayGene3D
 
           BLAST_ASSERT(VK_SUCCESS == vkBeginCommandBuffer(command_buffer, &begin_info));
 
-          VkBufferCopy copyRegion{};
-          copyRegion.srcOffset = 0; // Optional
-          copyRegion.dstOffset = i * staging_size; // Optional
-          copyRegion.size = std::min(staging_size, interop_size - i * staging_size);
-          vkCmdCopyBuffer(command_buffer, staging_buffer, buffer, 1, &copyRegion);
+          VkBufferCopy copy_region{};
+          copy_region.srcOffset = 0; // Optional
+          copy_region.dstOffset = i * staging_size; // Optional
+          copy_region.size = std::min(staging_size, interop_size - i * staging_size);
+          vkCmdCopyBuffer(command_buffer, staging_buffer, buffer, 1, &copy_region);
 
           BLAST_ASSERT(VK_SUCCESS == vkEndCommandBuffer(command_buffer));
 
-          VkSubmitInfo submitInfo{};
-          submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-          submitInfo.commandBufferCount = 1;
-          submitInfo.pCommandBuffers = &command_buffer;
+          VkSubmitInfo submit_info{};
+          submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+          submit_info.commandBufferCount = 1;
+          submit_info.pCommandBuffers = &command_buffer;
 
-          BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE));
+          BLAST_ASSERT(VK_SUCCESS == vkQueueSubmit(device->GetQueue(), 1, &submit_info, VK_NULL_HANDLE));
           BLAST_ASSERT(VK_SUCCESS == vkQueueWaitIdle(device->GetQueue()));
         }
         vkFreeCommandBuffers(device->GetDevice(), device->GetCommandPool(), 1, &command_buffer);

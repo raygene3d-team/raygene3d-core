@@ -46,7 +46,7 @@ namespace RayGene3D
     }
 
     IDXGIFactory* factory = nullptr;
-    BLAST_ASSERT(S_OK == CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)(&factory)));
+    BLAST_ASSERT(S_OK == CreateDXGIFactory(IID_PPV_ARGS(&factory)));
 
     IDXGIAdapter* adapter = nullptr;
     BLAST_ASSERT(S_OK == factory->EnumAdapters(ordinal, &adapter));
@@ -63,12 +63,17 @@ namespace RayGene3D
     const D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_12_0;
     const D3D_DRIVER_TYPE driver_type = D3D_DRIVER_TYPE_UNKNOWN;
 
-    BLAST_ASSERT(S_OK == D3D12CreateDevice(adapter, feature_level, __uuidof(ID3D12Device), (void**)(&device)));
+    BLAST_ASSERT(S_OK == D3D12CreateDevice(adapter, feature_level, IID_PPV_ARGS(&device)));
 
     D3D12_COMMAND_QUEUE_DESC queue_desc = {};
     queue_desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
     queue_desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    BLAST_ASSERT(S_OK == device->CreateCommandQueue(&queue_desc, __uuidof(ID3D12CommandQueue), (void**)(&queue)));
+    BLAST_ASSERT(S_OK == device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&command_queue)));
+
+    BLAST_ASSERT(S_OK == device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&command_allocator)));
+
+    BLAST_ASSERT(S_OK == device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, command_allocator, nullptr, IID_PPV_ARGS(&command_list)));
+
 
 
     if (window)
@@ -89,17 +94,48 @@ namespace RayGene3D
       swapchain_desc.Flags = 0;
 
       IDXGIDevice* dxgi_device = nullptr;
-      BLAST_ASSERT(S_OK == device->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgi_device));
+      BLAST_ASSERT(S_OK == device->QueryInterface(IID_PPV_ARGS(&dxgi_device)));
 
       IDXGIAdapter* dxgi_adapter = nullptr;
-      BLAST_ASSERT(S_OK == dxgi_device->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgi_adapter));
+      BLAST_ASSERT(S_OK == dxgi_device->GetParent(IID_PPV_ARGS(&dxgi_adapter)));
 
       IDXGIFactory* dxgi_factory = nullptr;
-      BLAST_ASSERT(S_OK == dxgi_adapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgi_factory));
+      BLAST_ASSERT(S_OK == dxgi_adapter->GetParent(IID_PPV_ARGS(&dxgi_factory)));
 
       BLAST_ASSERT(S_OK == dxgi_factory->CreateSwapChain(device, &swapchain_desc, &swapchain));
 
-      BLAST_ASSERT(S_OK == swapchain->GetBuffer(0, __uuidof(ID3D12Resource), (void**)&backbuffer));
+      BLAST_ASSERT(S_OK == swapchain->GetBuffer(0, IID_PPV_ARGS(&screen_buffer)));
+
+      {
+        D3D12_HEAP_PROPERTIES heap_properties = {};
+        heap_properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+        heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+        heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+        heap_properties.CreationNodeMask = 0;
+        heap_properties.VisibleNodeMask = 0;
+
+        D3D12_RESOURCE_DESC  resource_desc = {};
+        resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+        resource_desc.Alignment = 0;
+        resource_desc.Width = staging_size;
+        resource_desc.Height = 1;
+        resource_desc.DepthOrArraySize = 1;
+        resource_desc.MipLevels = 1;
+        resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+        resource_desc.SampleDesc = {0, 0};
+        resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+        resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+        BLAST_ASSERT(S_OK == device->CreateCommittedResource(
+          &heap_properties,
+          D3D12_HEAP_FLAG_NONE,
+          &resource_desc,
+          D3D12_RESOURCE_STATE_COPY_SOURCE,
+          nullptr,
+          IID_PPV_ARGS(&staging_buffer)));
+      }
+
+      
     }
 
     //for (auto& resource : resources)
@@ -169,9 +205,51 @@ namespace RayGene3D
       pass->Use();
     }
 
-    if (screen && backbuffer)
+    if (screen && back_buffer)
     {
-      context->CopyResource(backbuffer, reinterpret_cast<D12Resource*>(screen.get())->GetResource());
+      auto screen_buffer = reinterpret_cast<D12Resource*>(screen.get())->GetResource();
+      
+      {
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = screen_buffer;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+        command_list->ResourceBarrier(1, &barrier);
+      }
+
+      {
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = back_buffer;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+        command_list->ResourceBarrier(1, &barrier);        
+      }
+      
+      command_list->CopyResource(back_buffer, screen_buffer);
+
+      {
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = back_buffer;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+        command_list->ResourceBarrier(1, &barrier);
+      } 
+      
+      {
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+        barrier.Transition.pResource = screen_buffer;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        command_list->ResourceBarrier(1, &barrier);
+      }
     }
 
     if (swapchain)
@@ -193,10 +271,16 @@ namespace RayGene3D
     //  if (resource) { resource->Discard(); }
     //}
 
-    if (backbuffer)
+    if (screen_buffer)
     {
-      backbuffer->Release();
-      backbuffer = nullptr;
+      screen_buffer->Release();
+      screen_buffer = nullptr;
+    }
+
+    if (staging_buffer)
+    {
+      staging_buffer->Release();
+      staging_buffer = nullptr;
     }
 
     if (swapchain)
@@ -205,10 +289,22 @@ namespace RayGene3D
       swapchain = nullptr;
     }
 
-    if (context)
+    if (command_list)
     {
-      context->Release();
-      context = nullptr;
+      command_list->Release();
+      command_list = nullptr;
+    }
+
+    if (command_allocator)
+    {
+      command_allocator->Release();
+      command_allocator = nullptr;
+    }
+
+    if (command_queue)
+    {
+      command_queue->Release();
+      command_queue = nullptr;
     }
 
     if (device)

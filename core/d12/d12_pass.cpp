@@ -44,12 +44,12 @@ namespace RayGene3D
   {
     if (!enabled) return;
 
-    auto device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto device = reinterpret_cast<D12Device*>(&this->GetDevice());
 
     if (type == TYPE_GRAPHIC)
     {
-      const auto rt_limit = size_t(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT);
-      ID3D11RenderTargetView* rt_items[rt_limit]{ nullptr };
+      constexpr auto rt_limit = size_t(D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
+      D3D12_CPU_DESCRIPTOR_HANDLE rt_items[rt_limit] = {};
       const auto rt_count = std::min(rt_limit, rt_attachments.size());
       for (auto i = 0; i < rt_count; ++i)
       {
@@ -58,18 +58,18 @@ namespace RayGene3D
 
         if (rt_view)
         {
-          rt_items[i] = (reinterpret_cast<D11View*>(rt_view.get()))->GetRTView();
+          rt_items[i] = (reinterpret_cast<D12View*>(rt_view.get()))->GetView();
 
           if (rt_value)
           {
             const auto& clear_target = rt_value.value();
-            device->GetContext()->ClearRenderTargetView(rt_items[i], clear_target.data());
+            device->GetCommandList()->ClearRenderTargetView(rt_items[i], clear_target.data(), 0, nullptr);
           }
         }
       }
 
-      const auto ds_limit = size_t(1);
-      ID3D11DepthStencilView* ds_items[ds_limit]{ nullptr };
+      constexpr auto ds_limit = size_t(1);
+      D3D12_CPU_DESCRIPTOR_HANDLE ds_items[ds_limit] = {};
       const auto ds_count = std::min(ds_limit, ds_attachments.size());
       for (size_t i = 0; i < ds_count; ++i)
       {
@@ -78,32 +78,32 @@ namespace RayGene3D
 
         if (ds_view)
         {
-          ds_items[i] = (reinterpret_cast<D11View*>(ds_view.get()))->GetDSView();
+          ds_items[i] = (reinterpret_cast<D12View*>(ds_view.get()))->GetView();
 
-          uint32_t clear_flags = 0;
+          D3D12_CLEAR_FLAGS clear_flags = {};
           float clear_depth = 0.0f;
           uint8_t clear_stencil = 0;
 
           if (ds_value.first)
           {
-            clear_flags |= D3D11_CLEAR_DEPTH;
+            clear_flags |= D3D12_CLEAR_FLAG_DEPTH;
             clear_depth = ds_value.first.value();
           }
 
           if (ds_value.second)
           {
-            clear_flags |= D3D11_CLEAR_STENCIL;
+            clear_flags |= D3D12_CLEAR_FLAG_STENCIL;
             clear_stencil = ds_value.second.value();
           }
 
           if (clear_flags)
           {
-            device->GetContext()->ClearDepthStencilView(ds_items[i], clear_flags, clear_depth, clear_stencil);
+            device->GetCommandList()->ClearDepthStencilView(ds_items[i], clear_flags, clear_depth, clear_stencil, 0, nullptr);
           }
         }
       }
 
-      device->GetContext()->OMSetRenderTargets(rt_count, rt_items, ds_items[0]);
+      device->GetCommandList()->OMSetRenderTargets(rt_count, rt_items, false, &ds_items[0]);
     }
 
     for (const auto& config : configs)
@@ -111,7 +111,7 @@ namespace RayGene3D
       config->Use();
     }
 
-    device->GetContext()->ClearState();
+    //device->GetCommandList()->ClearState();
   }
 
   void D12Pass::Discard()

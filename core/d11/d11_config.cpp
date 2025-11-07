@@ -146,8 +146,6 @@ namespace RayGene3D
   static void D11Compile(const std::string& source, const char* entry, const char* target, 
     std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
   {
-
-
     D11Includer includer(path);
 
     const uint32_t flags{ D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3 };

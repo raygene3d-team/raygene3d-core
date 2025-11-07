@@ -41,13 +41,7 @@ namespace RayGene3D
   protected:
     ID3D12Resource* resource{ nullptr };
 
-    union Info
-    {
-      D3D11_BUFFER_DESC buffer_desc;
-      D3D11_TEXTURE1D_DESC tex1d_desc;
-      D3D11_TEXTURE2D_DESC tex2d_desc;
-      D3D11_TEXTURE3D_DESC tex3d_desc;
-    } info;
+    D3D12_RESOURCE_DESC desc;
 
   public:
     void Commit() override;
@@ -58,12 +52,12 @@ namespace RayGene3D
     void Unmap() override;
 
   public:
-    void SetResource(ID3D11Resource* resource) { this->resource = resource; }
-    ID3D11Resource* GetResource() { return resource; }
-    ID3D11Buffer* GetBuffer() const { return reinterpret_cast<ID3D11Buffer*>(resource); }
-    ID3D11Texture1D* GetTexture1D() const { return reinterpret_cast<ID3D11Texture1D*>(resource); }
-    ID3D11Texture2D* GetTexture2D() const { return reinterpret_cast<ID3D11Texture2D*>(resource); }
-    ID3D11Texture3D* GetTexture3D() const { return reinterpret_cast<ID3D11Texture3D*>(resource); }
+    void SetResource(ID3D12Resource* resource) { this->resource = resource; }
+    ID3D12Resource* GetResource() { return resource; }
+    //ID3D11Buffer* GetBuffer() const { return reinterpret_cast<ID3D11Buffer*>(resource); }
+    //ID3D11Texture1D* GetTexture1D() const { return reinterpret_cast<ID3D11Texture1D*>(resource); }
+    //ID3D11Texture2D* GetTexture2D() const { return reinterpret_cast<ID3D11Texture2D*>(resource); }
+    //ID3D11Texture3D* GetTexture3D() const { return reinterpret_cast<ID3D11Texture3D*>(resource); }
 
   public:
     const std::shared_ptr<View>& CreateView(const std::string& name,

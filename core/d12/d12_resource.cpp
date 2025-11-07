@@ -45,48 +45,34 @@ namespace RayGene3D
       return;
     }
 
-    D11Device* device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    auto device = reinterpret_cast<D12Device*>(&this->GetDevice());
 
-    const auto get_usage = [this]()
+    const auto get_state = [this]()
     {
-      D3D11_USAGE usage = D3D11_USAGE_DEFAULT;
-      usage = hint & HINT_DYNAMIC_BUFFER ? D3D11_USAGE_DYNAMIC : usage;
-      return usage;
-    };
-
-    const auto get_access = [this]()
-    {
-      uint32_t access = 0;
-      access = hint & HINT_DYNAMIC_BUFFER ? uint32_t(D3D11_CPU_ACCESS_WRITE) : access;
-      return access;
-    };
-
-    const auto get_misc = [this]()
-    {
-      uint32_t misc = 0;
-      misc = hint & HINT_CUBEMAP_IMAGE ? misc | D3D11_RESOURCE_MISC_TEXTURECUBE : misc;
+      auto state = D3D12_RESOURCE_STATE_COMMON | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
       {
-        misc = (type == TYPE_BUFFER && (usage & USAGE_SHADER_RESOURCE))  ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
-        misc = (type == TYPE_BUFFER && (usage & USAGE_UNORDERED_ACCESS)) ? misc | D3D11_RESOURCE_MISC_BUFFER_STRUCTURED : misc;
-        misc = (type == TYPE_BUFFER && (usage & USAGE_ARGUMENT_LIST)) ? misc | D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS : misc;
+        state |= usage & USAGE_SHADER_RESOURCE  ? state | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE             : state;
+        state |= usage & USAGE_RENDER_TARGET    ? state | D3D12_RESOURCE_STATE_RENDER_TARGET                     : state;
+        state |= usage & USAGE_DEPTH_STENCIL    ? state | D3D12_RESOURCE_STATE_DEPTH_WRITE                       : state;
+        state |= usage & USAGE_UNORDERED_ACCESS ? state | D3D12_RESOURCE_STATE_UNORDERED_ACCESS                  : state;
+        state |= usage & USAGE_VERTEX_ARRAY     ? state | D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER        : state;
+        state |= usage & USAGE_INDEX_ARRAY      ? state | D3D12_RESOURCE_STATE_INDEX_BUFFER                      : state;
+        state |= usage & USAGE_CONSTANT_DATA    ? state | D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER        : state;
+        state |= usage & USAGE_ARGUMENT_LIST    ? state | D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT                 : state;
+        state |= usage & USAGE_RAYTRACING_INPUT ? state | D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE : state;
       }
-      return misc;
     };
 
-    const auto get_bind = [this]()
+    const auto get_flags = [this]()
     {
-      uint32_t bind = 0;
+      auto flags = D3D12_RESOURCE_FLAG_NONE;
       {
-        bind = usage & USAGE_SHADER_RESOURCE ? bind | D3D11_BIND_SHADER_RESOURCE : bind;
-        bind = usage & USAGE_RENDER_TARGET ? bind | D3D11_BIND_RENDER_TARGET : bind;
-        bind = usage & USAGE_DEPTH_STENCIL ? bind | D3D11_BIND_DEPTH_STENCIL : bind;
-        bind = usage & USAGE_UNORDERED_ACCESS ? bind | D3D11_BIND_UNORDERED_ACCESS : bind;
-        bind = usage & USAGE_VERTEX_ARRAY ? bind | D3D11_BIND_VERTEX_BUFFER : bind;
-        bind = usage & USAGE_INDEX_ARRAY ? bind | D3D11_BIND_INDEX_BUFFER : bind;
-        bind = usage & USAGE_CONSTANT_DATA ? bind | D3D11_BIND_CONSTANT_BUFFER : bind;
-        bind = usage & USAGE_ARGUMENT_LIST ? bind | D3D11_BIND_VIDEO_ENCODER : bind; // Hack to create command buffer
+        flags = usage &~USAGE_SHADER_RESOURCE  ? flags | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE   : flags;
+        flags = usage & USAGE_RENDER_TARGET    ? flags | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET    : flags;
+        flags = usage & USAGE_DEPTH_STENCIL    ? flags | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL    : flags;
+        flags = usage & USAGE_UNORDERED_ACCESS ? flags | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : flags;
       }
-      return bind;
+      return flags;
     };
 
     const auto get_format = [this]()
@@ -167,208 +153,76 @@ namespace RayGene3D
       }
     };
 
-    const auto populate_texture_subresources_fn =
-      [this](std::pair<const uint8_t*, size_t> interop)
-      {
-        BLAST_ASSERT(layers_or_stride * Size(format, size_x, size_y, size_z, { 0, levels_or_length }) == interop.second);
-
-        auto offset = 0ull;
-        auto result = std::vector<D3D11_SUBRESOURCE_DATA>(layers_or_stride * levels_or_length);
-        for (size_t i = 0; i < layers_or_stride; ++i)
-        {
-          for (size_t j = 0; j < levels_or_length; ++j)
-          {
-            const auto size = Size(format, size_x, size_y, size_z, { j, 1 });
-            const auto data = interop.first + offset;
-
-            result[i * levels_or_length + j].pSysMem = data;
-            result[i * levels_or_length + j].SysMemPitch = size / Mip(size_x, j);
-            result[i * levels_or_length + j].SysMemSlicePitch = size / size_t(Mip(size_x, j) * Mip(size_y, j));
-
-            offset += size;
-          }
-        }
-        return result;
-      };
-
-    const auto populate_buffer_subresources_fn = 
-      [this](std::pair<const uint8_t*, size_t> interop)
-      {
-        D3D11_SUBRESOURCE_DATA subres_data = {};
-        subres_data.pSysMem = interop.first;
-        subres_data.SysMemPitch = 0;
-        subres_data.SysMemSlicePitch = 0;
-        
-        return subres_data;
-      };
-
     switch (type)
     {
     case TYPE_BUFFER:
     {
-      D3D11_BUFFER_DESC buffer_desc = {};
-      buffer_desc.ByteWidth = levels_or_length * layers_or_stride;
-      buffer_desc.Usage = get_usage();
-      buffer_desc.BindFlags = get_bind();
-      buffer_desc.CPUAccessFlags = get_access();
-      buffer_desc.MiscFlags = get_misc();
-      buffer_desc.StructureByteStride = layers_or_stride;
-
-      if (interop.first == nullptr || interop.second == 0)
-      {
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateBuffer(&buffer_desc,
-          nullptr, reinterpret_cast<ID3D11Buffer**>(&resource)));        
-      }
-      else
-      {
-        const auto subresource = populate_buffer_subresources_fn(interop);
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateBuffer(&buffer_desc, 
-          &subresource, reinterpret_cast<ID3D11Buffer**>(&resource)));
-      }
-
-      GetBuffer()->GetDesc(&info.buffer_desc);
+      desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+      desc.Alignment = 0;
+      desc.Width = levels_or_length * layers_or_stride;
+      desc.Height = 1;
+      desc.DepthOrArraySize = 1;
+      desc.MipLevels = 1;
+      desc.Format = DXGI_FORMAT_UNKNOWN;
+      desc.SampleDesc = { 0, 0 };
+      desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+      desc.Flags = get_flags();
       break;
     }
 
     case TYPE_TEX1D:
     {
-      D3D11_TEXTURE1D_DESC tex1d_desc = {};
-      tex1d_desc.Width = size_x;
-      tex1d_desc.MipLevels = levels_or_length;
-      tex1d_desc.ArraySize = layers_or_stride;
-      tex1d_desc.Format = get_format();
-      tex1d_desc.Usage = get_usage();
-      tex1d_desc.BindFlags = get_bind();
-      tex1d_desc.CPUAccessFlags = get_access();
-      tex1d_desc.MiscFlags = get_misc();
-
-      //std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(interops.size());
-      //for (size_t i = 0; i < arr_sd_items.size(); ++i)
-      //{
-      //  const auto [data, size] = interops[i];
-      //  BLAST_ASSERT(data != nullptr && size != 0);
-
-      //  const auto mip_extent_x = size_x >> j;
-      //  const auto mip_extent_y = size_y >> j;
-
-      //  arr_sd_items[i * levels_or_length + j].pSysMem = data;
-      //  arr_sd_items[i * levels_or_length + j].SysMemPitch = size / mip_extent_y;
-      //  arr_sd_items[i * levels_or_length + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
-      //}
-      if (interop.first == nullptr || interop.second == 0)
-      {
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture1D(&tex1d_desc, 
-          nullptr, reinterpret_cast<ID3D11Texture1D**>(&resource)));
-      }
-      else
-      {
-        const auto subresources = populate_texture_subresources_fn(interop);
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture1D(&tex1d_desc, 
-          subresources.data(), reinterpret_cast<ID3D11Texture1D**>(&resource)));
-      }
-
-      GetTexture1D()->GetDesc(&info.tex1d_desc);
+      desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE1D;
+      desc.Alignment = 0;
+      desc.Width = size_x;
+      desc.Height = 1;
+      desc.DepthOrArraySize = layers_or_stride;
+      desc.MipLevels = levels_or_length;
+      desc.Format = get_format();
+      desc.SampleDesc = { 1, 0 };
+      desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+      desc.Flags = get_flags();
       break;
     }
 
     case TYPE_TEX2D:
     {
-      D3D11_TEXTURE2D_DESC tex2d_desc = {};
-      tex2d_desc.Width = size_x;
-      tex2d_desc.Height = size_y;
-      tex2d_desc.MipLevels = levels_or_length;
-      tex2d_desc.ArraySize = layers_or_stride;
-      tex2d_desc.Format = get_format();
-      tex2d_desc.SampleDesc = { 1, 0 };
-      tex2d_desc.Usage = get_usage();
-      tex2d_desc.BindFlags = get_bind();
-      tex2d_desc.CPUAccessFlags = get_access();
-      tex2d_desc.MiscFlags = get_misc();
+      desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+      desc.Alignment = 0;
+      desc.Width = size_x;
+      desc.Height = size_y;
+      desc.DepthOrArraySize = layers_or_stride;
+      desc.MipLevels = levels_or_length;
+      desc.Format = get_format();
+      desc.SampleDesc = { 1, 0 };
+      desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+      desc.Flags = get_flags();
 
-      if (tex2d_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
-      {
-        switch (tex2d_desc.Format)
-        {
-        case DXGI_FORMAT_D32_FLOAT_S8X24_UINT: tex2d_desc.Format = DXGI_FORMAT_R32G8X24_TYPELESS; break;
-        case DXGI_FORMAT_D32_FLOAT: tex2d_desc.Format = DXGI_FORMAT_R32_TYPELESS; break;
-        case DXGI_FORMAT_D24_UNORM_S8_UINT: tex2d_desc.Format = DXGI_FORMAT_R24G8_TYPELESS; break;
-        case DXGI_FORMAT_D16_UNORM: tex2d_desc.Format = DXGI_FORMAT_R16_TYPELESS; break;
-        }
-      }
-
-      //std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(levels_or_length * layers_or_stride);
-      //for (uint32_t i = 0; i < layers_or_stride; ++i)
+      //if (tex2d_desc.BindFlags & D3D11_BIND_DEPTH_STENCIL)
       //{
-      //  for (uint32_t j = 0; j < levels_or_length; ++j)
+      //  switch (tex2d_desc.Format)
       //  {
-      //    const auto [data, size] = interops[i];
-      //    BLAST_ASSERT(data != nullptr && size != 0);
-
-      //    const auto mip_extent_x = size_x >> j;
-      //    const auto mip_extent_y = size_y >> j;
-
-      //    arr_sd_items[i * levels_or_length + j].pSysMem = data;
-      //    arr_sd_items[i * levels_or_length + j].SysMemPitch = size / mip_extent_y;
-      //    arr_sd_items[i * levels_or_length + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
+      //  case DXGI_FORMAT_D32_FLOAT_S8X24_UINT: tex2d_desc.Format = DXGI_FORMAT_R32G8X24_TYPELESS; break;
+      //  case DXGI_FORMAT_D32_FLOAT: tex2d_desc.Format = DXGI_FORMAT_R32_TYPELESS; break;
+      //  case DXGI_FORMAT_D24_UNORM_S8_UINT: tex2d_desc.Format = DXGI_FORMAT_R24G8_TYPELESS; break;
+      //  case DXGI_FORMAT_D16_UNORM: tex2d_desc.Format = DXGI_FORMAT_R16_TYPELESS; break;
       //  }
       //}
-
-      if (interop.first == nullptr || interop.second == 0)
-      {
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture2D(&tex2d_desc,
-          nullptr, reinterpret_cast<ID3D11Texture2D**>(&resource)));
-      }
-      else
-      {
-        const auto subresources = populate_texture_subresources_fn(interop);
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture2D(&tex2d_desc,
-          subresources.data(), reinterpret_cast<ID3D11Texture2D**>(&resource)));
-      }
-      
-      GetTexture2D()->GetDesc(&info.tex2d_desc);
       break;
     }
 
     case TYPE_TEX3D:
     {
-      D3D11_TEXTURE3D_DESC tex3d_desc = {};
-      tex3d_desc.Width = size_x;
-      tex3d_desc.Height = size_x;
-      tex3d_desc.Depth = size_x;
-      tex3d_desc.MipLevels = levels_or_length;
-      tex3d_desc.Format = get_format();
-      tex3d_desc.Usage = get_usage();
-      tex3d_desc.BindFlags = get_bind();
-      tex3d_desc.CPUAccessFlags = get_access();
-      tex3d_desc.MiscFlags = get_misc();
-
-      //std::vector<D3D11_SUBRESOURCE_DATA> arr_sd_items(interops.size());
-      //for (size_t i = 0; i < arr_sd_items.size(); ++i)
-      //{
-      //  const auto [data, size] = interops[i];
-      //  BLAST_ASSERT(data != nullptr && size != 0);
-
-      //  const auto mip_extent_x = size_x >> j;
-      //  const auto mip_extent_y = size_y >> j;
-
-      //  arr_sd_items[i * levels_or_length + j].pSysMem = data;
-      //  arr_sd_items[i * levels_or_length + j].SysMemPitch = size / mip_extent_y;
-      //  arr_sd_items[i * levels_or_length + j].SysMemSlicePitch = size / (mip_extent_x * mip_extent_y);
-      //}
-
-      if (interop.first == nullptr || interop.second == 0)
-      {
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture3D(&tex3d_desc,
-          nullptr, reinterpret_cast<ID3D11Texture3D**>(&resource)));
-      }
-      else
-      {
-        const auto subresources = populate_texture_subresources_fn(interop);
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateTexture3D(&tex3d_desc,
-          subresources.data(), reinterpret_cast<ID3D11Texture3D**>(&resource)));
-      }
-
-      GetTexture3D()->GetDesc(&info.tex3d_desc);
+      desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+      desc.Alignment = 0;
+      desc.Width = size_x;
+      desc.Height = size_y;
+      desc.DepthOrArraySize = size_z;
+      desc.MipLevels = levels_or_length;
+      desc.Format = get_format();
+      desc.SampleDesc = { 1, 0 };
+      desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+      desc.Flags = get_flags();
       break;
     }
 
@@ -376,6 +230,205 @@ namespace RayGene3D
       break;
     }
 
+    D3D12_HEAP_PROPERTIES heap_prop = {};
+    heap_prop.Type = hint & HINT_DYNAMIC_BUFFER ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT;
+    heap_prop.CPUPageProperty = hint & HINT_DYNAMIC_BUFFER ? D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE : D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE;
+    heap_prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+    heap_prop.CreationNodeMask = 0;
+    heap_prop.VisibleNodeMask = 0;
+
+    BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommittedResource(
+      &heap_prop, 
+      D3D12_HEAP_FLAG_NONE,
+      &desc, 
+      D3D12_RESOURCE_STATE_COMMON, 
+      nullptr, 
+      IID_PPV_ARGS(&resource)));
+
+    desc = resource->GetDesc();
+
+
+    //const auto populate_texture_subresources_fn =
+    //  [this](std::pair<const uint8_t*, size_t> interop)
+    //  {
+    //    BLAST_ASSERT(layers_or_stride * Size(format, size_x, size_y, size_z, { 0, levels_or_length }) == interop.second);
+
+    //    auto offset = 0ull;
+    //    auto result = std::vector<D3D12_SUBRESOURCE_DATA>(layers_or_stride * levels_or_length);
+    //    for (size_t i = 0; i < layers_or_stride; ++i)
+    //    {
+    //      for (size_t j = 0; j < levels_or_length; ++j)
+    //      {
+    //        const auto size = Size(format, size_x, size_y, size_z, { j, 1 });
+    //        const auto data = interop.first + offset;
+
+    //        result[i * levels_or_length + j].pData = data;
+    //        result[i * levels_or_length + j].RowPitch = size / Mip(size_x, j);
+    //        result[i * levels_or_length + j].SlicePitch = size / size_t(Mip(size_x, j) * Mip(size_y, j));
+
+    //        offset += size;
+    //      }
+    //    }
+    //    return result;
+    //  };
+
+    //const auto populate_buffer_subresources_fn =
+    //  [this](std::pair<const uint8_t*, size_t> interop)
+    //  {
+    //    D3D12_SUBRESOURCE_DATA subres_data = {};
+    //    subres_data.pData = interop.first;
+    //    subres_data.RowPitch = 0;
+    //    subres_data.SlicePitch = 0;
+
+    //    return subres_data;
+    //  };
+
+    if (interop != std::pair(nullptr, 0))
+    {
+      switch (type)
+      {
+      case TYPE_BUFFER:
+      {
+        const auto interop_data = interop.first;
+        BLAST_ASSERT(interop_data != nullptr);
+
+        const auto interop_size = interop.second;
+        BLAST_ASSERT(interop_size == levels_or_length * layers_or_stride);
+
+        const auto staging_size = device->GetStagingSize();
+        const auto staging_buffer = device->GetStagingBuffer();
+
+        ID3D12GraphicsCommandList* command_list = nullptr;
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, 
+          device->GetCommandAllocator(), nullptr, IID_PPV_ARGS(&command_list)));
+
+        size_t fence_value = 0;
+        ID3D12Fence* fence = nullptr;
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+        HANDLE fence_event = CreateEvent(nullptr, false, false, nullptr);
+
+        for (auto i = 0u; i < (interop_size + staging_size - 1) / staging_size; ++i)
+        {
+          const auto data = interop_data + i * staging_size;
+          const auto size = std::min(staging_size, interop_size - i * staging_size);
+
+          uint8_t* mapped = nullptr;
+          BLAST_ASSERT(S_OK == staging_buffer->Map(0, nullptr, reinterpret_cast<void**>(&mapped)));
+          memcpy(mapped, data, size);
+          staging_buffer->Unmap(0, nullptr);
+
+          command_list->CopyBufferRegion(resource, i * staging_size, staging_buffer, 0, size);
+
+          BLAST_ASSERT(S_OK == command_list->Close());
+          device->GetCommandQueue()->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
+
+          ++fence_value;
+          BLAST_ASSERT(S_OK == device->GetCommandQueue()->Signal(fence, fence_value));
+          BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+          WaitForSingleObject(fence_event, INFINITE);
+        }
+        command_list->Release();
+        fence->Release();
+        CloseHandle(fence_event);
+      }
+      break;
+      case TYPE_TEX1D:
+      case TYPE_TEX2D:
+      case TYPE_TEX3D:
+      {
+        const auto interop_data = interop.first;
+        BLAST_ASSERT(interop_data != nullptr);
+
+        const auto interop_size = interop.second;
+        BLAST_ASSERT(interop_size == Size(format, size_x, size_y, size_z, { 0, levels_or_length }) * layers_or_stride);
+
+        const auto staging_buffer = device->GetStagingBuffer();
+        const auto staging_size = device->GetStagingSize();
+
+        BLAST_ASSERT(Size(format, size_x, size_y, size_z, { 0, 1 }) <= staging_size);
+
+        constexpr auto subres_limit = 16;
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT layouts[subres_limit] = {};
+        uint32_t counts[subres_limit] = {};
+        size_t strides[subres_limit] = {};
+        size_t lenghts[subres_limit] = {};
+        device->GetDevice()->GetCopyableFootprints(&desc, 0, D3D12_REQ_SUBRESOURCES, 0, layouts, counts, strides, lenghts);
+
+        ID3D12GraphicsCommandList* command_list = nullptr;
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
+          device->GetCommandAllocator(), nullptr, IID_PPV_ARGS(&command_list)));
+
+        size_t fence_value = 0;
+        ID3D12Fence* fence = nullptr;
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+        HANDLE fence_event = CreateEvent(nullptr, false, false, nullptr);
+
+        {
+          D3D12_RESOURCE_BARRIER barrier{};
+          barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+          barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+          barrier.Transition.pResource = resource;
+          barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+          barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+          barrier.Transition.Subresource = 0;
+          command_list->ResourceBarrier(1, &barrier);
+        }
+
+        auto offset = 0ull;
+        for (size_t i = 0; i < layers_or_stride; ++i)
+        {
+          for (size_t j = 0; j < levels_or_length; ++j)
+          {
+            const auto data = interop.first + offset;
+            const auto size = Size(format, size_x, size_y, size_z, { j, 1 });
+
+            offset += size;
+
+            uint8_t* mapped = nullptr;
+            BLAST_ASSERT(S_OK == staging_buffer->Map(0, nullptr, reinterpret_cast<void**>(&mapped)));
+            memcpy(mapped, data, size);
+            staging_buffer->Unmap(0, nullptr);
+
+            D3D12_TEXTURE_COPY_LOCATION src{};
+            src.pResource = staging_buffer;
+            src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+            src.PlacedFootprint.Offset = 0;
+            src.PlacedFootprint.Footprint = layouts[j].Footprint;
+
+            D3D12_TEXTURE_COPY_LOCATION dst{};
+            dst.pResource = resource;
+            dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+            dst.SubresourceIndex = i * desc.MipLevels + j;
+            command_list->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+            BLAST_ASSERT(S_OK == command_list->Close());
+            device->GetCommandQueue()->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
+
+            ++fence_value;
+            BLAST_ASSERT(S_OK == device->GetCommandQueue()->Signal(fence, fence_value));
+            BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+            WaitForSingleObject(fence_event, INFINITE);
+          }
+        }
+
+        {
+          D3D12_RESOURCE_BARRIER barrier{};
+          barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+          barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+          barrier.Transition.pResource = resource;
+          barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+          barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+          barrier.Transition.Subresource = 0;
+          device->GetCommandList()->ResourceBarrier(1, &barrier);
+        }
+
+        command_list->Release();
+        fence->Release();
+        CloseHandle(fence_event);
+      }
+      break;
+      }
+    }
     for (auto& view : views)
     {
       view->Initialize();
@@ -403,7 +456,7 @@ namespace RayGene3D
 
   void D12Resource::Commit()
   {
-    D11Device* device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    D12Device* device = reinterpret_cast<D12Device*>(&this->GetDevice());
 
 
     //const auto [data, size] = interops[index];
@@ -444,7 +497,7 @@ namespace RayGene3D
 
   void D12Resource::Retrieve()
   {
-    D11Device* device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    D12Device* device = reinterpret_cast<D12Device*>(&this->GetDevice());
 
 
     //ID3D11Resource* temp_resource = nullptr;
@@ -509,40 +562,61 @@ namespace RayGene3D
 
   void D12Resource::Blit(const std::shared_ptr<Resource>& resource)
   {
-    D11Device* device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    D12Device* device = reinterpret_cast<D12Device*>(&this->GetDevice());
 
     if (resource)
     {
-      device->GetContext()->CopyResource(this->resource, reinterpret_cast<D11Resource*>(resource.get())->GetResource());
+      ID3D12GraphicsCommandList* command_list = nullptr;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
+        device->GetCommandAllocator(), nullptr, IID_PPV_ARGS(&command_list)));
+
+      size_t fence_value = 0;
+      ID3D12Fence* fence = nullptr;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+      HANDLE fence_event = CreateEvent(nullptr, false, false, nullptr);
+      
+      command_list->CopyResource(this->resource, reinterpret_cast<D12Resource*>(resource.get())->resource);
+
+      BLAST_ASSERT(S_OK == command_list->Close());
+      device->GetCommandQueue()->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
+
+      ++fence_value;
+      BLAST_ASSERT(S_OK == device->GetCommandQueue()->Signal(fence, fence_value));
+      BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+      WaitForSingleObject(fence_event, INFINITE);
+
+      command_list->Release();
+      fence->Release();
+      CloseHandle(fence_event);
     }   
   }
 
 
   void* D12Resource::Map()
   {
-    D11Device* device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    D12Device* device = reinterpret_cast<D12Device*>(&this->GetDevice());
 
     if (type != Resource::TYPE_BUFFER || ~hint & HINT_DYNAMIC_BUFFER)
     {
       return nullptr;
     }
 
-    D3D11_MAPPED_SUBRESOURCE mapped_subres{ 0 };
-    BLAST_ASSERT(S_OK == device->GetContext()->Map(this->resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped_subres));
+    void* mapped = nullptr;
+    BLAST_ASSERT(S_OK == resource->Map(0, nullptr, reinterpret_cast<void**>(&mapped)));
 
-    return mapped_subres.pData;
+    return mapped;
   }
 
   void D12Resource::Unmap()
   {
-    D11Device* device = reinterpret_cast<D11Device*>(&this->GetDevice());
+    D12Device* device = reinterpret_cast<D12Device*>(&this->GetDevice());
 
     if (type != Resource::TYPE_BUFFER || ~hint & HINT_DYNAMIC_BUFFER)
     {
       return;
     }
 
-    device->GetContext()->Unmap(this->resource, 0);
+    resource->Unmap(0, nullptr);
   }
 
   D12Resource::D12Resource(const std::string& name,

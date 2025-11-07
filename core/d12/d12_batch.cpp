@@ -50,10 +50,10 @@ namespace RayGene3D
     {
       switch (filtering)
       {
-      default: return D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-      case Sampler::FILTERING_NEAREST: return compare ? D3D11_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D11_FILTER_MIN_MAG_MIP_POINT;
-      case Sampler::FILTERING_LINEAR: return compare ? D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR : D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-      case Sampler::FILTERING_ANISOTROPIC: return compare ? D3D11_FILTER_COMPARISON_ANISOTROPIC : D3D11_FILTER_ANISOTROPIC;
+      default: return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+      case Sampler::FILTERING_NEAREST: return compare ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
+      case Sampler::FILTERING_LINEAR: return compare ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR : D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+      case Sampler::FILTERING_ANISOTROPIC: return compare ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
       }
     };
 
@@ -61,11 +61,11 @@ namespace RayGene3D
     {
       switch (addressing)
       {
-      default: return D3D11_TEXTURE_ADDRESS_CLAMP;
-      case Sampler::ADDRESSING_REPEAT: return D3D11_TEXTURE_ADDRESS_WRAP;
-      case Sampler::ADDRESSING_MIRROR: return D3D11_TEXTURE_ADDRESS_MIRROR;
-      case Sampler::ADDRESSING_CLAMP: return D3D11_TEXTURE_ADDRESS_CLAMP;
-      case Sampler::ADDRESSING_BORDER: return D3D11_TEXTURE_ADDRESS_BORDER;
+      default: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+      case Sampler::ADDRESSING_REPEAT: return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+      case Sampler::ADDRESSING_MIRROR: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+      case Sampler::ADDRESSING_CLAMP: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+      case Sampler::ADDRESSING_BORDER: return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
       }
     };
 
@@ -73,22 +73,22 @@ namespace RayGene3D
     {
       switch (comparison)
       {
-      default: return D3D11_COMPARISON_NEVER;
-      case Sampler::COMPARISON_NEVER: return D3D11_COMPARISON_NEVER;
-      case Sampler::COMPARISON_LESS: return D3D11_COMPARISON_LESS;
-      case Sampler::COMPARISON_EQUAL: return D3D11_COMPARISON_EQUAL;
-      case Sampler::COMPARISON_LESS_EQUAL: return D3D11_COMPARISON_LESS_EQUAL;
-      case Sampler::COMPARISON_GREATER: return D3D11_COMPARISON_GREATER;
-      case Sampler::COMPARISON_NOT_EQUAL: return D3D11_COMPARISON_NOT_EQUAL;
-      case Sampler::COMPARISON_GREATER_EQUAL: return D3D11_COMPARISON_GREATER_EQUAL;
-      case Sampler::COMPARISON_ALWAYS: return D3D11_COMPARISON_ALWAYS;
+      default: return D3D12_COMPARISON_FUNC_NONE;
+      case Sampler::COMPARISON_NEVER: return D3D12_COMPARISON_FUNC_NEVER;
+      case Sampler::COMPARISON_LESS: return D3D12_COMPARISON_FUNC_LESS;
+      case Sampler::COMPARISON_EQUAL: return D3D12_COMPARISON_FUNC_EQUAL;
+      case Sampler::COMPARISON_LESS_EQUAL: return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+      case Sampler::COMPARISON_GREATER: return D3D12_COMPARISON_FUNC_GREATER;
+      case Sampler::COMPARISON_NOT_EQUAL: return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+      case Sampler::COMPARISON_GREATER_EQUAL: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+      case Sampler::COMPARISON_ALWAYS: return D3D12_COMPARISON_FUNC_ALWAYS;
       }
     };
 
-    sampler_states.resize(samplers.size());
-    for (uint32_t i = 0; i < sampler_states.size(); ++i)
+    sampler_handles.resize(samplers.size());
+    for (uint32_t i = 0; i < sampler_handles.size(); ++i)
     {
-      D3D11_SAMPLER_DESC sampler_desc{};
+      D3D12_SAMPLER_DESC sampler_desc{};
       sampler_desc.Filter = get_filter(samplers[i].filtering, samplers[i].comparison != Sampler::COMPARISON_NEVER);
       sampler_desc.AddressU = get_addressing(samplers[i].addressing);
       sampler_desc.AddressV = get_addressing(samplers[i].addressing);
@@ -103,12 +103,12 @@ namespace RayGene3D
       sampler_desc.MinLOD = samplers[i].min_lod;
       sampler_desc.MaxLOD = samplers[i].max_lod;
 
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateSamplerState(&sampler_desc, &sampler_states[i]));
+      device->GetDevice()->CreateSampler(&sampler_desc, sampler_handles[i]);
     }
 
 
     const auto ub_count = ub_views.size();
-    ub_items.resize(std::min(ub_count, size_t(D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)), nullptr);
+    ub_items.resize(std::min(ub_count, size_t(D3D12_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)), nullptr);
     for (size_t i = 0; i < ub_items.size(); ++i)
     {
       if (i < ub_count)
@@ -116,13 +116,13 @@ namespace RayGene3D
         const auto& ub_view = ub_views[i];
         if (ub_view)
         {
-          ub_items[i] = (reinterpret_cast<D11Resource*>(&ub_view->GetResource()))->GetBuffer();
+          ub_items[i] = (reinterpret_cast<D12Resource*>(&ub_view->GetResource()))->GetResource();
         }
       }
     }
 
     const auto sb_count = sb_views.size();
-    sb_items.resize(std::min(sb_count, size_t(D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)), nullptr);
+    sb_items.resize(std::min(sb_count, size_t(D3D12_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)), nullptr);
     for (size_t i = 0; i < sb_items.size(); ++i)
     {
       if (i < sb_count)
@@ -130,43 +130,71 @@ namespace RayGene3D
         const auto& sb_view = sb_views[i];
         if (sb_view)
         {
-          sb_items[i] = (reinterpret_cast<D11Resource*>(&sb_view->GetResource()))->GetBuffer();
+          sb_items[i] = (reinterpret_cast<D12Resource*>(&sb_view->GetResource()))->GetResource();
         }
       }
     }
 
     const auto rr_count = rb_views.size() + ri_views.size();
-    rr_items.resize(std::min(rr_count, size_t(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)), nullptr);
+    rr_items.resize(std::min(rr_count, size_t(D3D12_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT)), nullptr);
     for (size_t i = 0; i < rr_items.size(); ++i)
     {
       if (i < rr_count)
       {
         size_t offset = 0u;
-        if (i - offset < rb_views.size() && rb_views[i - offset]) { rr_items[i] = (reinterpret_cast<D11View*>(rb_views[i - offset].get()))->GetSRView(); continue; }
+        if (i - offset < rb_views.size() && rb_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(rb_views[i - offset].get()))->GetSRView(); continue; }
         offset += rb_views.size();
-        if (i - offset < ri_views.size() && ri_views[i - offset]) { rr_items[i] = (reinterpret_cast<D11View*>(ri_views[i - offset].get()))->GetSRView(); continue; }
+        if (i - offset < ri_views.size() && ri_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(ri_views[i - offset].get()))->GetSRView(); continue; }
       }
     }
 
     const auto wr_count = wb_views.size() + wi_views.size();
-    wr_items.resize(std::min(wr_count, size_t(D3D11_PS_CS_UAV_REGISTER_COUNT)), nullptr);
+    wr_items.resize(std::min(wr_count, size_t(D3D12_PS_CS_UAV_REGISTER_COUNT)), nullptr);
     for (size_t i = 0; i < wr_items.size(); ++i)
     {
       if (i < wr_count)
       {
         size_t offset = 0u;
-        if (i - offset < wb_views.size() && wb_views[i - offset]) { wr_items[i] = (reinterpret_cast<D11View*>(wb_views[i - offset].get()))->GetUAView(); continue; }
+        if (i - offset < wb_views.size() && wb_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wb_views[i - offset].get()))->GetUAView(); continue; }
         offset += wb_views.size();
-        if (i - offset < wi_views.size() && wi_views[i - offset]) { wr_items[i] = (reinterpret_cast<D11View*>(wi_views[i - offset].get()))->GetUAView(); continue; }
+        if (i - offset < wi_views.size() && wi_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wi_views[i - offset].get()))->GetUAView(); continue; }
       }
+    }
+
+    std::vector<D3D12_ROOT_PARAMETER> root_parameters;
+
+    D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
+    signature_desc.NumParameters = root_parameters.size();
+    signature_desc.pParameters = root_parameters.data();
+    signature_desc.NumStaticSamplers = 0;
+    signature_desc.pStaticSamplers = nullptr;
+    signature_desc.Flags =
+      D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+      D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
+
+    ID3DBlob* signature{ nullptr };
+    ID3DBlob* errors{ nullptr };
+    HRESULT hr = D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
+
+    if (errors)
+    {
+      BLAST_LOG("signature serialization output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
+      errors->Release();
+    }
+
+    if (signature)
+    {
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+        IID_PPV_ARGS(&root_signature)));
+      signature->Release();
     }
   }
 
   void D12Batch::Use()
   {
-    auto config = reinterpret_cast<D11Config*>(&this->GetConfig());
-    auto pass = reinterpret_cast<D11Pass*>(&config->GetPass());
-    auto device = reinterpret_cast<D11Device*>(&pass->GetDevice());
+    auto config = reinterpret_cast<D12Config*>(&this->GetConfig());
+    auto pass = reinterpret_cast<D12Pass*>(&config->GetPass());
+    auto device = reinterpret_cast<D12Device*>(&pass->GetDevice());
 
     if (pass->GetType() == Pass::TYPE_GRAPHIC)
     {
@@ -344,13 +372,19 @@ namespace RayGene3D
 
   void D12Batch::Discard()
   {
-    for (uint32_t i = 0; i < sampler_states.size(); ++i)
+    for (uint32_t i = 0; i < sampler_handles.size(); ++i)
     {
-      if (sampler_states[i])
-      {
-        sampler_states[i]->Release();
-        sampler_states[i] = nullptr;
-      }
+      //if (sampler_states[i])
+      //{
+      //  sampler_states[i]->Release();
+      //  sampler_states[i] = nullptr;
+      //}
+    }
+
+    if (root_signature)
+    {
+      root_signature->Release();
+      root_signature = nullptr;
     }
   }
 

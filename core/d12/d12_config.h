@@ -39,12 +39,16 @@ namespace RayGene3D
   class D12Config : public Config
   {
   protected:
-    ID3D11VertexShader* vert_shader{ nullptr };
-    ID3D11HullShader* tesc_shader{ nullptr };
-    ID3D11DomainShader* tese_shader{ nullptr };
-    ID3D11GeometryShader* geom_shader{ nullptr };
-    ID3D11PixelShader* frag_shader{ nullptr };
-    ID3D11ComputeShader* comp_shader{ nullptr };
+    ID3D12RootSignature* root_signature{ nullptr };
+    ID3D12PipelineState* pipeline_state{ nullptr };
+
+  protected:
+    D3D12_SHADER_BYTECODE vert_shader{ nullptr };
+    D3D12_SHADER_BYTECODE tesc_shader{ nullptr };
+    D3D12_SHADER_BYTECODE tese_shader{ nullptr };
+    D3D12_SHADER_BYTECODE geom_shader{ nullptr };
+    D3D12_SHADER_BYTECODE frag_shader{ nullptr };
+    D3D12_SHADER_BYTECODE comp_shader{ nullptr };
 
   //public:
   //  std::vector<char> CompileVSSource(const std::string& source) override;
@@ -54,22 +58,22 @@ namespace RayGene3D
   //  std::vector<char> CompilePSSource(const std::string& source) override;
   //  std::vector<char> CompileCSSource(const std::string& source) override;
 
-  protected:
-    ID3D11InputLayout* input_layout{ nullptr };
+  //protected:
+  //  ID3D12InputLayout* input_layout{ nullptr };
 
-  protected:
-    ID3D11RasterizerState* raster_state{ nullptr };
-    ID3D11DepthStencilState* depth_state{ nullptr };
-    ID3D11BlendState* blend_state{ nullptr };
+  //protected:
+  //  ID3D12RasterizerState* raster_state{ nullptr };
+  //  ID3D12DepthStencilState* depth_state{ nullptr };
+  //  ID3D12BlendState* blend_state{ nullptr };
 
-  protected:
-    std::vector<D3D11_VIEWPORT> vp_items;
+  //protected:
+  //  std::vector<D3D11_VIEWPORT> vp_items;
 
   protected:
     std::vector<uint32_t> strides; //TODO: Remove
 
   protected:
-    D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
+    D3D12_PRIMITIVE_TOPOLOGY primitive_topology{ D3D12_PRIMITIVE_TOPOLOGY_UNDEFINED };
 
   public:
     const std::vector<uint32_t>& GetStrides() const { return strides; }
@@ -86,7 +90,7 @@ namespace RayGene3D
       const std::pair<const std::shared_ptr<View>*, size_t>& wb_views
     ) override
     {
-      return batches.emplace_back(new D11Batch(name, *this, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
+      return batches.emplace_back(new D12Batch(name, *this, entities, samplers, ub_views, sb_views, ri_views, wi_views, rb_views, wb_views));
     }
 
   public:
