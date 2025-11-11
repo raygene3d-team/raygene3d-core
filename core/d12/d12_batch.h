@@ -39,19 +39,20 @@ namespace RayGene3D
   class D12Batch : public Batch
   {
   protected:
-
+    ID3D12RootSignature* root_signature{ nullptr };
+    ID3D12PipelineState* pipeline_state{ nullptr };
 
     ID3D12DescriptorHeap* sampler_heap{ nullptr };
     ID3D12DescriptorHeap* cbv_srv_uav_heap{ nullptr };
 
   protected:
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> sampler_handles;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> sampler_items;
 
   protected:
-    std::vector<ID3D12Resource*> ub_items;
-    std::vector<ID3D12Resource*> sb_items;
-    std::vector<ID3D12Resource*> rr_items;
-    std::vector<ID3D12Resource*> wr_items;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> ub_items;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> sb_items;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rr_items;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> wr_items;
 
   //public:
   //  const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,

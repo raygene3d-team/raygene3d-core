@@ -39,16 +39,23 @@ namespace RayGene3D
   class D12Config : public Config
   {
   protected:
-    ID3D12RootSignature* root_signature{ nullptr };
-    ID3D12PipelineState* pipeline_state{ nullptr };
-
-  protected:
     D3D12_SHADER_BYTECODE vert_shader{ nullptr };
     D3D12_SHADER_BYTECODE tesc_shader{ nullptr };
     D3D12_SHADER_BYTECODE tese_shader{ nullptr };
     D3D12_SHADER_BYTECODE geom_shader{ nullptr };
     D3D12_SHADER_BYTECODE frag_shader{ nullptr };
     D3D12_SHADER_BYTECODE comp_shader{ nullptr };
+
+  protected:
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_type;
+
+  protected:
+    std::vector<D3D12_INPUT_ELEMENT_DESC> element_descs;
+
+  protected:
+    D3D12_BLEND_DESC blend_desc{};
+    D3D12_DEPTH_STENCIL_DESC depth_desc{};
+    D3D12_RASTERIZER_DESC raster_desc{};
 
   //public:
   //  std::vector<char> CompileVSSource(const std::string& source) override;
@@ -57,6 +64,25 @@ namespace RayGene3D
   //  std::vector<char> CompileGSSource(const std::string& source) override;
   //  std::vector<char> CompilePSSource(const std::string& source) override;
   //  std::vector<char> CompileCSSource(const std::string& source) override;
+
+  public:
+    D3D12_SHADER_BYTECODE GetVSBytecode() const { return vert_shader; }
+    D3D12_SHADER_BYTECODE GetHSBytecode() const { return tesc_shader; }
+    D3D12_SHADER_BYTECODE GetDSBytecode() const { return tese_shader; }
+    D3D12_SHADER_BYTECODE GetGSBytecode() const { return geom_shader; }
+    D3D12_SHADER_BYTECODE GetPSBytecode() const { return frag_shader; }
+    D3D12_SHADER_BYTECODE GetCSBytecode() const { return comp_shader; }
+
+  public:
+    D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType() const { return topology_type; }
+
+  public:
+    D3D12_INPUT_LAYOUT_DESC GetLayoutDesc() const { return { element_descs.data(), uint32_t(element_descs.size()) }; }
+
+  public:
+    D3D12_BLEND_DESC GetBlendDesc() const { return blend_desc; }
+    D3D12_DEPTH_STENCIL_DESC GetDepthDesc() const { return depth_desc; }
+    D3D12_RASTERIZER_DESC GetRasterDesc() const { return raster_desc; }
 
   //protected:
   //  ID3D12InputLayout* input_layout{ nullptr };
@@ -69,14 +95,11 @@ namespace RayGene3D
   //protected:
   //  std::vector<D3D11_VIEWPORT> vp_items;
 
-  protected:
-    std::vector<uint32_t> strides; //TODO: Remove
+  //protected:
+  //  std::vector<uint32_t> strides; //TODO: Remove
 
-  protected:
-    D3D12_PRIMITIVE_TOPOLOGY primitive_topology{ D3D12_PRIMITIVE_TOPOLOGY_UNDEFINED };
-
-  public:
-    const std::vector<uint32_t>& GetStrides() const { return strides; }
+  //public:
+  //  const std::vector<uint32_t>& GetStrides() const { return strides; }
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,

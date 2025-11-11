@@ -59,7 +59,12 @@ namespace RayGene3D
     wcstombs_s(&adapter_size, adapter_name, adapter_desc.Description, 256);
     name = std::string(adapter_name) + " (D3D12 API)\n";
 
-    //const uint32_t device_flags = debug ? D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_SINGLETHREADED : 0;
+    if (debug)
+    {
+      BLAST_ASSERT(S_OK == D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
+      debug_controller->EnableDebugLayer();
+    }
+
     const D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_12_0;
     const D3D_DRIVER_TYPE driver_type = D3D_DRIVER_TYPE_UNKNOWN;
 
@@ -86,23 +91,24 @@ namespace RayGene3D
       swapchain_desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
       swapchain_desc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
       swapchain_desc.SampleDesc = { 1, 0 };
-      swapchain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT | DXGI_USAGE_UNORDERED_ACCESS;
+      swapchain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
       swapchain_desc.BufferCount = 3;
       swapchain_desc.OutputWindow = reinterpret_cast<HWND>(window);
       swapchain_desc.Windowed = true;
-      swapchain_desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+      swapchain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
       swapchain_desc.Flags = 0;
 
-      IDXGIDevice* dxgi_device = nullptr;
-      BLAST_ASSERT(S_OK == device->QueryInterface(IID_PPV_ARGS(&dxgi_device)));
+      //IDXGIDevice* dxgi_device = nullptr;
+      //BLAST_ASSERT(S_OK == device->QueryInterface(IID_PPV_ARGS(&dxgi_device)));
 
-      IDXGIAdapter* dxgi_adapter = nullptr;
-      BLAST_ASSERT(S_OK == dxgi_device->GetParent(IID_PPV_ARGS(&dxgi_adapter)));
+      //IDXGIAdapter* dxgi_adapter = nullptr;
+      //BLAST_ASSERT(S_OK == dxgi_device->GetParent(IID_PPV_ARGS(&dxgi_adapter)));
 
-      IDXGIFactory* dxgi_factory = nullptr;
-      BLAST_ASSERT(S_OK == dxgi_adapter->GetParent(IID_PPV_ARGS(&dxgi_factory)));
+      //IDXGIFactory* dxgi_factory = nullptr;
+      //BLAST_ASSERT(S_OK == dxgi_adapter->GetParent(IID_PPV_ARGS(&dxgi_factory)));
 
-      BLAST_ASSERT(S_OK == dxgi_factory->CreateSwapChain(device, &swapchain_desc, &swapchain));
+      HRESULT res = factory->CreateSwapChain(command_queue, &swapchain_desc, &swapchain);
+      BLAST_ASSERT(S_OK == res);
 
       BLAST_ASSERT(S_OK == swapchain->GetBuffer(0, IID_PPV_ARGS(&screen_buffer)));
 
@@ -122,7 +128,7 @@ namespace RayGene3D
         resource_desc.DepthOrArraySize = 1;
         resource_desc.MipLevels = 1;
         resource_desc.Format = DXGI_FORMAT_UNKNOWN;
-        resource_desc.SampleDesc = {0, 0};
+        resource_desc.SampleDesc = {1, 0};
         resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
         resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
@@ -134,8 +140,6 @@ namespace RayGene3D
           nullptr,
           IID_PPV_ARGS(&staging_buffer)));
       }
-
-      
     }
 
     //for (auto& resource : resources)
@@ -311,6 +315,12 @@ namespace RayGene3D
     {
       device->Release();
       device = nullptr;
+    }
+
+    if (debug_controller)
+    {
+      debug_controller->Release();
+      debug_controller = nullptr;
     }
   }
 

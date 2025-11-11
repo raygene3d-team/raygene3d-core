@@ -92,16 +92,16 @@ namespace RayGene3D
       swapchain_desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
       swapchain_desc.Flags = 0;
 
-      IDXGIDevice* dxgi_device = nullptr;
-      BLAST_ASSERT(S_OK == device->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgi_device));
+      //IDXGIDevice* dxgi_device = nullptr;
+      //BLAST_ASSERT(S_OK == device->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgi_device));
 
-      IDXGIAdapter* dxgi_adapter = nullptr;
-      BLAST_ASSERT(S_OK == dxgi_device->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgi_adapter));
+      //IDXGIAdapter* dxgi_adapter = nullptr;
+      //BLAST_ASSERT(S_OK == dxgi_device->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgi_adapter));
 
-      IDXGIFactory* dxgi_factory = nullptr;
-      BLAST_ASSERT(S_OK == dxgi_adapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgi_factory));
+      //IDXGIFactory* dxgi_factory = nullptr;
+      //BLAST_ASSERT(S_OK == dxgi_adapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgi_factory));
 
-      BLAST_ASSERT(S_OK == dxgi_factory->CreateSwapChain(device, &swapchain_desc, &swapchain));
+      BLAST_ASSERT(S_OK == factory->CreateSwapChain(device, &swapchain_desc, &swapchain));
 
       BLAST_ASSERT(S_OK == swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backbuffer));
     }

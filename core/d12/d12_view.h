@@ -38,7 +38,7 @@ namespace RayGene3D
   class D12View : public View
   {
   protected:
-    D3D12_CPU_DESCRIPTOR_HANDLE handle;
+    D3D12_CPU_DESCRIPTOR_HANDLE view;
 
     union Info
     {
@@ -50,7 +50,7 @@ namespace RayGene3D
 
   public:
   //  void SetView(D3D12_CPU_DESCRIPTOR_HANDLE view) { this->view = view; }
-    D3D12_CPU_DESCRIPTOR_HANDLE GetView() const { return handle; }
+    D3D12_CPU_DESCRIPTOR_HANDLE GetView() const { return view; }
   //  ID3D11ShaderResourceView* GetSRView() const { return reinterpret_cast<ID3D11ShaderResourceView*>(view); }
   //  ID3D11RenderTargetView* GetRTView() const { return reinterpret_cast<ID3D11RenderTargetView*>(view); }
   //  ID3D11DepthStencilView* GetDSView() const { return reinterpret_cast<ID3D11DepthStencilView*>(view); }

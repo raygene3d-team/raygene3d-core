@@ -146,8 +146,6 @@ namespace RayGene3D
   static void D11Compile(const std::string& source, const char* entry, const char* target, 
     std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
   {
-
-
     D11Includer includer(path);
 
     const uint32_t flags{ D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3 };
@@ -277,38 +275,31 @@ namespace RayGene3D
       }
     };
 
-    //if (ia_state.topology != TOPOLOGY_UNKNOWN)
+
+    auto stride_max = 0u;
+    std::map<uint32_t, uint32_t> stride_map;
+
+    element_descs.resize(ia_state.attributes.size());
+    for (size_t i = 0; i < element_descs.size(); ++i)
+    {
+      element_descs[i].SemanticName = "register";
+      element_descs[i].SemanticIndex = uint32_t(i);
+      element_descs[i].Format = get_format(ia_state.attributes[i].format);
+      element_descs[i].InputSlot = ia_state.attributes[i].slot;
+      element_descs[i].AlignedByteOffset = ia_state.attributes[i].offset;
+      element_descs[i].InputSlotClass = ia_state.attributes[i].instance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+      element_descs[i].InstanceDataStepRate = 0;
+
+      stride_map[ia_state.attributes[i].slot] = ia_state.attributes[i].stride;
+      stride_max = std::max(stride_max, ia_state.attributes[i].slot);
+    }
+
+    //strides.resize(stride_max + 1, 0);
+    //for (const auto& stride_item : stride_map)
     //{
-    //  if (!ia_state.attributes.empty())
-    //  {
-        auto stride_max = 0u;
-        std::map<uint32_t, uint32_t> stride_map;
+    //  strides[stride_item.first] = stride_item.second;
+    //}
 
-        std::vector<D3D12_INPUT_ELEMENT_DESC> element_descs(ia_state.attributes.size(), { 0 });
-        for (size_t i = 0; i < ia_state.attributes.size(); ++i)
-        {
-          element_descs[i].SemanticName = "register";
-          element_descs[i].SemanticIndex = uint32_t(i);
-          element_descs[i].Format = get_format(ia_state.attributes[i].format);
-          element_descs[i].InputSlot = ia_state.attributes[i].slot;
-          element_descs[i].AlignedByteOffset = ia_state.attributes[i].offset;
-          element_descs[i].InputSlotClass = ia_state.attributes[i].instance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-          element_descs[i].InstanceDataStepRate = 0;
-
-          stride_map[ia_state.attributes[i].slot] = ia_state.attributes[i].stride;
-          stride_max = std::max(stride_max, ia_state.attributes[i].slot);
-        }
-
-
-        strides.resize(stride_max + 1, 0);
-        for (const auto& stride_item : stride_map)
-        {
-          strides[stride_item.first] = stride_item.second;
-        }
-
-        //BLAST_ASSERT(S_OK == device->GetDevice()->CreateInputLayout(element_descs.data(), uint32_t(element_descs.size()),
-        //  vert_bytecode.data(), vert_bytecode.size(), &input_layout));
-      //}
 
       const auto get_fill = [](Fill fill)
       {
@@ -333,7 +324,7 @@ namespace RayGene3D
 
       };
 
-      D3D12_RASTERIZER_DESC raster_desc = {};
+      
       raster_desc.FillMode = get_fill(rc_state.fill_mode);
       raster_desc.CullMode = get_cull(rc_state.cull_mode);
       raster_desc.FrontCounterClockwise = false;
@@ -380,7 +371,7 @@ namespace RayGene3D
         }
       };
 
-      D3D12_DEPTH_STENCIL_DESC depth_desc;
+      
       depth_desc.DepthEnable = ds_state.depth_enabled;
       depth_desc.DepthWriteMask = ds_state.depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
       depth_desc.DepthFunc = get_comparison(ds_state.depth_comparison);
@@ -435,7 +426,7 @@ namespace RayGene3D
         }
       };
 
-      D3D12_BLEND_DESC blend_desc = {};
+     
       blend_desc.AlphaToCoverageEnable = om_state.atc_enabled;
       blend_desc.IndependentBlendEnable = false; //TODO: Implement true only
       for (size_t i = 0; i < std::min(om_state.target_blends.size(), size_t(8u)); ++i)
@@ -452,35 +443,67 @@ namespace RayGene3D
       //BLAST_ASSERT(S_OK == device->GetDevice()->CreateBlendState(&blend_desc, &blend_state));
     //}
 
-    const auto get_topology = [](Topology topology)
+    const auto get_topology_type = [](Topology topology)
     {
       switch (topology)
       {
-      default:                          return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
-      case TOPOLOGY_POINTLIST:          return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
-      case TOPOLOGY_LINELIST:           return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
-      case TOPOLOGY_LINESTRIP:          return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
-      case TOPOLOGY_TRIANGLELIST:       return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-      case TOPOLOGY_TRIANGLESTRIP:      return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
-      case TOPOLOGY_LINELIST_ADJ:       return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
-      case TOPOLOGY_LINESTRIP_ADJ:      return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
-      case TOPOLOGY_TRIANGLELIST_ADJ:   return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
-      case TOPOLOGY_TRIANGLESTRIP_ADJ:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
+      default:                                  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_UNDEFINED;
+      case TOPOLOGY_POINTLIST:                  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+      case TOPOLOGY_LINELIST:                   return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+      case TOPOLOGY_LINESTRIP:                  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+      case TOPOLOGY_TRIANGLELIST:               return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      case TOPOLOGY_TRIANGLESTRIP:              return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      case TOPOLOGY_LINELIST_ADJ:               return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      case TOPOLOGY_LINESTRIP_ADJ:              return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      case TOPOLOGY_TRIANGLELIST_ADJ:           return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      case TOPOLOGY_TRIANGLESTRIP_ADJ:          return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+      case TOPOLOGY_1_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_2_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_3_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_4_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_5_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_6_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_7_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_8_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_9_CONTROL_POINT_PATCHLIST:  return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_10_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_11_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_12_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_13_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_14_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_15_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_16_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_17_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_18_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_19_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_20_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_21_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_22_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_23_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_24_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_25_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_26_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_27_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_28_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_29_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_30_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_31_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
+      case TOPOLOGY_32_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
       }
     };
 
-    primitive_topology = get_topology(ia_state.topology);
+    topology_type = get_topology_type(ia_state.topology);
 
-    const auto vp_count = rc_state.viewports.size();
-    vp_items.resize(std::min(vp_count, size_t(D3D12_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
-    for (size_t i = 0; i < vp_items.size(); ++i)
-    {
-      if (i < vp_count)
-      {
-        const auto& viewport = rc_state.viewports[i];
-        vp_items[i] = { viewport.origin_x, viewport.origin_y, viewport.extent_x, viewport.extent_y, viewport.min_z, viewport.max_z };
-      }
-    }
+    //const auto vp_count = rc_state.viewports.size();
+    //vp_items.resize(std::min(vp_count, size_t(D3D12_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
+    //for (size_t i = 0; i < vp_items.size(); ++i)
+    //{
+    //  if (i < vp_count)
+    //  {
+    //    const auto& viewport = rc_state.viewports[i];
+    //    vp_items[i] = { viewport.origin_x, viewport.origin_y, viewport.extent_x, viewport.extent_y, viewport.min_z, viewport.max_z };
+    //  }
+    //}
 
     //if (!vert_bytecode.empty())
     //{
@@ -513,56 +536,41 @@ namespace RayGene3D
     //}
 
 
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc = {};
-    pso_desc.InputLayout = { element_descs.data(), uint32_t(element_descs.size()) };
-    pso_desc.pRootSignature = root_signature;
-    pso_desc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-    pso_desc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-    pso_desc.RasterizerState = raster_desc;
-    pso_desc.BlendState = blend_desc;
-    pso_desc.DepthStencilState = depth_desc;
-    pso_desc.SampleMask = UINT_MAX;
-    pso_desc.PrimitiveTopologyType = get_topology();
-    pso_desc.NumRenderTargets = 1;
-    pso_desc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    pso_desc.SampleDesc.Count = 1;
-    BLAST_ASSERT(S_OK == device->GetDevice()->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&pipeline_state)));
+
   }
 
   void D12Config::Use()
   {
     auto pass = reinterpret_cast<D12Pass*>(&this->GetPass());
     auto device = reinterpret_cast<D12Device*>(&pass->GetDevice());
-    
-     
-    if (pass->GetType() == Pass::TYPE_GRAPHIC)
-    {
 
-      device->GetContext()->VSSetShader(vert_shader, nullptr, 0);
-      device->GetContext()->HSSetShader(tesc_shader, nullptr, 0);
-      device->GetContext()->DSSetShader(tese_shader, nullptr, 0);
-      device->GetContext()->GSSetShader(geom_shader, nullptr, 0);
-      device->GetContext()->PSSetShader(frag_shader, nullptr, 0);
+    //if (pass->GetType() == Pass::TYPE_GRAPHIC)
+    //{
+    //  device->GetContext()->VSSetShader(vert_shader, nullptr, 0);
+    //  device->GetContext()->HSSetShader(tesc_shader, nullptr, 0);
+    //  device->GetContext()->DSSetShader(tese_shader, nullptr, 0);
+    //  device->GetContext()->GSSetShader(geom_shader, nullptr, 0);
+    //  device->GetContext()->PSSetShader(frag_shader, nullptr, 0);
 
-      device->GetContext()->IASetPrimitiveTopology(primitive_topology);
-      device->GetContext()->IASetInputLayout(input_layout);
+    //  device->GetContext()->IASetPrimitiveTopology(primitive_topology);
+    //  device->GetContext()->IASetInputLayout(input_layout);
 
-      device->GetContext()->RSSetState(raster_state);
+    //  device->GetContext()->RSSetState(raster_state);
 
-      uint32_t stencil_reference = 0xFFFFFFFF;
-      device->GetContext()->OMSetDepthStencilState(depth_state, stencil_reference);
+    //  uint32_t stencil_reference = 0xFFFFFFFF;
+    //  device->GetContext()->OMSetDepthStencilState(depth_state, stencil_reference);
 
-      float blend_factors[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-      uint32_t sample_mask = 0xFFFFFFFF;
-      device->GetContext()->OMSetBlendState(blend_state, blend_factors, sample_mask);
+    //  float blend_factors[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    //  uint32_t sample_mask = 0xFFFFFFFF;
+    //  device->GetContext()->OMSetBlendState(blend_state, blend_factors, sample_mask);
 
-      device->GetContext()->RSSetViewports(vp_items.size(), vp_items.data());
-    }
+    //  device->GetContext()->RSSetViewports(vp_items.size(), vp_items.data());
+    //}
 
-    if (pass->GetType() == Pass::TYPE_COMPUTE)
-    {
-      device->GetContext()->CSSetShader(comp_shader, nullptr, 0);
-    }
+    //if (pass->GetType() == Pass::TYPE_COMPUTE)
+    //{
+    //  device->GetContext()->CSSetShader(comp_shader, nullptr, 0);
+    //}
 
     for (const auto& batch : batches)
     {
@@ -572,65 +580,6 @@ namespace RayGene3D
 
   void D12Config::Discard()
   {
-    if (raster_state)
-    {
-      raster_state->Release();
-      raster_state = nullptr;
-    }
-
-    if (depth_state)
-    {
-      depth_state->Release();
-      depth_state = nullptr;
-    }
-
-    if (blend_state)
-    {
-      blend_state->Release();
-      blend_state = nullptr;
-    }
-
-    if (input_layout)
-    {
-      input_layout->Release();
-      input_layout = nullptr;
-    }
-
-    if (comp_shader)
-    {
-      comp_shader->Release();
-      comp_shader = nullptr;
-    }
-
-    if (frag_shader)
-    {
-      frag_shader->Release();
-      frag_shader = nullptr;
-    }
-
-    if (geom_shader)
-    {
-      geom_shader->Release();
-      geom_shader = nullptr;
-    }
-
-    if (tese_shader)
-    {
-      tese_shader->Release();
-      tese_shader = nullptr;
-    }
-
-    if (tesc_shader)
-    {
-      tesc_shader->Release();
-      tesc_shader = nullptr;
-    }
-
-    if (vert_shader)
-    {
-      vert_shader->Release();
-      vert_shader = nullptr;
-    }
   }
 
   D12Config::D12Config(const std::string& name,

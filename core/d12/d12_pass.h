@@ -36,6 +36,8 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
+  class D12Resource;
+
   class D12Pass : public Pass
   {
   protected:
@@ -46,6 +48,12 @@ namespace RayGene3D
     void Initialize() override;
     void Use() override;
     void Discard() override;
+
+  public:
+    DXGI_FORMAT GetRTFormat(size_t index) const;
+    size_t GetRTCount() const { return rt_attachments.size(); }
+    DXGI_FORMAT GetDSFormat(size_t index) const;
+    size_t GetDSCount() const { return ds_attachments.size(); }
 
   public:
     const std::shared_ptr<Config>& CreateConfig(const std::string& name,

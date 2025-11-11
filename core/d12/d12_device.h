@@ -40,6 +40,7 @@ namespace RayGene3D
   class D12Device : public Device
   {
   protected:
+    ID3D12Debug* debug_controller{ nullptr };
     ID3D12Device* device{ nullptr };
     ID3D12CommandQueue* command_queue{ nullptr };
     ID3D12CommandAllocator* command_allocator{ nullptr };

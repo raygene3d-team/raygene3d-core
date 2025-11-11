@@ -32,6 +32,7 @@ THE SOFTWARE.
 
 #ifdef _WIN32
 #include "core/d11/d11_device.h"
+#include "core/d12/d12_device.h"
 #endif
 
 namespace RayGene3D
@@ -64,6 +65,13 @@ namespace RayGene3D
     case DEVICE_D11:
 #ifdef _WIN32
       device = std::unique_ptr<Device>(new D11Device("d11_device"));
+#else
+      device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
+#endif
+      break;
+    case DEVICE_D12:
+#ifdef _WIN32
+      device = std::unique_ptr<Device>(new D12Device("d12_device"));
 #else
       device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
 #endif
