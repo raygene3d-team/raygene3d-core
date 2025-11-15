@@ -91,6 +91,7 @@ namespace RayGene3D
 
   public:
     Device& GetDevice() { return device; }
+    const Device& GetDevice() const { return device; }
 
   public:
     virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,

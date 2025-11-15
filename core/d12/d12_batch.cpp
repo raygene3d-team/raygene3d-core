@@ -116,7 +116,7 @@ namespace RayGene3D
         const auto& ub_view = ub_views[i];
         if (ub_view)
         {
-          ub_items[i] = (reinterpret_cast<D12View*>(ub_view.get()))->GetView();
+          ub_items[i] = (reinterpret_cast<D12View*>(ub_view.get()))->GetGPUHandle();
         }
       }
     }
@@ -130,7 +130,7 @@ namespace RayGene3D
         const auto& sb_view = sb_views[i];
         if (sb_view)
         {
-          sb_items[i] = (reinterpret_cast<D12View*>(sb_view.get()))->GetView();
+          sb_items[i] = (reinterpret_cast<D12View*>(sb_view.get()))->GetGPUHandle();
         }
       }
     }
@@ -142,9 +142,9 @@ namespace RayGene3D
       if (i < rr_count)
       {
         size_t offset = 0u;
-        if (i - offset < rb_views.size() && rb_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(rb_views[i - offset].get()))->GetView(); continue; }
+        if (i - offset < rb_views.size() && rb_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(rb_views[i - offset].get()))->GetGPUHandle(); continue; }
         offset += rb_views.size();
-        if (i - offset < ri_views.size() && ri_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(ri_views[i - offset].get()))->GetView(); continue; }
+        if (i - offset < ri_views.size() && ri_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(ri_views[i - offset].get()))->GetGPUHandle(); continue; }
       }
     }
 
@@ -155,9 +155,9 @@ namespace RayGene3D
       if (i < wr_count)
       {
         size_t offset = 0u;
-        if (i - offset < wb_views.size() && wb_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wb_views[i - offset].get()))->GetView(); continue; }
+        if (i - offset < wb_views.size() && wb_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wb_views[i - offset].get()))->GetGPUHandle(); continue; }
         offset += wb_views.size();
-        if (i - offset < wi_views.size() && wi_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wi_views[i - offset].get()))->GetView(); continue; }
+        if (i - offset < wi_views.size() && wi_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wi_views[i - offset].get()))->GetGPUHandle(); continue; }
       }
     }
 

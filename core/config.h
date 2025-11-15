@@ -326,6 +326,7 @@ namespace RayGene3D
 
   public:
     Pass& GetPass() { return pass; }
+    const Pass& GetPass() const { return pass; }
 
   public:
     virtual const std::shared_ptr<Batch>& CreateBatch(const std::string& name,

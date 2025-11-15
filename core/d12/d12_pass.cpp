@@ -135,6 +135,7 @@ namespace RayGene3D
 
   void D12Pass::Initialize()
   {
+    auto device = reinterpret_cast<D12Device*>(&this->GetDevice());
   }
 
   void D12Pass::Use()
@@ -155,7 +156,7 @@ namespace RayGene3D
 
         if (rt_view)
         {
-          rt_items[i] = (reinterpret_cast<D12View*>(rt_view.get()))->GetView();
+          rt_items[i] = (reinterpret_cast<D12View*>(rt_view.get()))->GetCPUHandle();
 
           if (rt_value)
           {
@@ -175,7 +176,7 @@ namespace RayGene3D
 
         if (ds_view)
         {
-          ds_items[i] = (reinterpret_cast<D12View*>(ds_view.get()))->GetView();
+          ds_items[i] = (reinterpret_cast<D12View*>(ds_view.get()))->GetCPUHandle();
 
           D3D12_CLEAR_FLAGS clear_flags = {};
           float clear_depth = 0.0f;

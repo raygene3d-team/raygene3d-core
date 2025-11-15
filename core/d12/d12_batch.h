@@ -43,16 +43,15 @@ namespace RayGene3D
     ID3D12PipelineState* pipeline_state{ nullptr };
 
     ID3D12DescriptorHeap* sampler_heap{ nullptr };
-    ID3D12DescriptorHeap* cbv_srv_uav_heap{ nullptr };
 
   protected:
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> sampler_items;
 
   protected:
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> ub_items;
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> sb_items;
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rr_items;
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> wr_items;
+    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> ub_items;
+    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> sb_items;
+    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> rr_items;
+    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> wr_items;
 
   //public:
   //  const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,

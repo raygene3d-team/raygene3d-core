@@ -36,6 +36,77 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
+  Handle D12Resource::ObtainGeneral()
+  {
+    const auto slot = std::distance(general_slots.cbegin(), std::find(general_slots.cbegin(), general_slots.cend(), false));
+    if (slot == general_limit) return { 0, 0 };
+
+    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetGeneralSize();
+    const auto cpu_handle = general_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
+    const auto gpu_handle = general_heap->GetGPUDescriptorHandleForHeapStart().ptr + slot * size;
+
+    general_slots[slot] = true;
+
+    return { cpu_handle, gpu_handle };
+  }
+
+  Handle D12Resource::ObtainRTV()
+  {
+    const auto slot = std::distance(rtv_slots.cbegin(), std::find(rtv_slots.cbegin(), rtv_slots.cend(), false));
+    if (slot == rtv_limit) return { 0, 0 };
+
+    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetRTVSize();
+    const auto cpu_handle = rtv_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
+    const auto gpu_handle = 0; // rtv_heap->GetGPUDescriptorHandleForHeapStart().ptr + slot * size;
+
+    rtv_slots[slot] = true;
+
+    return { cpu_handle, gpu_handle };
+  }
+
+  Handle D12Resource::ObtainDSV()
+  {
+    const auto slot = std::distance(dsv_slots.cbegin(), std::find(dsv_slots.cbegin(), dsv_slots.cend(), false));
+    if (slot == dsv_limit) return { 0, 0 };
+
+    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetDSVSize();
+    const auto cpu_handle = dsv_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
+    const auto gpu_handle = 0; // dsv_heap->GetGPUDescriptorHandleForHeapStart().ptr + slot * size;
+
+    dsv_slots[slot] = true;
+
+    return { cpu_handle, gpu_handle };
+  }
+
+  void D12Resource::DropGeneral(Handle handle)
+  { 
+    if (handle.Cpu.ptr == 0) return; 
+
+    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetGeneralSize();
+    const auto slot = (handle.Cpu.ptr - general_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
+
+    general_slots[slot] = false;
+  }
+
+  void D12Resource::DropRTV(Handle handle)
+  { 
+    if (handle.Cpu.ptr == 0) return;
+
+    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetRTVSize();
+    const auto slot = (handle.Cpu.ptr - rtv_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
+
+    rtv_slots[slot] = false;
+  }
+
+  void D12Resource::DropDSV(Handle handle)
+  {
+    if (handle.Cpu.ptr == 0) return;
+
+    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetDSVSize();
+    const auto slot = (handle.Cpu.ptr - dsv_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
+
+    dsv_slots[slot] = false;
+  }
 
   void D12Resource::Initialize()
   {
@@ -67,7 +138,7 @@ namespace RayGene3D
     {
       auto flags = D3D12_RESOURCE_FLAG_NONE;
       {
-        flags = usage &~USAGE_SHADER_RESOURCE  ? flags | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE   : flags;
+        //flags = usage &~USAGE_SHADER_RESOURCE  ? flags | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE   : flags;
         flags = usage & USAGE_RENDER_TARGET    ? flags | D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET    : flags;
         flags = usage & USAGE_DEPTH_STENCIL    ? flags | D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL    : flags;
         flags = usage & USAGE_UNORDERED_ACCESS ? flags | D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS : flags;
@@ -164,8 +235,8 @@ namespace RayGene3D
       desc.DepthOrArraySize = 1;
       desc.MipLevels = 1;
       desc.Format = DXGI_FORMAT_UNKNOWN;
-      desc.SampleDesc = { 0, 0 };
-      desc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+      desc.SampleDesc = { 1, 0 };
+      desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
       desc.Flags = get_flags();
       break;
     }
@@ -232,7 +303,7 @@ namespace RayGene3D
 
     D3D12_HEAP_PROPERTIES heap_prop = {};
     heap_prop.Type = hint & HINT_DYNAMIC_BUFFER ? D3D12_HEAP_TYPE_UPLOAD : D3D12_HEAP_TYPE_DEFAULT;
-    heap_prop.CPUPageProperty = hint & HINT_DYNAMIC_BUFFER ? D3D12_CPU_PAGE_PROPERTY_WRITE_COMBINE : D3D12_CPU_PAGE_PROPERTY_NOT_AVAILABLE;
+    heap_prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
     heap_prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
     heap_prop.CreationNodeMask = 0;
     heap_prop.VisibleNodeMask = 0;
@@ -282,6 +353,30 @@ namespace RayGene3D
 
     //    return subres_data;
     //  };
+
+    {
+      D3D12_DESCRIPTOR_HEAP_DESC rtv_heap_desc = {};
+      rtv_heap_desc.NumDescriptors = rtv_limit;
+      rtv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+      rtv_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&rtv_heap_desc, IID_PPV_ARGS(&rtv_heap)));
+    }
+
+    {
+      D3D12_DESCRIPTOR_HEAP_DESC dsv_heap_esc = {};
+      dsv_heap_esc.NumDescriptors = dsv_limit;
+      dsv_heap_esc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+      dsv_heap_esc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&dsv_heap_esc, IID_PPV_ARGS(&dsv_heap)));
+    }
+
+    {
+      D3D12_DESCRIPTOR_HEAP_DESC general_heap_desc = {};
+      general_heap_desc.NumDescriptors = general_limit;
+      general_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+      general_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&general_heap_desc, IID_PPV_ARGS(&general_heap)));
+    }
 
     if (interop != std::pair(nullptr, 0))
     {
@@ -347,16 +442,17 @@ namespace RayGene3D
 
         BLAST_ASSERT(Size(format, size_x, size_y, size_z, { 0, 1 }) <= staging_size);
 
-        constexpr auto subres_limit = 16;
-        D3D12_PLACED_SUBRESOURCE_FOOTPRINT layouts[subres_limit] = {};
-        uint32_t counts[subres_limit] = {};
-        size_t strides[subres_limit] = {};
-        size_t lenghts[subres_limit] = {};
-        device->GetDevice()->GetCopyableFootprints(&desc, 0, D3D12_REQ_SUBRESOURCES, 0, layouts, counts, strides, lenghts);
+        //constexpr auto subres_limit = 16;
+        //D3D12_PLACED_SUBRESOURCE_FOOTPRINT layouts[subres_limit] = {};
+        //uint32_t counts[subres_limit] = {};
+        //size_t strides[subres_limit] = {};
+        //size_t lenghts[subres_limit] = {};
+        //device->GetDevice()->GetCopyableFootprints(&desc, 0, 1, 0, layouts, counts, strides, lenghts);
 
         ID3D12GraphicsCommandList* command_list = nullptr;
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
           device->GetCommandAllocator(), nullptr, IID_PPV_ARGS(&command_list)));
+        BLAST_ASSERT(S_OK == command_list->Close());
 
         size_t fence_value = 0;
         ID3D12Fence* fence = nullptr;
@@ -364,6 +460,8 @@ namespace RayGene3D
         HANDLE fence_event = CreateEvent(nullptr, false, false, nullptr);
 
         {
+          BLAST_ASSERT(S_OK == command_list->Reset(device->GetCommandAllocator(), nullptr));
+
           D3D12_RESOURCE_BARRIER barrier{};
           barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
           barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -372,6 +470,14 @@ namespace RayGene3D
           barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
           barrier.Transition.Subresource = 0;
           command_list->ResourceBarrier(1, &barrier);
+
+          BLAST_ASSERT(S_OK == command_list->Close());
+          device->GetCommandQueue()->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
+
+          ++fence_value;
+          BLAST_ASSERT(S_OK == device->GetCommandQueue()->Signal(fence, fence_value));
+          BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+          WaitForSingleObject(fence_event, INFINITE);
         }
 
         auto offset = 0ull;
@@ -393,7 +499,15 @@ namespace RayGene3D
             src.pResource = staging_buffer;
             src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
             src.PlacedFootprint.Offset = 0;
-            src.PlacedFootprint.Footprint = layouts[j].Footprint;
+            //src.PlacedFootprint.Footprint = layouts[j].Footprint;
+            src.PlacedFootprint.Footprint.Format = get_format();
+            src.PlacedFootprint.Footprint.Width = Mip(size_x, j);
+            src.PlacedFootprint.Footprint.Height = Mip(size_y, j);
+            src.PlacedFootprint.Footprint.Depth = Mip(size_z, j);
+            src.PlacedFootprint.Footprint.RowPitch = (Size(format, size_x, size_y, size_z, {j, 1}) / size_t(Mip(size_y, j) * Mip(size_z, j))
+              + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) & -D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+
+            BLAST_ASSERT(S_OK == command_list->Reset(device->GetCommandAllocator(), nullptr));
 
             D3D12_TEXTURE_COPY_LOCATION dst{};
             dst.pResource = resource;
@@ -412,6 +526,8 @@ namespace RayGene3D
         }
 
         {
+          BLAST_ASSERT(S_OK == command_list->Reset(device->GetCommandAllocator(), nullptr));
+
           D3D12_RESOURCE_BARRIER barrier{};
           barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
           barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -419,7 +535,15 @@ namespace RayGene3D
           barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
           barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
           barrier.Transition.Subresource = 0;
-          device->GetCommandList()->ResourceBarrier(1, &barrier);
+          command_list->ResourceBarrier(1, &barrier);
+
+          BLAST_ASSERT(S_OK == command_list->Close());
+          device->GetCommandQueue()->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
+
+          ++fence_value;
+          BLAST_ASSERT(S_OK == device->GetCommandQueue()->Signal(fence, fence_value));
+          BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+          WaitForSingleObject(fence_event, INFINITE);
         }
 
         command_list->Release();
@@ -444,6 +568,24 @@ namespace RayGene3D
     for (auto& view : views)
     {
       view->Discard();
+    }
+
+    if (general_heap)
+    {
+      general_heap->Release();
+      general_heap = nullptr;
+    }
+
+    if (rtv_heap)
+    {
+      rtv_heap->Release();
+      rtv_heap = nullptr;
+    }
+
+    if (dsv_heap)
+    {
+      dsv_heap->Release();
+      dsv_heap = nullptr;
     }
 
     if (resource)

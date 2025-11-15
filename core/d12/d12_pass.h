@@ -40,10 +40,6 @@ namespace RayGene3D
 
   class D12Pass : public Pass
   {
-  protected:
-    ID3D12DescriptorHeap* rtv_heap{ nullptr };
-    ID3D12DescriptorHeap* dsv_heap{ nullptr };
-
   public:
     void Initialize() override;
     void Use() override;

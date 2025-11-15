@@ -62,6 +62,7 @@ namespace RayGene3D
 
   public:
     Resource& GetResource() { return resource; }
+    const Resource& GetResource() const { return resource; }
     
   public:
     Usage GetUsage() const { return usage; }

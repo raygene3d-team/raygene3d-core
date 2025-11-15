@@ -122,6 +122,7 @@ namespace RayGene3D
 
   public:
     Device& GetDevice() { return device; }
+    const Device& GetDevice() const { return device; }
 
   public:
     Usage GetUsage() const { return usage; }

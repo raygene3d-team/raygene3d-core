@@ -51,8 +51,14 @@ namespace RayGene3D
     ID3D12Resource* staging_buffer{ nullptr };
 
   protected:
-    ID3D12DescriptorHeap* cbv_srv_uav_heap{ nullptr };
+    ID3D12DescriptorHeap* general_heap{ nullptr };
     ID3D12DescriptorHeap* sampler_heap{ nullptr };
+
+  protected:
+    uint32_t general_size{ 0 };
+    uint32_t sampler_size{ 0 };
+    uint32_t rtv_size{ 0 };
+    uint32_t dsv_size{ 0 };
 
   protected:
     size_t staging_size{ 64 * 1024 * 1024 };
@@ -115,6 +121,16 @@ namespace RayGene3D
   public:
     size_t GetStagingSize() const { return staging_size; }
     ID3D12Resource* GetStagingBuffer() const { return staging_buffer; }
+
+  public:
+    ID3D12DescriptorHeap* GetGeneralHeap() const { return general_heap; }
+    ID3D12DescriptorHeap* GetSamplerHeap() const { return sampler_heap; }
+
+  public:
+    uint32_t GetGeneralSize() const { return general_size; }
+    uint32_t GetSamplerSize() const { return sampler_size; }
+    uint32_t GetRTVSize() const { return rtv_size; }
+    uint32_t GetDSVSize() const { return dsv_size; }
 
   public:
     void Initialize() override;

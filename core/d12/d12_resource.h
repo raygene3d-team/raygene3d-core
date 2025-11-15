@@ -36,12 +36,33 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
+  constexpr size_t general_limit{ 256 };
+  constexpr size_t rtv_limit{ 32 };
+  constexpr size_t dsv_limit{ 32 };  
+
   class D12Resource : public Resource
   {
   protected:
     ID3D12Resource* resource{ nullptr };
-
     D3D12_RESOURCE_DESC desc;
+
+  protected:
+    ID3D12DescriptorHeap* general_heap{ nullptr };
+    std::array<bool, general_limit> general_slots{};
+
+    ID3D12DescriptorHeap* rtv_heap{ nullptr };
+    std::array<bool, rtv_limit> rtv_slots{};
+
+    ID3D12DescriptorHeap* dsv_heap{ nullptr };
+    std::array<bool, dsv_limit> dsv_slots{};
+
+  public:
+    enum Heap
+    {
+      HEAP_GENERAL = 0,
+      HEAP_RTV = 1,
+      HEAP_DSV = 2,      
+    };
 
   public:
     void Commit() override;
@@ -52,12 +73,40 @@ namespace RayGene3D
     void Unmap() override;
 
   public:
-    void SetResource(ID3D12Resource* resource) { this->resource = resource; }
+    //void SetResource(ID3D12Resource* resource) { this->resource = resource; }
     ID3D12Resource* GetResource() { return resource; }
-    //ID3D11Buffer* GetBuffer() const { return reinterpret_cast<ID3D11Buffer*>(resource); }
-    //ID3D11Texture1D* GetTexture1D() const { return reinterpret_cast<ID3D11Texture1D*>(resource); }
-    //ID3D11Texture2D* GetTexture2D() const { return reinterpret_cast<ID3D11Texture2D*>(resource); }
-    //ID3D11Texture3D* GetTexture3D() const { return reinterpret_cast<ID3D11Texture3D*>(resource); }
+
+  protected:
+    Handle ObtainGeneral();
+    Handle ObtainRTV();
+    Handle ObtainDSV();
+
+    void DropGeneral(Handle handle);
+    void DropRTV(Handle handle);
+    void DropDSV(Handle handle);
+
+  public:
+    Handle ObtainHandle(Heap heap = HEAP_GENERAL)
+    {
+      switch (heap)
+      {
+      case HEAP_GENERAL: return ObtainGeneral();
+      case HEAP_RTV: return ObtainRTV();
+      case HEAP_DSV: return ObtainDSV();
+      };
+      return{ 0, 0 };
+    }
+
+    void DropHandle(Handle handle, Heap heap = HEAP_GENERAL)
+    {
+      switch (heap)
+      {
+      case HEAP_GENERAL: DropGeneral(handle);
+      case HEAP_RTV: DropRTV(handle);
+      case HEAP_DSV: DropDSV(handle);
+      };
+    }
+
 
   public:
     const std::shared_ptr<View>& CreateView(const std::string& name,

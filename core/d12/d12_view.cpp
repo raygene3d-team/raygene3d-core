@@ -39,8 +39,8 @@ namespace RayGene3D
 {
   void D12View::Initialize()
   {
-    D12Resource* resource = reinterpret_cast<D12Resource*>(&this->GetResource());
-    D12Device* device = reinterpret_cast<D12Device*>(&resource->GetDevice());
+    auto resource = reinterpret_cast<D12Resource*>(&this->GetResource());
+    auto device = reinterpret_cast<D12Device*>(&resource->GetDevice());
 
     const auto get_format = [](Format format)
     {
@@ -212,8 +212,8 @@ namespace RayGene3D
       srv_desc.Format = srv_desc.Format == DXGI_FORMAT_D24_UNORM_S8_UINT ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : srv_desc.Format;
       srv_desc.Format = srv_desc.Format == DXGI_FORMAT_D16_UNORM ? DXGI_FORMAT_R16_UNORM : srv_desc.Format;
 
-      device->GetDevice()->CreateShaderResourceView(resource->GetResource(), &srv_desc, view);
-      //GetSRView()->GetDesc(&info.srv_desc);
+      handle = resource->ObtainHandle();
+      device->GetDevice()->CreateShaderResourceView(resource->GetResource(), &srv_desc, handle.Cpu);
       break;
     }
 
@@ -284,8 +284,8 @@ namespace RayGene3D
       rtv_desc.Format = rtv_desc.Format == DXGI_FORMAT_D24_UNORM_S8_UINT ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : rtv_desc.Format;
       rtv_desc.Format = rtv_desc.Format == DXGI_FORMAT_D16_UNORM ? DXGI_FORMAT_R16_UNORM : rtv_desc.Format;
 
-      device->GetDevice()->CreateRenderTargetView(resource->GetResource(), &rtv_desc, view);
-      //GetRTView()->GetDesc(&info.rtv_desc);
+      handle = resource->ObtainHandle(D12Resource::HEAP_RTV);
+      device->GetDevice()->CreateRenderTargetView(resource->GetResource(), &rtv_desc, handle.Cpu);
       break;
     }
 
@@ -341,8 +341,8 @@ namespace RayGene3D
       dsv_desc.Format = dsv_desc.Format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS ? DXGI_FORMAT_D24_UNORM_S8_UINT : dsv_desc.Format;
       dsv_desc.Format = dsv_desc.Format == DXGI_FORMAT_R16_UNORM ? DXGI_FORMAT_D16_UNORM : dsv_desc.Format;
 
-      device->GetDevice()->CreateDepthStencilView(resource->GetResource(), &dsv_desc, view);
-      //GetDSView()->GetDesc(&info.dsv_desc);
+      handle = resource->ObtainHandle(D12Resource::HEAP_DSV);
+      device->GetDevice()->CreateDepthStencilView(resource->GetResource(), &dsv_desc, handle.Cpu);
       break;
     }
 
@@ -409,8 +409,8 @@ namespace RayGene3D
         break;
       }
       }
-      device->GetDevice()->CreateUnorderedAccessView(resource->GetResource(), nullptr, &uav_desc, view);
-      //GetUAView()->GetDesc(&info.uav_desc);
+      handle = resource->ObtainHandle();
+      device->GetDevice()->CreateUnorderedAccessView(resource->GetResource(), nullptr, &uav_desc, handle.Cpu);
       break;
     }
 
@@ -425,11 +425,17 @@ namespace RayGene3D
 
   void D12View::Discard()
   {
-    //if (view)
-    //{ 
-    //  view->Release(); 
-    //  view = nullptr;
-    //}
+    auto resource = reinterpret_cast<D12Resource*>(&this->GetResource());
+    auto device = reinterpret_cast<D12Device*>(&resource->GetDevice());
+
+    switch (usage)
+    {
+    //case USAGE_CONSTANT_DATA: resource->DropHandle(handle); break;
+    case USAGE_SHADER_RESOURCE: resource->DropHandle(handle); break;
+    case USAGE_UNORDERED_ACCESS: resource->DropHandle(handle); break;
+    case USAGE_RENDER_TARGET: resource->DropHandle(handle, D12Resource::HEAP_RTV); break;
+    case USAGE_DEPTH_STENCIL: resource->DropHandle(handle, D12Resource::HEAP_DSV); break;
+    }
   }
 
   D12View::D12View(const std::string& name,
