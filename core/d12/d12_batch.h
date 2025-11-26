@@ -36,32 +36,25 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
+  constexpr size_t sampler_limit{ 8 };
+
   class D12Batch : public Batch
   {
   protected:
     ID3D12RootSignature* root_signature{ nullptr };
     ID3D12PipelineState* pipeline_state{ nullptr };
 
-    ID3D12DescriptorHeap* sampler_heap{ nullptr };
+  protected:
+    std::vector<D3D12_ROOT_PARAMETER> root_parameters;
 
   protected:
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> sampler_items;
+    std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs;
 
   protected:
     std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> ub_items;
     std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> sb_items;
     std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> rr_items;
     std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> wr_items;
-
-  //public:
-  //  const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,
-  //    const std::pair<const Mesh::Subset*, uint32_t>& subsets,
-  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& vtx_views = {},
-  //    const std::pair<const std::shared_ptr<View>*, uint32_t>& idx_views = {}
-  //  ) override
-  //  {
-  //    return meshes.emplace_back(new D11Mesh(name, *this, subsets, vtx_views, idx_views));
-  //  }
 
   public:
     void Initialize() override;

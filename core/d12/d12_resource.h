@@ -44,7 +44,7 @@ namespace RayGene3D
   {
   protected:
     ID3D12Resource* resource{ nullptr };
-    D3D12_RESOURCE_DESC desc;
+    D3D12_GPU_VIRTUAL_ADDRESS address{ 0 };
 
   protected:
     ID3D12DescriptorHeap* general_heap{ nullptr };
@@ -77,16 +77,16 @@ namespace RayGene3D
     ID3D12Resource* GetResource() { return resource; }
 
   protected:
-    Handle ObtainGeneral();
-    Handle ObtainRTV();
-    Handle ObtainDSV();
+    D3D12_CPU_DESCRIPTOR_HANDLE ObtainGeneral();
+    D3D12_CPU_DESCRIPTOR_HANDLE ObtainRTV();
+    D3D12_CPU_DESCRIPTOR_HANDLE ObtainDSV();
 
-    void DropGeneral(Handle handle);
-    void DropRTV(Handle handle);
-    void DropDSV(Handle handle);
+    void DropGeneral(D3D12_CPU_DESCRIPTOR_HANDLE handle);
+    void DropRTV(D3D12_CPU_DESCRIPTOR_HANDLE handle);
+    void DropDSV(D3D12_CPU_DESCRIPTOR_HANDLE handle);
 
   public:
-    Handle ObtainHandle(Heap heap = HEAP_GENERAL)
+    D3D12_CPU_DESCRIPTOR_HANDLE ObtainHandle(Heap heap = HEAP_GENERAL)
     {
       switch (heap)
       {
@@ -97,7 +97,7 @@ namespace RayGene3D
       return{ 0, 0 };
     }
 
-    void DropHandle(Handle handle, Heap heap = HEAP_GENERAL)
+    void DropHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle, Heap heap = HEAP_GENERAL)
     {
       switch (heap)
       {

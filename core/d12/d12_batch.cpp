@@ -85,25 +85,22 @@ namespace RayGene3D
       }
     };
 
-    sampler_items.resize(samplers.size());
-    for (uint32_t i = 0; i < sampler_items.size(); ++i)
+    sampler_descs.resize(samplers.size());
+    for (uint32_t i = 0; i < sampler_descs.size(); ++i)
     {
-      D3D12_SAMPLER_DESC sampler_desc{};
-      sampler_desc.Filter = get_filter(samplers[i].filtering, samplers[i].comparison != Sampler::COMPARISON_NEVER);
-      sampler_desc.AddressU = get_addressing(samplers[i].addressing);
-      sampler_desc.AddressV = get_addressing(samplers[i].addressing);
-      sampler_desc.AddressW = get_addressing(samplers[i].addressing);
-      sampler_desc.MipLODBias = samplers[i].bias_lod;
-      sampler_desc.MaxAnisotropy = samplers[i].anisotropy;
-      sampler_desc.ComparisonFunc = get_comparison(samplers[i].comparison);
-      sampler_desc.BorderColor[0] = samplers[i].color[0];
-      sampler_desc.BorderColor[1] = samplers[i].color[1];
-      sampler_desc.BorderColor[2] = samplers[i].color[2];
-      sampler_desc.BorderColor[3] = samplers[i].color[3];
-      sampler_desc.MinLOD = samplers[i].min_lod;
-      sampler_desc.MaxLOD = samplers[i].max_lod;
-
-      device->GetDevice()->CreateSampler(&sampler_desc, sampler_items[i]);
+      sampler_descs[i].Filter = get_filter(samplers[i].filtering, samplers[i].comparison != Sampler::COMPARISON_NEVER);
+      sampler_descs[i].AddressU = get_addressing(samplers[i].addressing);
+      sampler_descs[i].AddressV = get_addressing(samplers[i].addressing);
+      sampler_descs[i].AddressW = get_addressing(samplers[i].addressing);
+      sampler_descs[i].MipLODBias = samplers[i].bias_lod;
+      sampler_descs[i].MaxAnisotropy = samplers[i].anisotropy;
+      sampler_descs[i].ComparisonFunc = get_comparison(samplers[i].comparison);
+      sampler_descs[i].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
+      sampler_descs[i].MinLOD = samplers[i].min_lod;
+      sampler_descs[i].MaxLOD = samplers[i].max_lod;
+      sampler_descs[i].ShaderRegister = i;
+      sampler_descs[i].RegisterSpace = 0;
+      sampler_descs[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     }
 
 
@@ -161,20 +158,77 @@ namespace RayGene3D
       }
     }
 
-    std::vector<D3D12_ROOT_PARAMETER> root_parameters;
+    auto parameter_offset = 0ull;
+
+    root_parameters.resize(parameter_offset + ub_items.size());
+    for (size_t i = 0; i < ub_items.size(); ++i)
+    {
+      root_parameters[parameter_offset + i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+      root_parameters[parameter_offset + i].Descriptor = { uint32_t(i + parameter_offset), 0 };
+      root_parameters[parameter_offset + i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    }
+    parameter_offset += ub_items.size();
+    
+    root_parameters.resize(parameter_offset + sb_items.size());
+    for (size_t i = 0; i < sb_items.size(); ++i)
+    {
+      root_parameters[parameter_offset + i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+      root_parameters[parameter_offset + i].Descriptor = { uint32_t(i + parameter_offset), 0 };
+      root_parameters[parameter_offset + i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+    }
+    parameter_offset += sb_items.size();
+
+    
+    std::vector<D3D12_DESCRIPTOR_RANGE> rr_ranges(rr_items.size());
+    for (size_t i = 0; i < rr_ranges.size(); ++i)
+    {
+      rr_ranges[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+      rr_ranges[i].NumDescriptors = rr_items.size();
+      rr_ranges[i].BaseShaderRegister = i;
+      rr_ranges[i].RegisterSpace = 0;
+      rr_ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+    }
+    if (!rr_items.empty())
+    {
+      root_parameters.resize(parameter_offset + 1);
+      root_parameters[parameter_offset].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+      root_parameters[parameter_offset].DescriptorTable = { uint32_t(rr_ranges.size()), rr_ranges.data() };
+      root_parameters[parameter_offset].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+      parameter_offset += 1;
+    }
+
+    
+    std::vector<D3D12_DESCRIPTOR_RANGE> wr_ranges(wr_items.size());
+    for (size_t i = 0; i < wr_ranges.size(); ++i)
+    {
+      wr_ranges[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+      wr_ranges[i].NumDescriptors = wr_items.size();
+      wr_ranges[i].BaseShaderRegister = i;
+      wr_ranges[i].RegisterSpace = 0;
+      wr_ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+    }
+    if (!wr_items.empty())
+    {
+      root_parameters.resize(parameter_offset + 1);
+      root_parameters[parameter_offset].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+      root_parameters[parameter_offset].DescriptorTable = { uint32_t(wr_ranges.size()), wr_ranges.data() };
+      root_parameters[parameter_offset].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+      parameter_offset += 1;
+    }
+    
 
     D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
     signature_desc.NumParameters = root_parameters.size();
     signature_desc.pParameters = root_parameters.data();
-    signature_desc.NumStaticSamplers = 0;
-    signature_desc.pStaticSamplers = nullptr;
+    signature_desc.NumStaticSamplers = sampler_descs.size();
+    signature_desc.pStaticSamplers = sampler_descs.data();
     signature_desc.Flags =
       D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
       D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
 
     ID3DBlob* signature{ nullptr };
     ID3DBlob* errors{ nullptr };
-    HRESULT hr = D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors);
+    BLAST_ASSERT(S_OK == D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
 
     if (errors)
     {
@@ -402,15 +456,6 @@ namespace RayGene3D
 
   void D12Batch::Discard()
   {
-    for (uint32_t i = 0; i < sampler_items.size(); ++i)
-    {
-      //if (sampler_states[i])
-      //{
-      //  sampler_states[i]->Release();
-      //  sampler_states[i] = nullptr;
-      //}
-    }
-
     if (root_signature)
     {
       root_signature->Release();

@@ -55,6 +55,11 @@ namespace RayGene3D
     ID3D12DescriptorHeap* sampler_heap{ nullptr };
 
   protected:
+    size_t fence_value{ 0 };
+    ID3D12Fence* fence{ nullptr };
+    HANDLE fence_event{ nullptr };
+
+  protected:
     uint32_t general_size{ 0 };
     uint32_t sampler_size{ 0 };
     uint32_t rtv_size{ 0 };

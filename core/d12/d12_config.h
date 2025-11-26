@@ -39,14 +39,6 @@ namespace RayGene3D
   class D12Config : public Config
   {
   protected:
-    D3D12_SHADER_BYTECODE vert_shader{ nullptr };
-    D3D12_SHADER_BYTECODE tesc_shader{ nullptr };
-    D3D12_SHADER_BYTECODE tese_shader{ nullptr };
-    D3D12_SHADER_BYTECODE geom_shader{ nullptr };
-    D3D12_SHADER_BYTECODE frag_shader{ nullptr };
-    D3D12_SHADER_BYTECODE comp_shader{ nullptr };
-
-  protected:
     D3D12_PRIMITIVE_TOPOLOGY_TYPE topology_type;
 
   protected:
@@ -57,21 +49,13 @@ namespace RayGene3D
     D3D12_DEPTH_STENCIL_DESC depth_desc{};
     D3D12_RASTERIZER_DESC raster_desc{};
 
-  //public:
-  //  std::vector<char> CompileVSSource(const std::string& source) override;
-  //  std::vector<char> CompileHSSource(const std::string& source) override;
-  //  std::vector<char> CompileDSSource(const std::string& source) override;
-  //  std::vector<char> CompileGSSource(const std::string& source) override;
-  //  std::vector<char> CompilePSSource(const std::string& source) override;
-  //  std::vector<char> CompileCSSource(const std::string& source) override;
-
   public:
-    D3D12_SHADER_BYTECODE GetVSBytecode() const { return vert_shader; }
-    D3D12_SHADER_BYTECODE GetHSBytecode() const { return tesc_shader; }
-    D3D12_SHADER_BYTECODE GetDSBytecode() const { return tese_shader; }
-    D3D12_SHADER_BYTECODE GetGSBytecode() const { return geom_shader; }
-    D3D12_SHADER_BYTECODE GetPSBytecode() const { return frag_shader; }
-    D3D12_SHADER_BYTECODE GetCSBytecode() const { return comp_shader; }
+    D3D12_SHADER_BYTECODE GetVSBytecode() const { return { vert_bytecode.data(), vert_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetHSBytecode() const { return { tesc_bytecode.data(), tesc_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetDSBytecode() const { return { tese_bytecode.data(), tese_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetGSBytecode() const { return { geom_bytecode.data(), geom_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetPSBytecode() const { return { frag_bytecode.data(), frag_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetCSBytecode() const { return { comp_bytecode.data(), comp_bytecode.size() }; }
 
   public:
     D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType() const { return topology_type; }
@@ -83,14 +67,6 @@ namespace RayGene3D
     D3D12_BLEND_DESC GetBlendDesc() const { return blend_desc; }
     D3D12_DEPTH_STENCIL_DESC GetDepthDesc() const { return depth_desc; }
     D3D12_RASTERIZER_DESC GetRasterDesc() const { return raster_desc; }
-
-  //protected:
-  //  ID3D12InputLayout* input_layout{ nullptr };
-
-  //protected:
-  //  ID3D12RasterizerState* raster_state{ nullptr };
-  //  ID3D12DepthStencilState* depth_state{ nullptr };
-  //  ID3D12BlendState* blend_state{ nullptr };
 
   //protected:
   //  std::vector<D3D11_VIEWPORT> vp_items;

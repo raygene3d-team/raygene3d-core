@@ -36,21 +36,20 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  Handle D12Resource::ObtainGeneral()
+  D3D12_CPU_DESCRIPTOR_HANDLE D12Resource::ObtainGeneral()
   {
     const auto slot = std::distance(general_slots.cbegin(), std::find(general_slots.cbegin(), general_slots.cend(), false));
-    if (slot == general_limit) return { 0, 0 };
+    if (slot == general_limit) return D3D12_CPU_DESCRIPTOR_HANDLE{ 0 };
 
     const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetGeneralSize();
-    const auto cpu_handle = general_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
-    const auto gpu_handle = general_heap->GetGPUDescriptorHandleForHeapStart().ptr + slot * size;
+    const auto handle = general_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
 
     general_slots[slot] = true;
 
-    return { cpu_handle, gpu_handle };
+    return D3D12_CPU_DESCRIPTOR_HANDLE{ handle };
   }
 
-  Handle D12Resource::ObtainRTV()
+  D3D12_CPU_DESCRIPTOR_HANDLE D12Resource::ObtainRTV()
   {
     const auto slot = std::distance(rtv_slots.cbegin(), std::find(rtv_slots.cbegin(), rtv_slots.cend(), false));
     if (slot == rtv_limit) return { 0, 0 };
@@ -64,7 +63,7 @@ namespace RayGene3D
     return { cpu_handle, gpu_handle };
   }
 
-  Handle D12Resource::ObtainDSV()
+  D3D12_CPU_DESCRIPTOR_HANDLE D12Resource::ObtainDSV()
   {
     const auto slot = std::distance(dsv_slots.cbegin(), std::find(dsv_slots.cbegin(), dsv_slots.cend(), false));
     if (slot == dsv_limit) return { 0, 0 };
@@ -78,7 +77,7 @@ namespace RayGene3D
     return { cpu_handle, gpu_handle };
   }
 
-  void D12Resource::DropGeneral(Handle handle)
+  void D12Resource::DropGeneral(D3D12_CPU_DESCRIPTOR_HANDLE handle)
   { 
     if (handle.Cpu.ptr == 0) return; 
 
@@ -88,7 +87,7 @@ namespace RayGene3D
     general_slots[slot] = false;
   }
 
-  void D12Resource::DropRTV(Handle handle)
+  void D12Resource::DropRTV(D3D12_CPU_DESCRIPTOR_HANDLE handle)
   { 
     if (handle.Cpu.ptr == 0) return;
 
@@ -98,7 +97,7 @@ namespace RayGene3D
     rtv_slots[slot] = false;
   }
 
-  void D12Resource::DropDSV(Handle handle)
+  void D12Resource::DropDSV(D3D12_CPU_DESCRIPTOR_HANDLE handle)
   {
     if (handle.Cpu.ptr == 0) return;
 
@@ -224,6 +223,8 @@ namespace RayGene3D
       }
     };
 
+    D3D12_RESOURCE_DESC desc{};
+
     switch (type)
     {
     case TYPE_BUFFER:
@@ -316,7 +317,10 @@ namespace RayGene3D
       nullptr, 
       IID_PPV_ARGS(&resource)));
 
-    desc = resource->GetDesc();
+    if (type == TYPE_BUFFER)
+    {
+      address = resource->GetGPUVirtualAddress();
+    }
 
 
     //const auto populate_texture_subresources_fn =
@@ -374,7 +378,7 @@ namespace RayGene3D
       D3D12_DESCRIPTOR_HEAP_DESC general_heap_desc = {};
       general_heap_desc.NumDescriptors = general_limit;
       general_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-      general_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+      general_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
       BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&general_heap_desc, IID_PPV_ARGS(&general_heap)));
     }
 
@@ -495,24 +499,29 @@ namespace RayGene3D
             memcpy(mapped, data, size);
             staging_buffer->Unmap(0, nullptr);
 
+            const auto width = Mip(size_x, j);
+            const auto height = Mip(size_y, j);
+            const auto depth = Mip(size_z, j);
+
+           
+
             D3D12_TEXTURE_COPY_LOCATION src{};
             src.pResource = staging_buffer;
             src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
             src.PlacedFootprint.Offset = 0;
             //src.PlacedFootprint.Footprint = layouts[j].Footprint;
             src.PlacedFootprint.Footprint.Format = get_format();
-            src.PlacedFootprint.Footprint.Width = Mip(size_x, j);
-            src.PlacedFootprint.Footprint.Height = Mip(size_y, j);
-            src.PlacedFootprint.Footprint.Depth = Mip(size_z, j);
-            src.PlacedFootprint.Footprint.RowPitch = (Size(format, size_x, size_y, size_z, {j, 1}) / size_t(Mip(size_y, j) * Mip(size_z, j))
-              + D3D12_TEXTURE_DATA_PITCH_ALIGNMENT - 1) & -D3D12_TEXTURE_DATA_PITCH_ALIGNMENT;
+            src.PlacedFootprint.Footprint.Width = width;
+            src.PlacedFootprint.Footprint.Height = height;
+            src.PlacedFootprint.Footprint.Depth = depth;
+            src.PlacedFootprint.Footprint.RowPitch = (size / height * depth + 255u) & ~255u;
 
             BLAST_ASSERT(S_OK == command_list->Reset(device->GetCommandAllocator(), nullptr));
 
             D3D12_TEXTURE_COPY_LOCATION dst{};
             dst.pResource = resource;
             dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-            dst.SubresourceIndex = i * desc.MipLevels + j;
+            dst.SubresourceIndex = i * levels_or_length + j;
             command_list->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
 
             BLAST_ASSERT(S_OK == command_list->Close());

@@ -81,6 +81,9 @@ namespace RayGene3D
 
     BLAST_ASSERT(S_OK == command_list->Close());
 
+    BLAST_ASSERT(S_OK == device->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+    fence_event = CreateEvent(nullptr, false, false, nullptr);
+
     general_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     sampler_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     rtv_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -209,13 +212,28 @@ namespace RayGene3D
     //  this->GetContext()->CopyResource(dst_resource, src_resource);
     //}
 
+
+
+
+    BLAST_ASSERT(S_OK == command_list->Reset(command_allocator, nullptr));
+
     for (auto& pass : passes)
     {
-      pass->Use();
+      //pass->Use();
     }
+
+    BLAST_ASSERT(S_OK == command_list->Close());
+    command_queue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
+
+    ++fence_value;
+    BLAST_ASSERT(S_OK == command_queue->Signal(fence, fence_value));
+    BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+    WaitForSingleObject(fence_event, INFINITE);
 
     if (screen && back_buffer)
     {
+      BLAST_ASSERT(S_OK == command_list->Reset(command_allocator, nullptr));
+
       auto screen_buffer = reinterpret_cast<D12Resource*>(screen.get())->GetResource();
       
       {
@@ -259,7 +277,17 @@ namespace RayGene3D
         barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
         command_list->ResourceBarrier(1, &barrier);
       }
+
+      BLAST_ASSERT(S_OK == command_list->Close());
+      command_queue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
+
+      ++fence_value;
+      BLAST_ASSERT(S_OK == command_queue->Signal(fence, fence_value));
+      BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+      WaitForSingleObject(fence_event, INFINITE);
     }
+
+
 
     if (swapchain)
     {

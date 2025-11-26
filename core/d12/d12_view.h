@@ -32,19 +32,14 @@ THE SOFTWARE.
 
 #include <dxgi.h>
 #include <d3d12.h>
+#include <wrl.h>
 
 namespace RayGene3D
 {
-  struct Handle
-  {
-    D3D12_CPU_DESCRIPTOR_HANDLE Cpu;
-    D3D12_GPU_DESCRIPTOR_HANDLE Gpu;
-  };
-
   class D12View : public View
   {
   protected:
-    Handle handle;
+    D3D12_CPU_DESCRIPTOR_HANDLE handle;
 
     union Info
     {
@@ -57,8 +52,7 @@ namespace RayGene3D
 
   public:
   //  void SetView(D3D12_CPU_DESCRIPTOR_HANDLE view) { this->view = view; }
-    D3D12_CPU_DESCRIPTOR_HANDLE GetCPUHandle() const { return handle.Cpu; }
-    D3D12_GPU_DESCRIPTOR_HANDLE GetGPUHandle() const { return handle.Gpu; }
+    D3D12_CPU_DESCRIPTOR_HANDLE GetHandle() const { return handle; }
   //  ID3D11ShaderResourceView* GetSRView() const { return reinterpret_cast<ID3D11ShaderResourceView*>(view); }
   //  ID3D11RenderTargetView* GetRTView() const { return reinterpret_cast<ID3D11RenderTargetView*>(view); }
   //  ID3D11DepthStencilView* GetDSView() const { return reinterpret_cast<ID3D11DepthStencilView*>(view); }
