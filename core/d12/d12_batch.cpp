@@ -113,7 +113,7 @@ namespace RayGene3D
         const auto& ub_view = ub_views[i];
         if (ub_view)
         {
-          ub_items[i] = (reinterpret_cast<D12View*>(ub_view.get()))->GetGPUHandle();
+          ub_items[i] = (reinterpret_cast<D12View*>(ub_view.get()))->GetHandle();
         }
       }
     }
@@ -127,7 +127,7 @@ namespace RayGene3D
         const auto& sb_view = sb_views[i];
         if (sb_view)
         {
-          sb_items[i] = (reinterpret_cast<D12View*>(sb_view.get()))->GetGPUHandle();
+          sb_items[i] = (reinterpret_cast<D12View*>(sb_view.get()))->GetHandle();
         }
       }
     }
@@ -139,9 +139,9 @@ namespace RayGene3D
       if (i < rr_count)
       {
         size_t offset = 0u;
-        if (i - offset < rb_views.size() && rb_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(rb_views[i - offset].get()))->GetGPUHandle(); continue; }
+        if (i - offset < rb_views.size() && rb_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(rb_views[i - offset].get()))->GetHandle(); continue; }
         offset += rb_views.size();
-        if (i - offset < ri_views.size() && ri_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(ri_views[i - offset].get()))->GetGPUHandle(); continue; }
+        if (i - offset < ri_views.size() && ri_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(ri_views[i - offset].get()))->GetHandle(); continue; }
       }
     }
 
@@ -152,9 +152,9 @@ namespace RayGene3D
       if (i < wr_count)
       {
         size_t offset = 0u;
-        if (i - offset < wb_views.size() && wb_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wb_views[i - offset].get()))->GetGPUHandle(); continue; }
+        if (i - offset < wb_views.size() && wb_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wb_views[i - offset].get()))->GetHandle(); continue; }
         offset += wb_views.size();
-        if (i - offset < wi_views.size() && wi_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wi_views[i - offset].get()))->GetGPUHandle(); continue; }
+        if (i - offset < wi_views.size() && wi_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wi_views[i - offset].get()))->GetHandle(); continue; }
       }
     }
 
@@ -183,7 +183,7 @@ namespace RayGene3D
     for (size_t i = 0; i < rr_ranges.size(); ++i)
     {
       rr_ranges[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
-      rr_ranges[i].NumDescriptors = rr_items.size();
+      rr_ranges[i].NumDescriptors = 1;
       rr_ranges[i].BaseShaderRegister = i;
       rr_ranges[i].RegisterSpace = 0;
       rr_ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -202,7 +202,7 @@ namespace RayGene3D
     for (size_t i = 0; i < wr_ranges.size(); ++i)
     {
       wr_ranges[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
-      wr_ranges[i].NumDescriptors = wr_items.size();
+      wr_ranges[i].NumDescriptors = 1;
       wr_ranges[i].BaseShaderRegister = i;
       wr_ranges[i].RegisterSpace = 0;
       wr_ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
@@ -216,62 +216,105 @@ namespace RayGene3D
       parameter_offset += 1;
     }
     
-
-    D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
-    signature_desc.NumParameters = root_parameters.size();
-    signature_desc.pParameters = root_parameters.data();
-    signature_desc.NumStaticSamplers = sampler_descs.size();
-    signature_desc.pStaticSamplers = sampler_descs.data();
-    signature_desc.Flags =
-      D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-      D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
-
-    ID3DBlob* signature{ nullptr };
-    ID3DBlob* errors{ nullptr };
-    BLAST_ASSERT(S_OK == D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
-
-    if (errors)
+    switch (pass->GetType())
     {
-      BLAST_LOG("signature serialization output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
-      errors->Release();
-    }
 
-    if (signature)
+    case Pass::TYPE_GRAPHIC:
     {
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-        IID_PPV_ARGS(&root_signature)));
-      signature->Release();
-    }
+      D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
+      signature_desc.NumParameters = root_parameters.size();
+      signature_desc.pParameters = root_parameters.data();
+      signature_desc.NumStaticSamplers = sampler_descs.size();
+      signature_desc.pStaticSamplers = sampler_descs.data();
+      signature_desc.Flags =
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+        D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
 
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc = {};
-    pso_desc.pRootSignature = root_signature;
-    pso_desc.VS = config->GetVSBytecode();
-    pso_desc.PS = config->GetPSBytecode();
-    pso_desc.HS = config->GetHSBytecode();
-    pso_desc.DS = config->GetDSBytecode();
-    pso_desc.GS = config->GetGSBytecode();    
-    pso_desc.StreamOutput = {};
-    pso_desc.BlendState = config->GetBlendDesc();
-    pso_desc.SampleMask = UINT_MAX;
-    pso_desc.RasterizerState = config->GetRasterDesc();
-    pso_desc.DepthStencilState = config->GetDepthDesc();
-    pso_desc.InputLayout = config->GetLayoutDesc();
-    pso_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
-    pso_desc.PrimitiveTopologyType = config->GetTopologyType();
-    pso_desc.NumRenderTargets = pass->GetRTCount();
-    pso_desc.RTVFormats[0] = pass->GetRTFormat(0);
-    pso_desc.RTVFormats[1] = pass->GetRTFormat(1);
-    pso_desc.RTVFormats[2] = pass->GetRTFormat(2);
-    pso_desc.RTVFormats[3] = pass->GetRTFormat(3);
-    pso_desc.RTVFormats[4] = pass->GetRTFormat(4);
-    pso_desc.RTVFormats[5] = pass->GetRTFormat(5);
-    pso_desc.RTVFormats[6] = pass->GetRTFormat(6);
-    pso_desc.RTVFormats[7] = pass->GetRTFormat(7);
-    pso_desc.DSVFormat = pass->GetDSFormat(0);
-    pso_desc.SampleDesc = { 1, 0 };
-    pso_desc.NodeMask = 0;
-    pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-    BLAST_ASSERT(S_OK == device->GetDevice()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pipeline_state)));
+      ID3DBlob* signature{ nullptr };
+      ID3DBlob* errors{ nullptr };
+      BLAST_ASSERT(S_OK == D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
+
+      if (errors)
+      {
+        BLAST_LOG("signature serialization output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
+        errors->Release();
+      }
+
+      if (signature)
+      {
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+          IID_PPV_ARGS(&root_signature)));
+        signature->Release();
+      }
+
+      BLAST_LOG("batch: %s", name.c_str());
+
+      D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc = {};
+      pso_desc.pRootSignature = root_signature;
+      pso_desc.VS = config->GetVSBytecode();
+      pso_desc.PS = config->GetPSBytecode();
+      pso_desc.HS = config->GetHSBytecode();
+      pso_desc.DS = config->GetDSBytecode();
+      pso_desc.GS = config->GetGSBytecode();
+      pso_desc.StreamOutput = {};
+      pso_desc.BlendState = config->GetBlendDesc();
+      pso_desc.SampleMask = UINT_MAX;
+      pso_desc.RasterizerState = config->GetRasterDesc();
+      pso_desc.DepthStencilState = config->GetDepthDesc();
+      pso_desc.InputLayout = config->GetLayoutDesc();
+      pso_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+      pso_desc.PrimitiveTopologyType = config->GetTopologyType();
+      pso_desc.NumRenderTargets = pass->GetRTCount();
+      pso_desc.RTVFormats[0] = pass->GetRTFormat(0);
+      pso_desc.RTVFormats[1] = pass->GetRTFormat(1);
+      pso_desc.RTVFormats[2] = pass->GetRTFormat(2);
+      pso_desc.RTVFormats[3] = pass->GetRTFormat(3);
+      pso_desc.RTVFormats[4] = pass->GetRTFormat(4);
+      pso_desc.RTVFormats[5] = pass->GetRTFormat(5);
+      pso_desc.RTVFormats[6] = pass->GetRTFormat(6);
+      pso_desc.RTVFormats[7] = pass->GetRTFormat(7);
+      pso_desc.DSVFormat = pass->GetDSFormat(0);
+      pso_desc.SampleDesc = { 1, 0 };
+      pso_desc.NodeMask = 0;
+      pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pipeline_state)));
+    } break;
+    case Pass::TYPE_COMPUTE:
+    {
+      D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
+      signature_desc.NumParameters = root_parameters.size();
+      signature_desc.pParameters = root_parameters.data();
+      signature_desc.NumStaticSamplers = sampler_descs.size();
+      signature_desc.pStaticSamplers = sampler_descs.data();
+      signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
+
+      ID3DBlob* signature{ nullptr };
+      ID3DBlob* errors{ nullptr };
+      BLAST_ASSERT(S_OK == D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
+
+      if (errors)
+      {
+        BLAST_LOG("signature serialization output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
+        errors->Release();
+      }
+
+      if (signature)
+      {
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+          IID_PPV_ARGS(&root_signature)));
+        signature->Release();
+      }
+
+      BLAST_LOG("batch: %s", name.c_str());
+
+      D3D12_COMPUTE_PIPELINE_STATE_DESC pso_desc = {};
+      pso_desc.pRootSignature = root_signature;
+      pso_desc.CS = config->GetCSBytecode();
+      pso_desc.NodeMask = 0;
+      pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pipeline_state)));
+    } break;
+    }
   }
 
   void D12Batch::Use()

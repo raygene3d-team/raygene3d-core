@@ -52,57 +52,55 @@ namespace RayGene3D
   D3D12_CPU_DESCRIPTOR_HANDLE D12Resource::ObtainRTV()
   {
     const auto slot = std::distance(rtv_slots.cbegin(), std::find(rtv_slots.cbegin(), rtv_slots.cend(), false));
-    if (slot == rtv_limit) return { 0, 0 };
+    if (slot == rtv_limit) return D3D12_CPU_DESCRIPTOR_HANDLE{ 0 };
 
     const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetRTVSize();
-    const auto cpu_handle = rtv_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
-    const auto gpu_handle = 0; // rtv_heap->GetGPUDescriptorHandleForHeapStart().ptr + slot * size;
+    const auto handle = rtv_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
 
     rtv_slots[slot] = true;
 
-    return { cpu_handle, gpu_handle };
+    return D3D12_CPU_DESCRIPTOR_HANDLE{ handle };
   }
 
   D3D12_CPU_DESCRIPTOR_HANDLE D12Resource::ObtainDSV()
   {
     const auto slot = std::distance(dsv_slots.cbegin(), std::find(dsv_slots.cbegin(), dsv_slots.cend(), false));
-    if (slot == dsv_limit) return { 0, 0 };
+    if (slot == dsv_limit) return D3D12_CPU_DESCRIPTOR_HANDLE{ 0 };
 
     const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetDSVSize();
-    const auto cpu_handle = dsv_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
-    const auto gpu_handle = 0; // dsv_heap->GetGPUDescriptorHandleForHeapStart().ptr + slot * size;
+    const auto handle = dsv_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
 
     dsv_slots[slot] = true;
 
-    return { cpu_handle, gpu_handle };
+    return D3D12_CPU_DESCRIPTOR_HANDLE{ handle };
   }
 
   void D12Resource::DropGeneral(D3D12_CPU_DESCRIPTOR_HANDLE handle)
   { 
-    if (handle.Cpu.ptr == 0) return; 
+    if (handle.ptr == 0) return;
 
     const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetGeneralSize();
-    const auto slot = (handle.Cpu.ptr - general_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
+    const auto slot = (handle.ptr - general_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
 
     general_slots[slot] = false;
   }
 
   void D12Resource::DropRTV(D3D12_CPU_DESCRIPTOR_HANDLE handle)
   { 
-    if (handle.Cpu.ptr == 0) return;
+    if (handle.ptr == 0) return;
 
     const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetRTVSize();
-    const auto slot = (handle.Cpu.ptr - rtv_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
+    const auto slot = (handle.ptr - rtv_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
 
     rtv_slots[slot] = false;
   }
 
   void D12Resource::DropDSV(D3D12_CPU_DESCRIPTOR_HANDLE handle)
   {
-    if (handle.Cpu.ptr == 0) return;
+    if (handle.ptr == 0) return;
 
     const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetDSVSize();
-    const auto slot = (handle.Cpu.ptr - dsv_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
+    const auto slot = (handle.ptr - dsv_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
 
     dsv_slots[slot] = false;
   }

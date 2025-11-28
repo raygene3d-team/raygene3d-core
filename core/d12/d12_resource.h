@@ -94,16 +94,16 @@ namespace RayGene3D
       case HEAP_RTV: return ObtainRTV();
       case HEAP_DSV: return ObtainDSV();
       };
-      return{ 0, 0 };
+      return D3D12_CPU_DESCRIPTOR_HANDLE{};
     }
 
     void DropHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle, Heap heap = HEAP_GENERAL)
     {
       switch (heap)
       {
-      case HEAP_GENERAL: DropGeneral(handle);
-      case HEAP_RTV: DropRTV(handle);
-      case HEAP_DSV: DropDSV(handle);
+      case HEAP_GENERAL: return DropGeneral(handle);
+      case HEAP_RTV: return DropRTV(handle);
+      case HEAP_DSV: return DropDSV(handle);
       };
     }
 

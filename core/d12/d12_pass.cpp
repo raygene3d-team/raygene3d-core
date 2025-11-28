@@ -156,7 +156,7 @@ namespace RayGene3D
 
         if (rt_view)
         {
-          rt_items[i] = (reinterpret_cast<D12View*>(rt_view.get()))->GetCPUHandle();
+          rt_items[i] = (reinterpret_cast<D12View*>(rt_view.get()))->GetHandle();
 
           if (rt_value)
           {
@@ -176,7 +176,7 @@ namespace RayGene3D
 
         if (ds_view)
         {
-          ds_items[i] = (reinterpret_cast<D12View*>(ds_view.get()))->GetCPUHandle();
+          ds_items[i] = (reinterpret_cast<D12View*>(ds_view.get()))->GetHandle();
 
           D3D12_CLEAR_FLAGS clear_flags = {};
           float clear_depth = 0.0f;

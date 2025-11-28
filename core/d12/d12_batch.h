@@ -51,10 +51,10 @@ namespace RayGene3D
     std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs;
 
   protected:
-    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> ub_items;
-    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> sb_items;
-    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> rr_items;
-    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> wr_items;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> ub_items;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> sb_items;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rr_items;
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> wr_items;
 
   public:
     void Initialize() override;
