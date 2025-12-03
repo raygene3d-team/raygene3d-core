@@ -201,8 +201,15 @@ namespace RayGene3D
         }
       }
 
-      device->GetCommandList()->OMSetRenderTargets(rt_count, rt_items, false, &ds_items[0]);
+      const auto ds_item = ds_items[0].ptr != 0 ? &ds_items[0] : nullptr;
+
+      device->GetCommandList()->OMSetRenderTargets(rt_count, rt_items, false, ds_item);
     }
+
+    if (type == TYPE_COMPUTE)
+    {
+    }
+
 
     for (const auto& config : configs)
     {

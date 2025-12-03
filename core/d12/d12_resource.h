@@ -36,12 +36,13 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  constexpr size_t general_limit{ 256 };
-  constexpr size_t rtv_limit{ 32 };
-  constexpr size_t dsv_limit{ 32 };  
-
   class D12Resource : public Resource
   {
+  protected:
+    static constexpr size_t general_limit{ 256 };
+    static constexpr size_t rtv_limit{ 32 };
+    static constexpr size_t dsv_limit{ 32 };
+
   protected:
     ID3D12Resource* resource{ nullptr };
     D3D12_GPU_VIRTUAL_ADDRESS address{ 0 };
@@ -74,7 +75,8 @@ namespace RayGene3D
 
   public:
     //void SetResource(ID3D12Resource* resource) { this->resource = resource; }
-    ID3D12Resource* GetResource() { return resource; }
+    ID3D12Resource* GetResource() const { return resource; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetAddress() const { return address; }
 
   protected:
     D3D12_CPU_DESCRIPTOR_HANDLE ObtainGeneral();

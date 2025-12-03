@@ -113,7 +113,7 @@ namespace RayGene3D
         const auto& ub_view = ub_views[i];
         if (ub_view)
         {
-          ub_items[i] = (reinterpret_cast<D12View*>(ub_view.get()))->GetHandle();
+          ub_items[i] = (reinterpret_cast<D12View*>(ub_view.get()))->GetAddress();
         }
       }
     }
@@ -127,7 +127,7 @@ namespace RayGene3D
         const auto& sb_view = sb_views[i];
         if (sb_view)
         {
-          sb_items[i] = (reinterpret_cast<D12View*>(sb_view.get()))->GetHandle();
+          sb_items[i] = (reinterpret_cast<D12View*>(sb_view.get()))->GetAddress();
         }
       }
     }
@@ -221,98 +221,126 @@ namespace RayGene3D
 
     case Pass::TYPE_GRAPHIC:
     {
-      D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
-      signature_desc.NumParameters = root_parameters.size();
-      signature_desc.pParameters = root_parameters.data();
-      signature_desc.NumStaticSamplers = sampler_descs.size();
-      signature_desc.pStaticSamplers = sampler_descs.data();
-      signature_desc.Flags =
-        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-        D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
-
-      ID3DBlob* signature{ nullptr };
-      ID3DBlob* errors{ nullptr };
-      BLAST_ASSERT(S_OK == D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
-
-      if (errors)
       {
-        BLAST_LOG("signature serialization output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
-        errors->Release();
+        D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
+        signature_desc.NumParameters = root_parameters.size();
+        signature_desc.pParameters = root_parameters.data();
+        signature_desc.NumStaticSamplers = sampler_descs.size();
+        signature_desc.pStaticSamplers = sampler_descs.data();
+        signature_desc.Flags =
+          D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
+          D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
+
+        ID3DBlob* signature{ nullptr };
+        ID3DBlob* errors{ nullptr };
+        BLAST_ASSERT(S_OK == D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
+
+        if (errors)
+        {
+          BLAST_LOG("signature serialization output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
+          errors->Release();
+        }
+
+        if (signature)
+        {
+          BLAST_ASSERT(S_OK == device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+            IID_PPV_ARGS(&root_signature)));
+          signature->Release();
+        }
       }
 
-      if (signature)
       {
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-          IID_PPV_ARGS(&root_signature)));
-        signature->Release();
+        D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc = {};
+        pso_desc.pRootSignature = root_signature;
+        pso_desc.VS = config->GetVSBytecode();
+        pso_desc.PS = config->GetPSBytecode();
+        pso_desc.HS = config->GetHSBytecode();
+        pso_desc.DS = config->GetDSBytecode();
+        pso_desc.GS = config->GetGSBytecode();
+        pso_desc.StreamOutput = {};
+        pso_desc.BlendState = config->GetBlendDesc();
+        pso_desc.SampleMask = UINT_MAX;
+        pso_desc.RasterizerState = config->GetRasterDesc();
+        pso_desc.DepthStencilState = config->GetDepthDesc();
+        pso_desc.InputLayout = config->GetLayoutDesc();
+        pso_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
+        pso_desc.PrimitiveTopologyType = config->GetTopologyType();
+        pso_desc.NumRenderTargets = pass->GetRTCount();
+        pso_desc.RTVFormats[0] = pass->GetRTFormat(0);
+        pso_desc.RTVFormats[1] = pass->GetRTFormat(1);
+        pso_desc.RTVFormats[2] = pass->GetRTFormat(2);
+        pso_desc.RTVFormats[3] = pass->GetRTFormat(3);
+        pso_desc.RTVFormats[4] = pass->GetRTFormat(4);
+        pso_desc.RTVFormats[5] = pass->GetRTFormat(5);
+        pso_desc.RTVFormats[6] = pass->GetRTFormat(6);
+        pso_desc.RTVFormats[7] = pass->GetRTFormat(7);
+        pso_desc.DSVFormat = pass->GetDSFormat(0);
+        pso_desc.SampleDesc = { 1, 0 };
+        pso_desc.NodeMask = 0;
+        pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pipeline_state)));
       }
 
-      BLAST_LOG("batch: %s", name.c_str());
+      {
+        D3D12_INDIRECT_ARGUMENT_DESC argument_desc = {};
+        argument_desc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
 
-      D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc = {};
-      pso_desc.pRootSignature = root_signature;
-      pso_desc.VS = config->GetVSBytecode();
-      pso_desc.PS = config->GetPSBytecode();
-      pso_desc.HS = config->GetHSBytecode();
-      pso_desc.DS = config->GetDSBytecode();
-      pso_desc.GS = config->GetGSBytecode();
-      pso_desc.StreamOutput = {};
-      pso_desc.BlendState = config->GetBlendDesc();
-      pso_desc.SampleMask = UINT_MAX;
-      pso_desc.RasterizerState = config->GetRasterDesc();
-      pso_desc.DepthStencilState = config->GetDepthDesc();
-      pso_desc.InputLayout = config->GetLayoutDesc();
-      pso_desc.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
-      pso_desc.PrimitiveTopologyType = config->GetTopologyType();
-      pso_desc.NumRenderTargets = pass->GetRTCount();
-      pso_desc.RTVFormats[0] = pass->GetRTFormat(0);
-      pso_desc.RTVFormats[1] = pass->GetRTFormat(1);
-      pso_desc.RTVFormats[2] = pass->GetRTFormat(2);
-      pso_desc.RTVFormats[3] = pass->GetRTFormat(3);
-      pso_desc.RTVFormats[4] = pass->GetRTFormat(4);
-      pso_desc.RTVFormats[5] = pass->GetRTFormat(5);
-      pso_desc.RTVFormats[6] = pass->GetRTFormat(6);
-      pso_desc.RTVFormats[7] = pass->GetRTFormat(7);
-      pso_desc.DSVFormat = pass->GetDSFormat(0);
-      pso_desc.SampleDesc = { 1, 0 };
-      pso_desc.NodeMask = 0;
-      pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateGraphicsPipelineState(&pso_desc, IID_PPV_ARGS(&pipeline_state)));
+        D3D12_COMMAND_SIGNATURE_DESC signature_desc = {};
+        signature_desc.ByteStride = uint32_t(sizeof(Graphic));
+        signature_desc.NumArgumentDescs = 1;
+        signature_desc.pArgumentDescs = &argument_desc;
+
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommandSignature(&signature_desc, nullptr, IID_PPV_ARGS(&command_signature)));
+      }
     } break;
     case Pass::TYPE_COMPUTE:
     {
-      D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
-      signature_desc.NumParameters = root_parameters.size();
-      signature_desc.pParameters = root_parameters.data();
-      signature_desc.NumStaticSamplers = sampler_descs.size();
-      signature_desc.pStaticSamplers = sampler_descs.data();
-      signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
-
-      ID3DBlob* signature{ nullptr };
-      ID3DBlob* errors{ nullptr };
-      BLAST_ASSERT(S_OK == D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
-
-      if (errors)
       {
-        BLAST_LOG("signature serialization output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
-        errors->Release();
+        D3D12_ROOT_SIGNATURE_DESC signature_desc = {};
+        signature_desc.NumParameters = root_parameters.size();
+        signature_desc.pParameters = root_parameters.data();
+        signature_desc.NumStaticSamplers = sampler_descs.size();
+        signature_desc.pStaticSamplers = sampler_descs.data();
+        signature_desc.Flags = D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
+
+        ID3DBlob* signature{ nullptr };
+        ID3DBlob* errors{ nullptr };
+        BLAST_ASSERT(S_OK == D3D12SerializeRootSignature(&signature_desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &signature, &errors));
+
+        if (errors)
+        {
+          BLAST_LOG("signature serialization output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
+          errors->Release();
+        }
+
+        if (signature)
+        {
+          BLAST_ASSERT(S_OK == device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+            IID_PPV_ARGS(&root_signature)));
+          signature->Release();
+        }
       }
 
-      if (signature)
       {
-        BLAST_ASSERT(S_OK == device->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-          IID_PPV_ARGS(&root_signature)));
-        signature->Release();
+        D3D12_COMPUTE_PIPELINE_STATE_DESC pso_desc = {};
+        pso_desc.pRootSignature = root_signature;
+        pso_desc.CS = config->GetCSBytecode();
+        pso_desc.NodeMask = 0;
+        pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pipeline_state)));
       }
 
-      BLAST_LOG("batch: %s", name.c_str());
+      {
+        D3D12_INDIRECT_ARGUMENT_DESC argument_desc = {};
+        argument_desc.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
 
-      D3D12_COMPUTE_PIPELINE_STATE_DESC pso_desc = {};
-      pso_desc.pRootSignature = root_signature;
-      pso_desc.CS = config->GetCSBytecode();
-      pso_desc.NodeMask = 0;
-      pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pipeline_state)));
+        D3D12_COMMAND_SIGNATURE_DESC signature_desc = {};
+        signature_desc.ByteStride = uint32_t(sizeof(Compute));
+        signature_desc.NumArgumentDescs = 1;
+        signature_desc.pArgumentDescs = &argument_desc;
+
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommandSignature(&signature_desc, nullptr, IID_PPV_ARGS(&command_signature)));
+      }
     } break;
     }
   }
@@ -322,6 +350,14 @@ namespace RayGene3D
     auto config = reinterpret_cast<D12Config*>(&this->GetConfig());
     auto pass = reinterpret_cast<D12Pass*>(&config->GetPass());
     auto device = reinterpret_cast<D12Device*>(&pass->GetDevice());
+
+    //const auto command_list = device->GetCommandList();
+
+    device->GetCommandList()->SetPipelineState(pipeline_state);
+
+    device->GetCommandList()->SetComputeRootSignature(root_signature);
+
+
 
     //if (pass->GetType() == Pass::TYPE_GRAPHIC)
     //{
@@ -437,64 +473,78 @@ namespace RayGene3D
     //}
 
 
-    //if (pass->GetType() == Pass::TYPE_COMPUTE)
-    //{
-    //  uint32_t wr_initials[8] = { 0 };
-    //  device->GetContext()->CSSetUnorderedAccessViews(0, wr_items.size(), wr_items.data(), wr_initials);
-    //  device->GetContext()->CSSetShaderResources(0, rr_items.size(), rr_items.data());
-    //  device->GetContext()->CSSetConstantBuffers(0, ub_items.size(), ub_items.data());
-    //  device->GetContext()->CSSetSamplers(0, sampler_states.size(), sampler_states.data());
+    if (pass->GetType() == Pass::TYPE_COMPUTE)
+    {
+      auto parameter_offset = 0ull;
 
-    //  for (const auto& chunk : entities)
-    //  {
-    //    if (!sb_views.empty())
-    //    {
-    //      const auto sb_limit = size_t(4u);
-    //      const auto sb_count = std::min(sb_limit, sb_views.size());
+      for (size_t i = 0; i < ub_items.size(); ++i)
+      {
+        device->GetCommandList()->SetComputeRootConstantBufferView(parameter_offset + i, ub_items[i]);
+      }
+      parameter_offset += ub_items.size();
 
-    //      uint32_t sb_offsets[sb_limit] = {};
-    //      uint32_t sb_strides[sb_limit] = {};
-
-    //      for (size_t i = 0; i < sb_count; ++i)
-    //      {
-    //        const auto& sb_view = sb_views[i];
-    //        if (sb_view)
-    //        {
-    //          sb_offsets[i] = chunk.sb_offset ? chunk.sb_offset.value()[i] : 0u;
-    //          const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
-    //          sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
-    //        }
-    //      }
-
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //    }
+      root_parameters.resize(parameter_offset + sb_items.size());
+      for (size_t i = 0; i < sb_items.size(); ++i)
+      {
+        device->GetCommandList()->SetComputeRootConstantBufferView(parameter_offset + i, sb_items[i]);
+      }
+      parameter_offset += sb_items.size();
 
 
-    //    if (chunk.arg_view)
-    //    {
-    //      const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
-    //      const auto aa_stride = uint32_t(sizeof(Compute));
-    //      const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
-    //      device->GetContext()->DispatchIndirect(aa_buffer, aa_offset);
-    //    }
-    //    else
-    //    {
-    //      const auto grid_x = chunk.ins_or_grid_x.length;
-    //      const auto grid_y = chunk.vtx_or_grid_y.length;
-    //      const auto grid_z = chunk.idx_or_grid_z.length;
-    //      device->GetContext()->Dispatch(grid_x, grid_y, grid_z);
-    //    }
-    //  }
-    //}
+
+      //uint32_t wr_initials[8] = { 0 };
+      //device->GetContext()->CSSetUnorderedAccessViews(0, wr_items.size(), wr_items.data(), wr_initials);
+      //device->GetContext()->CSSetShaderResources(0, rr_items.size(), rr_items.data());
+      //device->GetContext()->CSSetConstantBuffers(0, ub_items.size(), ub_items.data());
+      //device->GetContext()->CSSetSamplers(0, sampler_states.size(), sampler_states.data());
+
+      for (size_t i = 0; i < entities.size(); ++i)
+      {
+        const auto& entity = entities[i];
+
+        if (!sb_views.empty())
+        {
+          const auto sb_limit = size_t(4u);
+          const auto sb_count = std::min(sb_limit, sb_views.size());
+
+          uint32_t sb_offsets[sb_limit] = {};
+          uint32_t sb_strides[sb_limit] = {};
+
+          for (size_t j = 0; j < sb_count; ++j)
+          {
+            const auto& sb_view = sb_views[j];
+            if (sb_view)
+            {
+              sb_offsets[j] = entity.sb_offset ? entity.sb_offset.value()[j] : 0u;
+              device->GetCommandList()->SetComputeRootConstantBufferView(ub_items.size() + j, sb_items[j] + sb_offsets[j]);
+            }
+          }
+        }
+
+
+        if (entity.arg_view)
+        {
+          const auto aa_buffer = (reinterpret_cast<D12Resource*>(&entity.arg_view->GetResource()))->GetResource();
+          //const auto aa_stride = uint32_t(sizeof(Compute));
+          //const auto aa_offset = entity.arg_view->GetLevelsOrLength().offset;
+
+          device->GetCommandList()->ExecuteIndirect(
+            command_signature,
+            1,
+            aa_buffer,
+            0,
+            nullptr,
+            0);
+        }
+        else
+        {
+          const auto grid_x = entity.ins_or_grid_x.length;
+          const auto grid_y = entity.vtx_or_grid_y.length;
+          const auto grid_z = entity.idx_or_grid_z.length;
+          device->GetCommandList()->Dispatch(grid_x, grid_y, grid_z);
+        }
+      }
+    }
   }
 
   void D12Batch::Discard()

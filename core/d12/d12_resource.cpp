@@ -307,12 +307,23 @@ namespace RayGene3D
     heap_prop.CreationNodeMask = 0;
     heap_prop.VisibleNodeMask = 0;
 
+    D3D12_CLEAR_VALUE clear_value = {};
+    clear_value.Format = get_format();
+    clear_value.Color[0] = 0.0f;
+    clear_value.Color[1] = 0.0f;
+    clear_value.Color[2] = 0.0f;
+    clear_value.Color[3] = 0.0f;
+    clear_value.DepthStencil.Depth = 1.0f;
+    clear_value.DepthStencil.Stencil = 0;
+
+    auto clear_apply = (usage & USAGE_RENDER_TARGET) | (usage & USAGE_DEPTH_STENCIL);
+
     BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommittedResource(
       &heap_prop, 
       D3D12_HEAP_FLAG_NONE,
       &desc, 
       D3D12_RESOURCE_STATE_COMMON, 
-      nullptr, 
+      clear_apply ? &clear_value : nullptr,
       IID_PPV_ARGS(&resource)));
 
     if (type == TYPE_BUFFER)

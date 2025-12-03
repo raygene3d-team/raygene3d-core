@@ -84,6 +84,22 @@ namespace RayGene3D
     BLAST_ASSERT(S_OK == device->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
     fence_event = CreateEvent(nullptr, false, false, nullptr);
 
+    {
+      D3D12_DESCRIPTOR_HEAP_DESC general_heap_desc = {};
+      general_heap_desc.NumDescriptors = general_limit;
+      general_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+      general_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+      BLAST_ASSERT(S_OK == device->CreateDescriptorHeap(&general_heap_desc, IID_PPV_ARGS(&general_heap)));
+    }
+
+    {
+      D3D12_DESCRIPTOR_HEAP_DESC sampler_heap_desc = {};
+      sampler_heap_desc.NumDescriptors = sampler_limit;
+      sampler_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+      sampler_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+      BLAST_ASSERT(S_OK == device->CreateDescriptorHeap(&sampler_heap_desc, IID_PPV_ARGS(&sampler_heap)));
+    }
+
     general_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     sampler_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     rtv_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
@@ -217,9 +233,12 @@ namespace RayGene3D
 
     BLAST_ASSERT(S_OK == command_list->Reset(command_allocator, nullptr));
 
+    std::array<ID3D12DescriptorHeap*, 2> heaps = { general_heap, sampler_heap };
+    command_list->SetDescriptorHeaps(heaps.size(), heaps.data());
+
     for (auto& pass : passes)
     {
-      //pass->Use();
+      pass->Use();
     }
 
     BLAST_ASSERT(S_OK == command_list->Close());

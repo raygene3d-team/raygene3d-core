@@ -40,6 +40,10 @@ namespace RayGene3D
   class D12Device : public Device
   {
   protected:
+    static constexpr size_t general_limit{ 1024 };
+    static constexpr size_t sampler_limit{ 1024 };
+
+  protected:
     ID3D12Debug* debug_controller{ nullptr };
     ID3D12Device* device{ nullptr };
     ID3D12CommandQueue* command_queue{ nullptr };

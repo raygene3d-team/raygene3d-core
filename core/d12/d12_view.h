@@ -40,6 +40,7 @@ namespace RayGene3D
   {
   protected:
     D3D12_CPU_DESCRIPTOR_HANDLE handle;
+    D3D12_GPU_VIRTUAL_ADDRESS address;
 
     union Info
     {
@@ -53,6 +54,7 @@ namespace RayGene3D
   public:
   //  void SetView(D3D12_CPU_DESCRIPTOR_HANDLE view) { this->view = view; }
     D3D12_CPU_DESCRIPTOR_HANDLE GetHandle() const { return handle; }
+    D3D12_GPU_VIRTUAL_ADDRESS GetAddress() const { return address; }
   //  ID3D11ShaderResourceView* GetSRView() const { return reinterpret_cast<ID3D11ShaderResourceView*>(view); }
   //  ID3D11RenderTargetView* GetRTView() const { return reinterpret_cast<ID3D11RenderTargetView*>(view); }
   //  ID3D11DepthStencilView* GetDSView() const { return reinterpret_cast<ID3D11DepthStencilView*>(view); }

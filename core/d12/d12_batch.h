@@ -43,6 +43,7 @@ namespace RayGene3D
   protected:
     ID3D12RootSignature* root_signature{ nullptr };
     ID3D12PipelineState* pipeline_state{ nullptr };
+    ID3D12CommandSignature* command_signature{ nullptr };
 
   protected:
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
@@ -51,8 +52,8 @@ namespace RayGene3D
     std::vector<D3D12_STATIC_SAMPLER_DESC> sampler_descs;
 
   protected:
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> ub_items;
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> sb_items;
+    std::vector<D3D12_GPU_VIRTUAL_ADDRESS> ub_items;
+    std::vector<D3D12_GPU_VIRTUAL_ADDRESS> sb_items;
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rr_items;
     std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> wr_items;
 
