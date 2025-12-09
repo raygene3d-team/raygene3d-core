@@ -55,8 +55,7 @@ namespace RayGene3D
     adapter->GetDesc(&adapter_desc);
 
     char adapter_name[256];
-    size_t adapter_size = 0;
-    wcstombs_s(&adapter_size, adapter_name, adapter_desc.Description, 256);
+    wcstombs(adapter_name, adapter_desc.Description, 256);
     name = std::string(adapter_name) + " (D3D12 API)\n";
 
     if (debug)
@@ -85,6 +84,14 @@ namespace RayGene3D
     fence_event = CreateEvent(nullptr, false, false, nullptr);
 
     {
+      D3D12_DESCRIPTOR_HEAP_DESC sampler_heap_desc = {};
+      sampler_heap_desc.NumDescriptors = sampler_limit;
+      sampler_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
+      sampler_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+      BLAST_ASSERT(S_OK == device->CreateDescriptorHeap(&sampler_heap_desc, IID_PPV_ARGS(&sampler_heap)));
+    }
+
+    {
       D3D12_DESCRIPTOR_HEAP_DESC general_heap_desc = {};
       general_heap_desc.NumDescriptors = general_limit;
       general_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
@@ -93,17 +100,26 @@ namespace RayGene3D
     }
 
     {
-      D3D12_DESCRIPTOR_HEAP_DESC sampler_heap_desc = {};
-      sampler_heap_desc.NumDescriptors = sampler_limit;
-      sampler_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-      sampler_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-      BLAST_ASSERT(S_OK == device->CreateDescriptorHeap(&sampler_heap_desc, IID_PPV_ARGS(&sampler_heap)));
+      D3D12_DESCRIPTOR_HEAP_DESC rt_heap_desc = {};
+      rt_heap_desc.NumDescriptors = rt_limit;
+      rt_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+      rt_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+      BLAST_ASSERT(S_OK == device->CreateDescriptorHeap(&rt_heap_desc, IID_PPV_ARGS(&rt_heap)));
     }
+
+    {
+      D3D12_DESCRIPTOR_HEAP_DESC ds_heap_desc = {};
+      ds_heap_desc.NumDescriptors = ds_limit;
+      ds_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+      ds_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+      BLAST_ASSERT(S_OK == device->CreateDescriptorHeap(&ds_heap_desc, IID_PPV_ARGS(&ds_heap)));
+    }
+
 
     general_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     sampler_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-    rtv_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    dsv_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+    rt_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    ds_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
     if (window)
     {
@@ -325,7 +341,31 @@ namespace RayGene3D
     //for (auto& resource : resources)
     //{
     //  if (resource) { resource->Discard(); }
-    //}
+    
+
+    if (sampler_heap)
+    {
+      sampler_heap->Release();
+      sampler_heap = nullptr;
+    }
+
+    if (general_heap)
+    {
+      general_heap->Release();
+      general_heap = nullptr;
+    }
+
+    if (rt_heap)
+    {
+      rt_heap->Release();
+      rt_heap = nullptr;
+    }
+
+    if (ds_heap)
+    {
+      ds_heap->Release();
+      ds_heap = nullptr;
+    }
 
     if (screen_buffer)
     {

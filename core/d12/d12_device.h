@@ -39,9 +39,26 @@ namespace RayGene3D
 {
   class D12Device : public Device
   {
+  public:
+    enum Heap
+    {
+      HEAP_SAMPLER = 0,
+      HEAP_GENERAL = 1,
+      HEAP_RTV = 2,
+      HEAP_DSV = 3,
+    };
+
+    union Handle
+    {
+      D3D12_CPU_DESCRIPTOR_HANDLE cpu;
+      D3D12_GPU_DESCRIPTOR_HANDLE gpu;
+    } handle;
+
   protected:
-    static constexpr size_t general_limit{ 1024 };
-    static constexpr size_t sampler_limit{ 1024 };
+    static constexpr size_t sampler_limit{ 4 * 1024 };
+    static constexpr size_t general_limit{ 16 * 1024 };
+    static constexpr size_t rt_limit{ 128 * 1024 };
+    static constexpr size_t ds_limit{ 128 * 1024 };
 
   protected:
     ID3D12Debug* debug_controller{ nullptr };
@@ -55,8 +72,17 @@ namespace RayGene3D
     ID3D12Resource* staging_buffer{ nullptr };
 
   protected:
-    ID3D12DescriptorHeap* general_heap{ nullptr };
     ID3D12DescriptorHeap* sampler_heap{ nullptr };
+    std::array<bool, sampler_limit> sampler_slots{};
+
+    ID3D12DescriptorHeap* general_heap{ nullptr };
+    std::array<bool, general_limit> general_slots{};
+
+    ID3D12DescriptorHeap* rt_heap{ nullptr };
+    std::array<bool, rt_limit> rt_slots{};
+
+    ID3D12DescriptorHeap* ds_heap{ nullptr };
+    std::array<bool, ds_limit> ds_slots{};
 
   protected:
     size_t fence_value{ 0 };
@@ -64,10 +90,10 @@ namespace RayGene3D
     HANDLE fence_event{ nullptr };
 
   protected:
-    uint32_t general_size{ 0 };
     uint32_t sampler_size{ 0 };
-    uint32_t rtv_size{ 0 };
-    uint32_t dsv_size{ 0 };
+    uint32_t general_size{ 0 };
+    uint32_t rt_size{ 0 };
+    uint32_t ds_size{ 0 };
 
   protected:
     size_t staging_size{ 64 * 1024 * 1024 };
@@ -132,14 +158,53 @@ namespace RayGene3D
     ID3D12Resource* GetStagingBuffer() const { return staging_buffer; }
 
   public:
-    ID3D12DescriptorHeap* GetGeneralHeap() const { return general_heap; }
     ID3D12DescriptorHeap* GetSamplerHeap() const { return sampler_heap; }
+    ID3D12DescriptorHeap* GetGeneralHeap() const { return general_heap; }
+    ID3D12DescriptorHeap* GetRTHeap() const { return rt_heap; }
+    ID3D12DescriptorHeap* GetDSHeap() const { return ds_heap; }
 
-  public:
-    uint32_t GetGeneralSize() const { return general_size; }
-    uint32_t GetSamplerSize() const { return sampler_size; }
-    uint32_t GetRTVSize() const { return rtv_size; }
-    uint32_t GetDSVSize() const { return dsv_size; }
+    Handle GetSamplerHandle(uint32_t slot, bool gpu = false) const { return { slot * sampler_size + 
+      (gpu ? sampler_heap->GetGPUDescriptorHandleForHeapStart().ptr : sampler_heap->GetCPUDescriptorHandleForHeapStart().ptr) };
+    }
+    Handle GetGeneralHandle(uint32_t slot, bool gpu = false) const { return { slot * general_size + 
+      (gpu ? general_heap->GetGPUDescriptorHandleForHeapStart().ptr : general_heap->GetCPUDescriptorHandleForHeapStart().ptr) };
+    }
+    Handle GetRTHandle(uint32_t slot, bool gpu = false) const { return { slot * rt_size + 
+      (gpu ? rt_heap->GetGPUDescriptorHandleForHeapStart().ptr : rt_heap->GetCPUDescriptorHandleForHeapStart().ptr) };
+    }
+    Handle GetDSHandle(uint32_t slot, bool gpu = false) const { return { slot * ds_size + 
+      (gpu ? ds_heap->GetGPUDescriptorHandleForHeapStart().ptr : ds_heap->GetCPUDescriptorHandleForHeapStart().ptr) };
+    }
+
+    uint32_t ObtainSamplerSlot() {
+      const auto slot = std::distance(sampler_slots.cbegin(), std::find(sampler_slots.cbegin(), sampler_slots.cend(), false));
+      if (slot == sampler_limit) return -1; sampler_slots[slot] = true; return slot;
+    }
+    uint32_t ObtainGeneralSlot() {
+      const auto slot = std::distance(general_slots.cbegin(), std::find(general_slots.cbegin(), general_slots.cend(), false));
+      if (slot == general_limit) return -1; general_slots[slot] = true; return slot;
+    }
+    uint32_t ObtainRTSlot() {
+      const auto slot = std::distance(rt_slots.cbegin(), std::find(rt_slots.cbegin(), rt_slots.cend(), false));
+      if (slot == rt_limit) return -1; rt_slots[slot] = true; return slot;
+    }
+    uint32_t ObtainDSSlot() {
+      const auto slot = std::distance(ds_slots.cbegin(), std::find(ds_slots.cbegin(), ds_slots.cend(), false));
+      if (slot == ds_limit) return -1; ds_slots[slot] = true; return slot;
+    }
+
+    void DropSamplerSlot(uint32_t slot) { 
+      if (slot == -1) return; sampler_slots[slot] = false;
+    }
+    void DropGeneralSlot(uint32_t slot) { 
+      if (slot == -1) return; general_slots[slot] = false;
+    }
+    void DropRTSlot(uint32_t slot) {
+      if (slot == -1) return; rt_slots[slot] = false;
+    }
+    void DropDSSlot(uint32_t slot) {
+      if (slot == -1) return; ds_slots[slot] = false;
+    }
 
   public:
     void Initialize() override;

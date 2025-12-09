@@ -54,8 +54,8 @@ namespace RayGene3D
   protected:
     std::vector<D3D12_GPU_VIRTUAL_ADDRESS> ub_items;
     std::vector<D3D12_GPU_VIRTUAL_ADDRESS> sb_items;
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rr_items;
-    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> wr_items;
+    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> rr_items;
+    std::vector<D3D12_GPU_DESCRIPTOR_HANDLE> wr_items;
 
   public:
     void Initialize() override;

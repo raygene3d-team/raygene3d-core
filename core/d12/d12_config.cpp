@@ -39,8 +39,6 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-
-
   class D12Includer : public IDxcIncludeHandler
   {
   private:

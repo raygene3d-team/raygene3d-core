@@ -139,9 +139,18 @@ namespace RayGene3D
       if (i < rr_count)
       {
         size_t offset = 0u;
-        if (i - offset < rb_views.size() && rb_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(rb_views[i - offset].get()))->GetHandle(); continue; }
+        if (i - offset < rb_views.size() && rb_views[i - offset])
+        { 
+          const auto slot = (reinterpret_cast<D12View*>(rb_views[i - offset].get()))->GetSlot();
+          rr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
+        }
+
         offset += rb_views.size();
-        if (i - offset < ri_views.size() && ri_views[i - offset]) { rr_items[i] = (reinterpret_cast<D12View*>(ri_views[i - offset].get()))->GetHandle(); continue; }
+        if (i - offset < ri_views.size() && ri_views[i - offset])
+        { 
+          const auto slot = (reinterpret_cast<D12View*>(ri_views[i - offset].get()))->GetSlot();
+          rr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
+        }
       }
     }
 
@@ -152,9 +161,18 @@ namespace RayGene3D
       if (i < wr_count)
       {
         size_t offset = 0u;
-        if (i - offset < wb_views.size() && wb_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wb_views[i - offset].get()))->GetHandle(); continue; }
+        if (i - offset < wb_views.size() && wb_views[i - offset]) 
+        { 
+          const auto slot = (reinterpret_cast<D12View*>(wb_views[i - offset].get()))->GetSlot();
+          wr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
+        }
+
         offset += wb_views.size();
-        if (i - offset < wi_views.size() && wi_views[i - offset]) { wr_items[i] = (reinterpret_cast<D12View*>(wi_views[i - offset].get()))->GetHandle(); continue; }
+        if (i - offset < wi_views.size() && wi_views[i - offset])
+        { 
+          const auto slot = (reinterpret_cast<D12View*>(wi_views[i - offset].get()))->GetSlot();
+          wr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
+        }
       }
     }
 
@@ -178,8 +196,9 @@ namespace RayGene3D
     }
     parameter_offset += sb_items.size();
 
-    
+
     std::vector<D3D12_DESCRIPTOR_RANGE> rr_ranges(rr_items.size());
+    root_parameters.resize(parameter_offset + rr_ranges.size());
     for (size_t i = 0; i < rr_ranges.size(); ++i)
     {
       rr_ranges[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -187,18 +206,16 @@ namespace RayGene3D
       rr_ranges[i].BaseShaderRegister = i;
       rr_ranges[i].RegisterSpace = 0;
       rr_ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+      
+      root_parameters[parameter_offset + i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+      root_parameters[parameter_offset + i].DescriptorTable = { 1u, &rr_ranges[i] };
+      root_parameters[parameter_offset + i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     }
-    if (!rr_items.empty())
-    {
-      root_parameters.resize(parameter_offset + 1);
-      root_parameters[parameter_offset].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-      root_parameters[parameter_offset].DescriptorTable = { uint32_t(rr_ranges.size()), rr_ranges.data() };
-      root_parameters[parameter_offset].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-      parameter_offset += 1;
-    }
+    parameter_offset += rr_items.size();
 
-    
+
     std::vector<D3D12_DESCRIPTOR_RANGE> wr_ranges(wr_items.size());
+    root_parameters.resize(parameter_offset + wr_ranges.size());
     for (size_t i = 0; i < wr_ranges.size(); ++i)
     {
       wr_ranges[i].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
@@ -206,13 +223,10 @@ namespace RayGene3D
       wr_ranges[i].BaseShaderRegister = i;
       wr_ranges[i].RegisterSpace = 0;
       wr_ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-    }
-    if (!wr_items.empty())
-    {
-      root_parameters.resize(parameter_offset + 1);
-      root_parameters[parameter_offset].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-      root_parameters[parameter_offset].DescriptorTable = { uint32_t(wr_ranges.size()), wr_ranges.data() };
-      root_parameters[parameter_offset].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+
+      root_parameters[parameter_offset + i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+      root_parameters[parameter_offset + i].DescriptorTable = { 1u, &wr_ranges[i] };
+      root_parameters[parameter_offset + i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
       parameter_offset += 1;
     }
     
@@ -355,7 +369,7 @@ namespace RayGene3D
 
     device->GetCommandList()->SetPipelineState(pipeline_state);
 
-    device->GetCommandList()->SetComputeRootSignature(root_signature);
+    
 
 
 
@@ -475,6 +489,8 @@ namespace RayGene3D
 
     if (pass->GetType() == Pass::TYPE_COMPUTE)
     {
+      device->GetCommandList()->SetComputeRootSignature(root_signature);
+
       auto parameter_offset = 0ull;
 
       for (size_t i = 0; i < ub_items.size(); ++i)
@@ -483,12 +499,24 @@ namespace RayGene3D
       }
       parameter_offset += ub_items.size();
 
-      root_parameters.resize(parameter_offset + sb_items.size());
+      //root_parameters.resize(parameter_offset + sb_items.size());
       for (size_t i = 0; i < sb_items.size(); ++i)
       {
         device->GetCommandList()->SetComputeRootConstantBufferView(parameter_offset + i, sb_items[i]);
       }
       parameter_offset += sb_items.size();
+
+      for (size_t i = 0; i < rr_items.size(); ++i)
+      {
+        device->GetCommandList()->SetComputeRootDescriptorTable(parameter_offset + i, rr_items[i]);
+      }
+      parameter_offset += rr_items.size();
+
+      for (size_t i = 0; i < wr_items.size(); ++i)
+      {
+        device->GetCommandList()->SetComputeRootDescriptorTable(parameter_offset + i, wr_items[i]);
+      }
+      parameter_offset += wr_items.size();
 
 
 

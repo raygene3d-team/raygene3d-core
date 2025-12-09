@@ -39,31 +39,10 @@ namespace RayGene3D
   class D12Resource : public Resource
   {
   protected:
-    static constexpr size_t general_limit{ 256 };
-    static constexpr size_t rtv_limit{ 32 };
-    static constexpr size_t dsv_limit{ 32 };
-
-  protected:
     ID3D12Resource* resource{ nullptr };
     D3D12_GPU_VIRTUAL_ADDRESS address{ 0 };
 
-  protected:
-    ID3D12DescriptorHeap* general_heap{ nullptr };
-    std::array<bool, general_limit> general_slots{};
-
-    ID3D12DescriptorHeap* rtv_heap{ nullptr };
-    std::array<bool, rtv_limit> rtv_slots{};
-
-    ID3D12DescriptorHeap* dsv_heap{ nullptr };
-    std::array<bool, dsv_limit> dsv_slots{};
-
-  public:
-    enum Heap
-    {
-      HEAP_GENERAL = 0,
-      HEAP_RTV = 1,
-      HEAP_DSV = 2,      
-    };
+  
 
   public:
     void Commit() override;
@@ -74,40 +53,8 @@ namespace RayGene3D
     void Unmap() override;
 
   public:
-    //void SetResource(ID3D12Resource* resource) { this->resource = resource; }
     ID3D12Resource* GetResource() const { return resource; }
     D3D12_GPU_VIRTUAL_ADDRESS GetAddress() const { return address; }
-
-  protected:
-    D3D12_CPU_DESCRIPTOR_HANDLE ObtainGeneral();
-    D3D12_CPU_DESCRIPTOR_HANDLE ObtainRTV();
-    D3D12_CPU_DESCRIPTOR_HANDLE ObtainDSV();
-
-    void DropGeneral(D3D12_CPU_DESCRIPTOR_HANDLE handle);
-    void DropRTV(D3D12_CPU_DESCRIPTOR_HANDLE handle);
-    void DropDSV(D3D12_CPU_DESCRIPTOR_HANDLE handle);
-
-  public:
-    D3D12_CPU_DESCRIPTOR_HANDLE ObtainHandle(Heap heap = HEAP_GENERAL)
-    {
-      switch (heap)
-      {
-      case HEAP_GENERAL: return ObtainGeneral();
-      case HEAP_RTV: return ObtainRTV();
-      case HEAP_DSV: return ObtainDSV();
-      };
-      return D3D12_CPU_DESCRIPTOR_HANDLE{};
-    }
-
-    void DropHandle(D3D12_CPU_DESCRIPTOR_HANDLE handle, Heap heap = HEAP_GENERAL)
-    {
-      switch (heap)
-      {
-      case HEAP_GENERAL: return DropGeneral(handle);
-      case HEAP_RTV: return DropRTV(handle);
-      case HEAP_DSV: return DropDSV(handle);
-      };
-    }
 
 
   public:

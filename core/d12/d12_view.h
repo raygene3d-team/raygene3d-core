@@ -39,26 +39,16 @@ namespace RayGene3D
   class D12View : public View
   {
   protected:
-    D3D12_CPU_DESCRIPTOR_HANDLE handle;
     D3D12_GPU_VIRTUAL_ADDRESS address;
 
-    union Info
-    {
-      D3D12_CONSTANT_BUFFER_VIEW_DESC cbv_desc;
-      D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc;
-      D3D12_UNORDERED_ACCESS_VIEW_DESC uav_desc;
-      D3D12_RENDER_TARGET_VIEW_DESC rtv_desc;
-      D3D12_DEPTH_STENCIL_VIEW_DESC dsv_desc;      
-    } info;
+  protected:
+    uint32_t slot{ uint32_t(-1) };
 
   public:
-  //  void SetView(D3D12_CPU_DESCRIPTOR_HANDLE view) { this->view = view; }
-    D3D12_CPU_DESCRIPTOR_HANDLE GetHandle() const { return handle; }
     D3D12_GPU_VIRTUAL_ADDRESS GetAddress() const { return address; }
-  //  ID3D11ShaderResourceView* GetSRView() const { return reinterpret_cast<ID3D11ShaderResourceView*>(view); }
-  //  ID3D11RenderTargetView* GetRTView() const { return reinterpret_cast<ID3D11RenderTargetView*>(view); }
-  //  ID3D11DepthStencilView* GetDSView() const { return reinterpret_cast<ID3D11DepthStencilView*>(view); }
-  //  ID3D11UnorderedAccessView* GetUAView() const { return reinterpret_cast<ID3D11UnorderedAccessView*>(view); }
+
+  public:
+    uint32_t GetSlot() const { return slot; }
 
   public:
     void Initialize() override;

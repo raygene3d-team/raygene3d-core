@@ -122,6 +122,13 @@ namespace RayGene3D
 
     switch (usage)
     {
+    case USAGE_CONSTANT_DATA:
+    case USAGE_VERTEX_ARRAY:
+    case USAGE_INDEX_ARRAY:
+    {
+      address = (reinterpret_cast<D12Resource*>(resource->GetResource()))->GetAddress();
+      break;
+    }
     case USAGE_SHADER_RESOURCE:
     {
       D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
@@ -221,8 +228,8 @@ namespace RayGene3D
       srv_desc.Format = srv_desc.Format == DXGI_FORMAT_D24_UNORM_S8_UINT ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : srv_desc.Format;
       srv_desc.Format = srv_desc.Format == DXGI_FORMAT_D16_UNORM ? DXGI_FORMAT_R16_UNORM : srv_desc.Format;
 
-      handle = resource->ObtainHandle();
-      device->GetDevice()->CreateShaderResourceView(resource->GetResource(), &srv_desc, handle);
+      slot = device->ObtainGeneralSlot(); const auto handle = device->GetGeneralHandle(slot);
+      device->GetDevice()->CreateShaderResourceView(resource->GetResource(), &srv_desc, handle.cpu);
       break;
     }
 
@@ -293,8 +300,8 @@ namespace RayGene3D
       rtv_desc.Format = rtv_desc.Format == DXGI_FORMAT_D24_UNORM_S8_UINT ? DXGI_FORMAT_R24_UNORM_X8_TYPELESS : rtv_desc.Format;
       rtv_desc.Format = rtv_desc.Format == DXGI_FORMAT_D16_UNORM ? DXGI_FORMAT_R16_UNORM : rtv_desc.Format;
 
-      handle = resource->ObtainHandle(D12Resource::HEAP_RTV);
-      device->GetDevice()->CreateRenderTargetView(resource->GetResource(), &rtv_desc, handle);
+      slot = device->ObtainRTSlot(); const auto handle = device->GetRTHandle(slot);
+      device->GetDevice()->CreateRenderTargetView(resource->GetResource(), &rtv_desc, handle.cpu);
       break;
     }
 
@@ -350,8 +357,8 @@ namespace RayGene3D
       dsv_desc.Format = dsv_desc.Format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS ? DXGI_FORMAT_D24_UNORM_S8_UINT : dsv_desc.Format;
       dsv_desc.Format = dsv_desc.Format == DXGI_FORMAT_R16_UNORM ? DXGI_FORMAT_D16_UNORM : dsv_desc.Format;
 
-      handle = resource->ObtainHandle(D12Resource::HEAP_DSV);
-      device->GetDevice()->CreateDepthStencilView(resource->GetResource(), &dsv_desc, handle);
+      slot = device->ObtainDSSlot(); const auto handle = device->GetDSHandle(slot);
+      device->GetDevice()->CreateDepthStencilView(resource->GetResource(), &dsv_desc, handle.cpu);
       break;
     }
 
@@ -418,8 +425,8 @@ namespace RayGene3D
         break;
       }
       }
-      handle = resource->ObtainHandle();
-      device->GetDevice()->CreateUnorderedAccessView(resource->GetResource(), nullptr, &uav_desc, handle);
+      slot = device->ObtainGeneralSlot(); const auto handle = device->GetGeneralHandle(slot);
+      device->GetDevice()->CreateUnorderedAccessView(resource->GetResource(), nullptr, &uav_desc, handle.cpu);
       break;
     }
 
@@ -439,11 +446,10 @@ namespace RayGene3D
 
     switch (usage)
     {
-    //case USAGE_CONSTANT_DATA: resource->DropHandle(handle); break;
-    case USAGE_SHADER_RESOURCE: resource->DropHandle(handle); break;
-    case USAGE_UNORDERED_ACCESS: resource->DropHandle(handle); break;
-    case USAGE_RENDER_TARGET: resource->DropHandle(handle, D12Resource::HEAP_RTV); break;
-    case USAGE_DEPTH_STENCIL: resource->DropHandle(handle, D12Resource::HEAP_DSV); break;
+    case USAGE_SHADER_RESOURCE: device->DropGeneralSlot(slot); break;
+    case USAGE_UNORDERED_ACCESS: device->DropGeneralSlot(slot); break;
+    case USAGE_RENDER_TARGET: device->DropRTSlot(slot); break;
+    case USAGE_DEPTH_STENCIL: device->DropDSSlot(slot); break;
     }
   }
 

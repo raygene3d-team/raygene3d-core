@@ -36,75 +36,6 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  D3D12_CPU_DESCRIPTOR_HANDLE D12Resource::ObtainGeneral()
-  {
-    const auto slot = std::distance(general_slots.cbegin(), std::find(general_slots.cbegin(), general_slots.cend(), false));
-    if (slot == general_limit) return D3D12_CPU_DESCRIPTOR_HANDLE{ 0 };
-
-    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetGeneralSize();
-    const auto handle = general_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
-
-    general_slots[slot] = true;
-
-    return D3D12_CPU_DESCRIPTOR_HANDLE{ handle };
-  }
-
-  D3D12_CPU_DESCRIPTOR_HANDLE D12Resource::ObtainRTV()
-  {
-    const auto slot = std::distance(rtv_slots.cbegin(), std::find(rtv_slots.cbegin(), rtv_slots.cend(), false));
-    if (slot == rtv_limit) return D3D12_CPU_DESCRIPTOR_HANDLE{ 0 };
-
-    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetRTVSize();
-    const auto handle = rtv_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
-
-    rtv_slots[slot] = true;
-
-    return D3D12_CPU_DESCRIPTOR_HANDLE{ handle };
-  }
-
-  D3D12_CPU_DESCRIPTOR_HANDLE D12Resource::ObtainDSV()
-  {
-    const auto slot = std::distance(dsv_slots.cbegin(), std::find(dsv_slots.cbegin(), dsv_slots.cend(), false));
-    if (slot == dsv_limit) return D3D12_CPU_DESCRIPTOR_HANDLE{ 0 };
-
-    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetDSVSize();
-    const auto handle = dsv_heap->GetCPUDescriptorHandleForHeapStart().ptr + slot * size;
-
-    dsv_slots[slot] = true;
-
-    return D3D12_CPU_DESCRIPTOR_HANDLE{ handle };
-  }
-
-  void D12Resource::DropGeneral(D3D12_CPU_DESCRIPTOR_HANDLE handle)
-  { 
-    if (handle.ptr == 0) return;
-
-    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetGeneralSize();
-    const auto slot = (handle.ptr - general_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
-
-    general_slots[slot] = false;
-  }
-
-  void D12Resource::DropRTV(D3D12_CPU_DESCRIPTOR_HANDLE handle)
-  { 
-    if (handle.ptr == 0) return;
-
-    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetRTVSize();
-    const auto slot = (handle.ptr - rtv_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
-
-    rtv_slots[slot] = false;
-  }
-
-  void D12Resource::DropDSV(D3D12_CPU_DESCRIPTOR_HANDLE handle)
-  {
-    if (handle.ptr == 0) return;
-
-    const auto size = reinterpret_cast<const D12Device*>(&this->GetDevice())->GetDSVSize();
-    const auto slot = (handle.ptr - dsv_heap->GetCPUDescriptorHandleForHeapStart().ptr) / size;
-
-    dsv_slots[slot] = false;
-  }
-
   void D12Resource::Initialize()
   {
     if (resource)
@@ -326,6 +257,10 @@ namespace RayGene3D
       clear_apply ? &clear_value : nullptr,
       IID_PPV_ARGS(&resource)));
 
+    wchar_t w_name[256];
+    mbstowcs(w_name, name.c_str(), 256);
+    resource->SetName(w_name);
+
     if (type == TYPE_BUFFER)
     {
       address = resource->GetGPUVirtualAddress();
@@ -367,29 +302,29 @@ namespace RayGene3D
     //    return subres_data;
     //  };
 
-    {
-      D3D12_DESCRIPTOR_HEAP_DESC rtv_heap_desc = {};
-      rtv_heap_desc.NumDescriptors = rtv_limit;
-      rtv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-      rtv_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&rtv_heap_desc, IID_PPV_ARGS(&rtv_heap)));
-    }
+    //{
+    //  D3D12_DESCRIPTOR_HEAP_DESC rt_heap_desc = {};
+    //  rt_heap_desc.NumDescriptors = rt_limit;
+    //  rt_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    //  rt_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&rtv_heap_desc, IID_PPV_ARGS(&rt_heap)));
+    //}
 
-    {
-      D3D12_DESCRIPTOR_HEAP_DESC dsv_heap_esc = {};
-      dsv_heap_esc.NumDescriptors = dsv_limit;
-      dsv_heap_esc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-      dsv_heap_esc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&dsv_heap_esc, IID_PPV_ARGS(&dsv_heap)));
-    }
+    //{
+    //  D3D12_DESCRIPTOR_HEAP_DESC ds_heap_desc = {};
+    //  ds_heap_desc.NumDescriptors = ds_limit;
+    //  ds_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+    //  ds_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&dsv_heap_esc, IID_PPV_ARGS(&ds_heap)));
+    //}
 
-    {
-      D3D12_DESCRIPTOR_HEAP_DESC general_heap_desc = {};
-      general_heap_desc.NumDescriptors = general_limit;
-      general_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-      general_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&general_heap_desc, IID_PPV_ARGS(&general_heap)));
-    }
+    //{
+    //  D3D12_DESCRIPTOR_HEAP_DESC general_heap_desc = {};
+    //  general_heap_desc.NumDescriptors = general_limit;
+    //  general_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    //  general_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreateDescriptorHeap(&general_heap_desc, IID_PPV_ARGS(&general_heap)));
+    //}
 
     if (interop != std::pair(nullptr, 0))
     {
@@ -588,23 +523,13 @@ namespace RayGene3D
       view->Discard();
     }
 
-    if (general_heap)
-    {
-      general_heap->Release();
-      general_heap = nullptr;
-    }
+    //if (general_heap)
+    //{
+    //  general_heap->Release();
+    //  general_heap = nullptr;
+    //}
 
-    if (rtv_heap)
-    {
-      rtv_heap->Release();
-      rtv_heap = nullptr;
-    }
 
-    if (dsv_heap)
-    {
-      dsv_heap->Release();
-      dsv_heap = nullptr;
-    }
 
     if (resource)
     {

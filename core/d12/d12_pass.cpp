@@ -156,7 +156,19 @@ namespace RayGene3D
 
         if (rt_view)
         {
-          rt_items[i] = (reinterpret_cast<D12View*>(rt_view.get()))->GetHandle();
+          const auto slot = (reinterpret_cast<D12View*>(rt_view.get()))->GetSlot();
+          rt_items[i] = device->GetRTHandle(slot).cpu;
+          
+          const auto resource = (reinterpret_cast<D12Resource*>(&rt_view->GetResource()));
+
+          D3D12_RESOURCE_BARRIER barrier = {};
+          barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+          barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+          barrier.Transition.pResource = resource->GetResource();
+          barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+          barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+          barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+          device->GetCommandList()->ResourceBarrier(1, &barrier);
 
           if (rt_value)
           {
@@ -176,7 +188,19 @@ namespace RayGene3D
 
         if (ds_view)
         {
-          ds_items[i] = (reinterpret_cast<D12View*>(ds_view.get()))->GetHandle();
+          const auto slot = (reinterpret_cast<D12View*>(ds_view.get()))->GetSlot();
+          ds_items[i] = device->GetDSHandle(slot).cpu;
+          
+          const auto resource = (reinterpret_cast<D12Resource*>(&ds_view->GetResource()));
+
+          D3D12_RESOURCE_BARRIER barrier = {};
+          barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+          barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+          barrier.Transition.pResource = resource->GetResource();
+          barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
+          barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+          barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+          device->GetCommandList()->ResourceBarrier(1, &barrier);
 
           D3D12_CLEAR_FLAGS clear_flags = {};
           float clear_depth = 0.0f;
@@ -214,6 +238,52 @@ namespace RayGene3D
     for (const auto& config : configs)
     {
       config->Use();
+    }
+
+    if (type == TYPE_GRAPHIC)
+    {
+      constexpr auto rt_limit = size_t(D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT);
+      const auto rt_count = std::min(rt_limit, rt_attachments.size());
+      for (auto i = 0; i < rt_count; ++i)
+      {
+        const auto& rt_view = rt_attachments[i].view;
+
+        if (rt_view)
+        {
+          const auto resource = (reinterpret_cast<D12Resource*>(&rt_view->GetResource()));
+
+          D3D12_RESOURCE_BARRIER barrier = {};
+          barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+          barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+          barrier.Transition.pResource = resource->GetResource();
+          barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+          barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+          barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+          device->GetCommandList()->ResourceBarrier(1, &barrier);
+        }
+      }
+
+      constexpr auto ds_limit = size_t(1);
+      const auto ds_count = std::min(ds_limit, ds_attachments.size());
+      for (size_t i = 0; i < ds_count; ++i)
+      {
+        const auto& ds_view = ds_attachments[i].view;
+        const auto& ds_value = ds_attachments[i].value;
+
+        if (ds_view)
+        {
+          auto resource = (reinterpret_cast<D12Resource*>(&ds_view->GetResource()));
+
+          D3D12_RESOURCE_BARRIER barrier = {};
+          barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+          barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+          barrier.Transition.pResource = resource->GetResource();
+          barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_DEPTH_WRITE;
+          barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+          barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+          device->GetCommandList()->ResourceBarrier(1, &barrier);
+        }
+      }
     }
 
     //device->GetCommandList()->ClearState();
