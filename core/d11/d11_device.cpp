@@ -55,8 +55,7 @@ namespace RayGene3D
     adapter->GetDesc(&adapter_desc);
 
     char adapter_name[256];
-    size_t adapter_size = 0;
-    wcstombs_s(&adapter_size, adapter_name, adapter_desc.Description, 256);
+    wcstombs(adapter_name, adapter_desc.Description, 256);
     name = std::string(adapter_name) + " (D3D11 API)\n";
 
     const uint32_t device_flags = debug ? D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_SINGLETHREADED : 0;

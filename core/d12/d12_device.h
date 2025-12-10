@@ -60,16 +60,24 @@ namespace RayGene3D
     static constexpr size_t rt_limit{ 128 * 1024 };
     static constexpr size_t ds_limit{ 128 * 1024 };
 
+
   protected:
     ID3D12Debug* debug_controller{ nullptr };
     ID3D12Device* device{ nullptr };
     ID3D12CommandQueue* command_queue{ nullptr };
     ID3D12CommandAllocator* command_allocator{ nullptr };
     ID3D12GraphicsCommandList* command_list{ nullptr };
+
     IDXGISwapChain* swapchain{ nullptr };
-    ID3D12Resource* back_buffer{ nullptr };
+    std::vector<ID3D12Resource*> back_buffers;
+    //ID3D12CommandQueue* present_command_queue{ nullptr };
+    //ID3D12CommandAllocator* present_command_allocator{ nullptr };
+    //ID3D12GraphicsCommandList* present_command_list{ nullptr };    
+
     ID3D12Resource* screen_buffer{ nullptr };
     ID3D12Resource* staging_buffer{ nullptr };
+
+    uint32_t current_index = 0;
 
   protected:
     ID3D12DescriptorHeap* sampler_heap{ nullptr };

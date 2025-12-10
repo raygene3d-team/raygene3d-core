@@ -126,7 +126,7 @@ namespace RayGene3D
     case USAGE_VERTEX_ARRAY:
     case USAGE_INDEX_ARRAY:
     {
-      address = (reinterpret_cast<D12Resource*>(resource->GetResource()))->GetAddress();
+      address = resource->GetAddress();
       break;
     }
     case USAGE_SHADER_RESOURCE:

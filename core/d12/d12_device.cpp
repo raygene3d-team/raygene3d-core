@@ -69,16 +69,19 @@ namespace RayGene3D
 
     BLAST_ASSERT(S_OK == D3D12CreateDevice(adapter, feature_level, IID_PPV_ARGS(&device)));
 
-    D3D12_COMMAND_QUEUE_DESC queue_desc = {};
-    queue_desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    queue_desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
-    BLAST_ASSERT(S_OK == device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&command_queue)));
+    {
+      D3D12_COMMAND_QUEUE_DESC queue_desc = {};
+      queue_desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+      queue_desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+      BLAST_ASSERT(S_OK == device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&command_queue)));
 
-    BLAST_ASSERT(S_OK == device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&command_allocator)));
+      BLAST_ASSERT(S_OK == device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&command_allocator)));
 
-    BLAST_ASSERT(S_OK == device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, command_allocator, nullptr, IID_PPV_ARGS(&command_list)));
-
-    BLAST_ASSERT(S_OK == command_list->Close());
+      BLAST_ASSERT(S_OK == device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, command_allocator, nullptr,
+        IID_PPV_ARGS(&command_list)));
+      BLAST_ASSERT(S_OK == command_list->Close());
+    }
+    
 
     BLAST_ASSERT(S_OK == device->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
     fence_event = CreateEvent(nullptr, false, false, nullptr);
@@ -150,36 +153,51 @@ namespace RayGene3D
       HRESULT res = factory->CreateSwapChain(command_queue, &swapchain_desc, &swapchain);
       BLAST_ASSERT(S_OK == res);
 
-      BLAST_ASSERT(S_OK == swapchain->GetBuffer(0, IID_PPV_ARGS(&screen_buffer)));
-
+      back_buffers.resize(swapchain_desc.BufferCount);
+      for (size_t i = 0; i < back_buffers.size(); ++i)
       {
-        D3D12_HEAP_PROPERTIES heap_properties = {};
-        heap_properties.Type = D3D12_HEAP_TYPE_UPLOAD;
-        heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-        heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-        heap_properties.CreationNodeMask = 0;
-        heap_properties.VisibleNodeMask = 0;
-
-        D3D12_RESOURCE_DESC  resource_desc = {};
-        resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-        resource_desc.Alignment = 0;
-        resource_desc.Width = staging_size;
-        resource_desc.Height = 1;
-        resource_desc.DepthOrArraySize = 1;
-        resource_desc.MipLevels = 1;
-        resource_desc.Format = DXGI_FORMAT_UNKNOWN;
-        resource_desc.SampleDesc = {1, 0};
-        resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-        resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-        BLAST_ASSERT(S_OK == device->CreateCommittedResource(
-          &heap_properties,
-          D3D12_HEAP_FLAG_NONE,
-          &resource_desc,
-          D3D12_RESOURCE_STATE_COPY_SOURCE,
-          nullptr,
-          IID_PPV_ARGS(&staging_buffer)));
+        BLAST_ASSERT(S_OK == swapchain->GetBuffer(i, IID_PPV_ARGS(&back_buffers[i])));
       }
+
+      //D3D12_COMMAND_QUEUE_DESC queue_desc = {};
+      //queue_desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+      //queue_desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+      //BLAST_ASSERT(S_OK == device->CreateCommandQueue(&queue_desc, IID_PPV_ARGS(&present_command_queue)));
+
+      //BLAST_ASSERT(S_OK == device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&present_command_allocator)));
+
+      //BLAST_ASSERT(S_OK == device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, present_command_allocator, nullptr,
+      //  IID_PPV_ARGS(&present_command_list)));
+      //BLAST_ASSERT(S_OK == present_command_list->Close());
+    }
+
+    {
+      D3D12_HEAP_PROPERTIES heap_properties = {};
+      heap_properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+      heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+      heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+      heap_properties.CreationNodeMask = 0;
+      heap_properties.VisibleNodeMask = 0;
+
+      D3D12_RESOURCE_DESC  resource_desc = {};
+      resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+      resource_desc.Alignment = 0;
+      resource_desc.Width = staging_size;
+      resource_desc.Height = 1;
+      resource_desc.DepthOrArraySize = 1;
+      resource_desc.MipLevels = 1;
+      resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+      resource_desc.SampleDesc = {1, 0};
+      resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+      resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+      BLAST_ASSERT(S_OK == device->CreateCommittedResource(
+        &heap_properties,
+        D3D12_HEAP_FLAG_NONE,
+        &resource_desc,
+        D3D12_RESOURCE_STATE_COPY_SOURCE,
+        nullptr,
+        IID_PPV_ARGS(&staging_buffer)));
     }
 
     //for (auto& resource : resources)
@@ -262,12 +280,15 @@ namespace RayGene3D
 
     ++fence_value;
     BLAST_ASSERT(S_OK == command_queue->Signal(fence, fence_value));
-    BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
-    WaitForSingleObject(fence_event, INFINITE);
 
-    if (screen && back_buffer)
+
+    if (screen && !back_buffers.empty())
     {
+      BLAST_ASSERT(S_OK == command_queue->Wait(fence, fence_value));
+
       BLAST_ASSERT(S_OK == command_list->Reset(command_allocator, nullptr));
+
+      const auto back_buffer = back_buffers[(current_index++) % 3];
 
       auto screen_buffer = reinterpret_cast<D12Resource*>(screen.get())->GetResource();
       
@@ -276,8 +297,9 @@ namespace RayGene3D
         barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
         barrier.Transition.pResource = screen_buffer;
-        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
         barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         command_list->ResourceBarrier(1, &barrier);
       }
 
@@ -288,7 +310,8 @@ namespace RayGene3D
         barrier.Transition.pResource = back_buffer;
         barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
         barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
-        command_list->ResourceBarrier(1, &barrier);        
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        command_list->ResourceBarrier(1, &barrier);
       }
       
       command_list->CopyResource(back_buffer, screen_buffer);
@@ -300,6 +323,7 @@ namespace RayGene3D
         barrier.Transition.pResource = back_buffer;
         barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
         barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         command_list->ResourceBarrier(1, &barrier);
       } 
       
@@ -309,7 +333,8 @@ namespace RayGene3D
         barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
         barrier.Transition.pResource = screen_buffer;
         barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
-        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+        barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COMMON;
+        barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         command_list->ResourceBarrier(1, &barrier);
       }
 
@@ -318,16 +343,19 @@ namespace RayGene3D
 
       ++fence_value;
       BLAST_ASSERT(S_OK == command_queue->Signal(fence, fence_value));
-      BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
-      WaitForSingleObject(fence_event, INFINITE);
+
     }
-
-
 
     if (swapchain)
     {
-      swapchain->Present(0, 0);
+      swapchain->Present(1, 0);
     }
+
+    BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+    WaitForSingleObject(fence_event, INFINITE);
+
+
+    
   }
 
 
