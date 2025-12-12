@@ -290,148 +290,166 @@ namespace RayGene3D
     //}
 
 
-      const auto get_fill = [](Fill fill)
+    const auto get_fill = [](Fill fill)
+    {
+      switch (fill)
       {
-        switch (fill)
-        {
-        default:           return (D3D12_FILL_MODE)0;
-        case FILL_POINT:   return (D3D12_FILL_MODE)1; // Not implemented
-        case FILL_LINE:    return D3D12_FILL_MODE_WIREFRAME;
-        case FILL_SOLID:   return D3D12_FILL_MODE_SOLID;
-        }
-      };
+      default:           return (D3D12_FILL_MODE)0;
+      case FILL_POINT:   return (D3D12_FILL_MODE)1; // Not implemented
+      case FILL_LINE:    return D3D12_FILL_MODE_WIREFRAME;
+      case FILL_SOLID:   return D3D12_FILL_MODE_SOLID;
+      }
+    };
 
-      const auto get_cull = [](Cull cull)
+    const auto get_cull = [](Cull cull)
+    {
+      switch (cull)
       {
-        switch (cull)
-        {
-        default:           return (D3D12_CULL_MODE)0;
-        case CULL_NONE:    return D3D12_CULL_MODE_NONE;
-        case CULL_FRONT:   return D3D12_CULL_MODE_FRONT;
-        case CULL_BACK:    return D3D12_CULL_MODE_BACK;
-        }
+      default:           return (D3D12_CULL_MODE)0;
+      case CULL_NONE:    return D3D12_CULL_MODE_NONE;
+      case CULL_FRONT:   return D3D12_CULL_MODE_FRONT;
+      case CULL_BACK:    return D3D12_CULL_MODE_BACK;
+      }
 
-      };
+    };
 
       
-      raster_desc.FillMode = get_fill(rc_state.fill_mode);
-      raster_desc.CullMode = get_cull(rc_state.cull_mode);
-      raster_desc.FrontCounterClockwise = false;
-      raster_desc.DepthBias = this->rc_state.depth_bias;
-      raster_desc.DepthBiasClamp = this->rc_state.bias_clamp;
-      raster_desc.SlopeScaledDepthBias = this->rc_state.bias_slope;
-      raster_desc.DepthClipEnable = this->rc_state.clip_enabled;
-      //raster_desc.ScissorEnable = this->rc_state.scissor_enabled;
-      raster_desc.MultisampleEnable = this->rc_state.multisample_enabled;
-      raster_desc.AntialiasedLineEnable = false;
-      //BLAST_ASSERT(S_OK == device->GetDevice()->CreateRasterizerState(&raster_desc, &raster_state));
+    raster_desc.FillMode = get_fill(rc_state.fill_mode);
+    raster_desc.CullMode = get_cull(rc_state.cull_mode);
+    raster_desc.FrontCounterClockwise = false;
+    raster_desc.DepthBias = this->rc_state.depth_bias;
+    raster_desc.DepthBiasClamp = this->rc_state.bias_clamp;
+    raster_desc.SlopeScaledDepthBias = this->rc_state.bias_slope;
+    raster_desc.DepthClipEnable = this->rc_state.clip_enabled;
+    //raster_desc.ScissorEnable = this->rc_state.scissor_enabled;
+    raster_desc.MultisampleEnable = this->rc_state.multisample_enabled;
+    raster_desc.AntialiasedLineEnable = false;
+    //BLAST_ASSERT(S_OK == device->GetDevice()->CreateRasterizerState(&raster_desc, &raster_state));
 
 
 
-      const auto get_comparison = [](Comparison comparison)
+    const auto get_comparison = [](Comparison comparison)
+    {
+      switch (comparison)
       {
-        switch (comparison)
-        {
-        default:                          return D3D12_COMPARISON_FUNC_ALWAYS;
-        case COMPARISON_NEVER:            return D3D12_COMPARISON_FUNC_NEVER;
-        case COMPARISON_LESS:             return D3D12_COMPARISON_FUNC_LESS;
-        case COMPARISON_EQUAL:            return D3D12_COMPARISON_FUNC_EQUAL;
-        case COMPARISON_LESS_EQUAL:       return D3D12_COMPARISON_FUNC_LESS_EQUAL;
-        case COMPARISON_GREATER:          return D3D12_COMPARISON_FUNC_GREATER;
-        case COMPARISON_NOT_EQUAL:        return D3D12_COMPARISON_FUNC_NOT_EQUAL;
-        case COMPARISON_GREATER_EQUAL:    return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-        case COMPARISON_ALWAYS:           return D3D12_COMPARISON_FUNC_ALWAYS;
-        }
-      };
+      default:                          return D3D12_COMPARISON_FUNC_ALWAYS;
+      case COMPARISON_NEVER:            return D3D12_COMPARISON_FUNC_NEVER;
+      case COMPARISON_LESS:             return D3D12_COMPARISON_FUNC_LESS;
+      case COMPARISON_EQUAL:            return D3D12_COMPARISON_FUNC_EQUAL;
+      case COMPARISON_LESS_EQUAL:       return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+      case COMPARISON_GREATER:          return D3D12_COMPARISON_FUNC_GREATER;
+      case COMPARISON_NOT_EQUAL:        return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+      case COMPARISON_GREATER_EQUAL:    return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+      case COMPARISON_ALWAYS:           return D3D12_COMPARISON_FUNC_ALWAYS;
+      }
+    };
 
-      const auto get_action = [](Action action)
+    const auto get_action = [](Action action)
+    {
+      switch (action)
       {
-        switch (action)
-        {
-        default:                return D3D12_STENCIL_OP_KEEP;
-        case ACTION_KEEP:       return D3D12_STENCIL_OP_KEEP;
-        case ACTION_ZERO:       return D3D12_STENCIL_OP_ZERO;
-        case ACTION_REPLACE:    return D3D12_STENCIL_OP_REPLACE;
-        case ACTION_INCR_SAT:   return D3D12_STENCIL_OP_INCR_SAT;
-        case ACTION_DECR_SAT:   return D3D12_STENCIL_OP_DECR_SAT;
-        case ACTION_INVERT:     return D3D12_STENCIL_OP_INVERT;
-        case ACTION_INCR:       return D3D12_STENCIL_OP_INCR;
-        case ACTION_DECR:       return D3D12_STENCIL_OP_DECR;
-        }
-      };
+      default:                return D3D12_STENCIL_OP_KEEP;
+      case ACTION_KEEP:       return D3D12_STENCIL_OP_KEEP;
+      case ACTION_ZERO:       return D3D12_STENCIL_OP_ZERO;
+      case ACTION_REPLACE:    return D3D12_STENCIL_OP_REPLACE;
+      case ACTION_INCR_SAT:   return D3D12_STENCIL_OP_INCR_SAT;
+      case ACTION_DECR_SAT:   return D3D12_STENCIL_OP_DECR_SAT;
+      case ACTION_INVERT:     return D3D12_STENCIL_OP_INVERT;
+      case ACTION_INCR:       return D3D12_STENCIL_OP_INCR;
+      case ACTION_DECR:       return D3D12_STENCIL_OP_DECR;
+      }
+    };
 
       
-      depth_desc.DepthEnable = ds_state.depth_enabled;
-      depth_desc.DepthWriteMask = ds_state.depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
-      depth_desc.DepthFunc = get_comparison(ds_state.depth_comparison);
-      depth_desc.StencilEnable = ds_state.stencil_enabled;
-      depth_desc.StencilReadMask = ds_state.stencil_rmask;
-      depth_desc.StencilWriteMask = ds_state.stencil_wmask;
-      depth_desc.FrontFace.StencilFunc = get_comparison(ds_state.stencil_fface_mode.comparison);
-      depth_desc.FrontFace.StencilDepthFailOp = get_action(ds_state.stencil_fface_mode.depth_fail);
-      depth_desc.FrontFace.StencilFailOp = get_action(ds_state.stencil_fface_mode.stencil_fail);
-      depth_desc.FrontFace.StencilPassOp = get_action(ds_state.stencil_fface_mode.stencil_pass);
-      depth_desc.BackFace.StencilFunc = get_comparison(ds_state.stencil_bface_mode.comparison);
-      depth_desc.BackFace.StencilDepthFailOp = get_action(ds_state.stencil_bface_mode.depth_fail);
-      depth_desc.BackFace.StencilFailOp = get_action(ds_state.stencil_bface_mode.stencil_fail);
-      depth_desc.BackFace.StencilPassOp = get_action(ds_state.stencil_bface_mode.stencil_pass);
-      //(S_OK == device->GetDevice()->CreateDepthStencilState(&depth_desc, &depth_state));
+    depth_desc.DepthEnable = ds_state.depth_enabled;
+    depth_desc.DepthWriteMask = ds_state.depth_write ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
+    depth_desc.DepthFunc = get_comparison(ds_state.depth_comparison);
+    depth_desc.StencilEnable = ds_state.stencil_enabled;
+    depth_desc.StencilReadMask = ds_state.stencil_rmask;
+    depth_desc.StencilWriteMask = ds_state.stencil_wmask;
+    depth_desc.FrontFace.StencilFunc = get_comparison(ds_state.stencil_fface_mode.comparison);
+    depth_desc.FrontFace.StencilDepthFailOp = get_action(ds_state.stencil_fface_mode.depth_fail);
+    depth_desc.FrontFace.StencilFailOp = get_action(ds_state.stencil_fface_mode.stencil_fail);
+    depth_desc.FrontFace.StencilPassOp = get_action(ds_state.stencil_fface_mode.stencil_pass);
+    depth_desc.BackFace.StencilFunc = get_comparison(ds_state.stencil_bface_mode.comparison);
+    depth_desc.BackFace.StencilDepthFailOp = get_action(ds_state.stencil_bface_mode.depth_fail);
+    depth_desc.BackFace.StencilFailOp = get_action(ds_state.stencil_bface_mode.stencil_fail);
+    depth_desc.BackFace.StencilPassOp = get_action(ds_state.stencil_bface_mode.stencil_pass);
+    //(S_OK == device->GetDevice()->CreateDepthStencilState(&depth_desc, &depth_state));
 
 
 
 
-      const auto get_operand = [](Operand operand)
+    const auto get_operand = [](Operand operand)
+    {
+      switch (operand)
       {
-        switch (operand)
-        {
-        default:                         return (D3D12_BLEND)0;
-        case OPERAND_ZERO:               return D3D12_BLEND_ZERO;
-        case OPERAND_ONE:                return D3D12_BLEND_ONE;
-        case OPERAND_SRC_COLOR:          return D3D12_BLEND_SRC_COLOR;
-        case OPERAND_INV_SRC_COLOR:      return D3D12_BLEND_INV_SRC_COLOR;
-        case OPERAND_SRC_ALPHA:          return D3D12_BLEND_SRC_ALPHA;
-        case OPERAND_INV_SRC_ALPHA:      return D3D12_BLEND_INV_SRC_ALPHA;
-        case OPERAND_DEST_ALPHA:         return D3D12_BLEND_DEST_ALPHA;
-        case OPERAND_INV_DEST_ALPHA:     return D3D12_BLEND_INV_DEST_ALPHA;
-        case OPERAND_DEST_COLOR:         return D3D12_BLEND_DEST_COLOR;
-        case OPERAND_INV_DEST_COLOR:     return D3D12_BLEND_INV_DEST_COLOR;
-        case OPERAND_SRC_ALPHA_SAT:      return D3D12_BLEND_SRC_ALPHA_SAT;
-        case OPERAND_BLEND_FACTOR:       return D3D12_BLEND_BLEND_FACTOR;
-        case OPERAND_INV_BLEND_FACTOR:   return D3D12_BLEND_INV_BLEND_FACTOR;
-        }
-      };
+      default:                         return (D3D12_BLEND)0;
+      case OPERAND_ZERO:               return D3D12_BLEND_ZERO;
+      case OPERAND_ONE:                return D3D12_BLEND_ONE;
+      case OPERAND_SRC_COLOR:          return D3D12_BLEND_SRC_COLOR;
+      case OPERAND_INV_SRC_COLOR:      return D3D12_BLEND_INV_SRC_COLOR;
+      case OPERAND_SRC_ALPHA:          return D3D12_BLEND_SRC_ALPHA;
+      case OPERAND_INV_SRC_ALPHA:      return D3D12_BLEND_INV_SRC_ALPHA;
+      case OPERAND_DEST_ALPHA:         return D3D12_BLEND_DEST_ALPHA;
+      case OPERAND_INV_DEST_ALPHA:     return D3D12_BLEND_INV_DEST_ALPHA;
+      case OPERAND_DEST_COLOR:         return D3D12_BLEND_DEST_COLOR;
+      case OPERAND_INV_DEST_COLOR:     return D3D12_BLEND_INV_DEST_COLOR;
+      case OPERAND_SRC_ALPHA_SAT:      return D3D12_BLEND_SRC_ALPHA_SAT;
+      case OPERAND_BLEND_FACTOR:       return D3D12_BLEND_BLEND_FACTOR;
+      case OPERAND_INV_BLEND_FACTOR:   return D3D12_BLEND_INV_BLEND_FACTOR;
+      }
+    };
 
 
-      const auto get_operation = [](Operation operation)
+    const auto get_operation = [](Operation operation)
+    {
+      switch (operation)
       {
-        switch (operation)
-        {
-        default:                        return (D3D12_BLEND_OP)0;
-        case OPERATION_ADD:             return D3D12_BLEND_OP_ADD;
-        case OPERATION_SUBTRACT:        return D3D12_BLEND_OP_SUBTRACT;
-        case OPERATION_REV_SUBTRACT:    return D3D12_BLEND_OP_REV_SUBTRACT;
-        case OPERATION_MIN:             return D3D12_BLEND_OP_MIN;
-        case OPERATION_MAX:             return D3D12_BLEND_OP_MAX;
-        }
-      };
+      default:                        return (D3D12_BLEND_OP)0;
+      case OPERATION_ADD:             return D3D12_BLEND_OP_ADD;
+      case OPERATION_SUBTRACT:        return D3D12_BLEND_OP_SUBTRACT;
+      case OPERATION_REV_SUBTRACT:    return D3D12_BLEND_OP_REV_SUBTRACT;
+      case OPERATION_MIN:             return D3D12_BLEND_OP_MIN;
+      case OPERATION_MAX:             return D3D12_BLEND_OP_MAX;
+      }
+    };
 
      
-      blend_desc.AlphaToCoverageEnable = om_state.atc_enabled;
-      blend_desc.IndependentBlendEnable = false; //TODO: Implement true only
-      for (size_t i = 0; i < std::min(om_state.target_blends.size(), size_t(8u)); ++i)
+    blend_desc.AlphaToCoverageEnable = om_state.atc_enabled;
+    blend_desc.IndependentBlendEnable = false; //TODO: Implement true only
+    for (size_t i = 0; i < std::min(om_state.target_blends.size(), size_t(8u)); ++i)
+    {
+      blend_desc.RenderTarget[i].BlendEnable = om_state.target_blends[i].blend_enabled;
+      blend_desc.RenderTarget[i].SrcBlend = get_operand(om_state.target_blends[i].src_color);
+      blend_desc.RenderTarget[i].DestBlend = get_operand(om_state.target_blends[i].dst_color);
+      blend_desc.RenderTarget[i].BlendOp = get_operation(om_state.target_blends[i].blend_color);
+      blend_desc.RenderTarget[i].SrcBlendAlpha = get_operand(om_state.target_blends[i].src_alpha);
+      blend_desc.RenderTarget[i].DestBlendAlpha = get_operand(om_state.target_blends[i].dst_alpha);
+      blend_desc.RenderTarget[i].BlendOpAlpha = get_operation(om_state.target_blends[i].blend_alpha);
+      blend_desc.RenderTarget[i].RenderTargetWriteMask = om_state.target_blends[i].write_mask;
+    }
+    //BLAST_ASSERT(S_OK == device->GetDevice()->CreateBlendState(&blend_desc, &blend_state));
+  //}
+  
+    const auto get_primitive_topology = [](Topology topology)
+    {
+      switch (topology)
       {
-        blend_desc.RenderTarget[i].BlendEnable = om_state.target_blends[i].blend_enabled;
-        blend_desc.RenderTarget[i].SrcBlend = get_operand(om_state.target_blends[i].src_color);
-        blend_desc.RenderTarget[i].DestBlend = get_operand(om_state.target_blends[i].dst_color);
-        blend_desc.RenderTarget[i].BlendOp = get_operation(om_state.target_blends[i].blend_color);
-        blend_desc.RenderTarget[i].SrcBlendAlpha = get_operand(om_state.target_blends[i].src_alpha);
-        blend_desc.RenderTarget[i].DestBlendAlpha = get_operand(om_state.target_blends[i].dst_alpha);
-        blend_desc.RenderTarget[i].BlendOpAlpha = get_operation(om_state.target_blends[i].blend_alpha);
-        blend_desc.RenderTarget[i].RenderTargetWriteMask = om_state.target_blends[i].write_mask;
+      default:                          return D3D_PRIMITIVE_TOPOLOGY_UNDEFINED;
+      case TOPOLOGY_POINTLIST:          return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+      case TOPOLOGY_LINELIST:           return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+      case TOPOLOGY_LINESTRIP:          return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP;
+      case TOPOLOGY_TRIANGLELIST:       return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+      case TOPOLOGY_TRIANGLESTRIP:      return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;
+      case TOPOLOGY_LINELIST_ADJ:       return D3D_PRIMITIVE_TOPOLOGY_LINELIST_ADJ;
+      case TOPOLOGY_LINESTRIP_ADJ:      return D3D_PRIMITIVE_TOPOLOGY_LINESTRIP_ADJ;
+      case TOPOLOGY_TRIANGLELIST_ADJ:   return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST_ADJ;
+      case TOPOLOGY_TRIANGLESTRIP_ADJ:  return D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP_ADJ;
       }
-      //BLAST_ASSERT(S_OK == device->GetDevice()->CreateBlendState(&blend_desc, &blend_state));
-    //}
-
+    };
+    primitive_topology = get_primitive_topology(ia_state.topology);
+    
     const auto get_topology_type = [](Topology topology)
     {
       switch (topology)
@@ -480,58 +498,67 @@ namespace RayGene3D
       case TOPOLOGY_32_CONTROL_POINT_PATCHLIST: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_PATCH;
       }
     };
-
     topology_type = get_topology_type(ia_state.topology);
 
-    //const auto vp_count = rc_state.viewports.size();
-    //vp_items.resize(std::min(vp_count, size_t(D3D12_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
-    //for (size_t i = 0; i < vp_items.size(); ++i)
-    //{
-    //  if (i < vp_count)
-    //  {
-    //    const auto& viewport = rc_state.viewports[i];
-    //    vp_items[i] = { viewport.origin_x, viewport.origin_y, viewport.extent_x, viewport.extent_y, viewport.min_z, viewport.max_z };
-    //  }
-    //}
+    const auto vp_count = rc_state.viewports.size();
+    vp_items.resize(std::min(vp_count, size_t(D3D12_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });
+    for (size_t i = 0; i < vp_items.size(); ++i)
+    {
+      if (i < vp_count)
+      {
+        const auto& viewport = rc_state.viewports[i];
+        vp_items[i] = { viewport.origin_x, viewport.origin_y, viewport.extent_x, viewport.extent_y, viewport.min_z, viewport.max_z };
+      }
+    }
 
-    //if (!vert_bytecode.empty())
-    //{
-    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreateVertexShader(vert_bytecode.data(), vert_bytecode.size(), nullptr, &vert_shader));
-    //}
+    const auto sr_count = rc_state.viewports.size(); // Equal to viewport count in dx12;
+    sr_items.resize(std::min(sr_count, size_t(D3D12_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0, 0, 0, 0 });
+    for (size_t i = 0; i < vp_items.size(); ++i)
+    {
+      if (i < sr_count)
+      {
+        sr_items[i] = { 0, 0, int32_t(vp_items[i].Width), int32_t(vp_items[i].Height) };
+      }
+    }
 
-    //if (!tesc_bytecode.empty())
-    //{
-    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreateHullShader(tesc_bytecode.data(), tesc_bytecode.size(), nullptr, &tesc_shader));
-    //}
+    if (ia_state.topology != TOPOLOGY_UNKNOWN)
+    {
+      if (!ia_state.attributes.empty())
+      {
+        auto stride_max = 0u;
+        std::map<uint32_t, uint32_t> stride_map;
 
-    //if (!tese_bytecode.empty())
-    //{
-    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreateDomainShader(tese_bytecode.data(), tese_bytecode.size(), nullptr, &tese_shader));
-    //}
+        std::vector<D3D12_INPUT_ELEMENT_DESC> element_descs(ia_state.attributes.size(), { 0 });
+        for (size_t i = 0; i < ia_state.attributes.size(); ++i)
+        {
+          element_descs[i].SemanticName = "register";
+          element_descs[i].SemanticIndex = uint32_t(i);
+          element_descs[i].Format = get_format(ia_state.attributes[i].format);
+          element_descs[i].InputSlot = ia_state.attributes[i].slot;
+          element_descs[i].AlignedByteOffset = ia_state.attributes[i].offset;
+          element_descs[i].InputSlotClass = ia_state.attributes[i].instance ? D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA : D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+          element_descs[i].InstanceDataStepRate = 0;
 
-    //if (!geom_bytecode.empty())
-    //{
-    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreateGeometryShader(geom_bytecode.data(), geom_bytecode.size(), nullptr, &geom_shader));
-    //}
+          stride_map[ia_state.attributes[i].slot] = ia_state.attributes[i].stride;
+          stride_max = std::max(stride_max, ia_state.attributes[i].slot);
+        }
 
-    //if (!frag_bytecode.empty())
-    //{
-    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreatePixelShader(frag_bytecode.data(), frag_bytecode.size(), nullptr, &frag_shader));
-    //}
-
-    //if (!comp_bytecode.empty())
-    //{
-    //  BLAST_ASSERT(S_OK == device->GetDevice()->CreateComputeShader(comp_bytecode.data(), comp_bytecode.size(), nullptr, &comp_shader));
-    //}
-
-
-
+        strides.resize(stride_max + 1, 0);
+        for (const auto& stride_item : stride_map)
+        {
+          strides[stride_item.first] = stride_item.second;
+        }
+      }
+    }
   }
 
   void D12Config::Use()
   {
     auto pass = reinterpret_cast<D12Pass*>(&this->GetPass());
     auto device = reinterpret_cast<D12Device*>(&pass->GetDevice());
+
+    device->GetCommandList()->RSSetViewports(vp_items.size(), vp_items.data());
+    device->GetCommandList()->RSSetScissorRects(sr_items.size(), sr_items.data());
 
     //if (pass->GetType() == Pass::TYPE_GRAPHIC)
     //{

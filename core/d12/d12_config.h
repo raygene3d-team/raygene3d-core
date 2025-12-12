@@ -59,6 +59,7 @@ namespace RayGene3D
 
   public:
     D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType() const { return topology_type; }
+    D3D_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const { return primitive_topology; }
 
   public:
     D3D12_INPUT_LAYOUT_DESC GetLayoutDesc() const { return { element_descs.data(), uint32_t(element_descs.size()) }; }
@@ -68,14 +69,18 @@ namespace RayGene3D
     D3D12_DEPTH_STENCIL_DESC GetDepthDesc() const { return depth_desc; }
     D3D12_RASTERIZER_DESC GetRasterDesc() const { return raster_desc; }
 
-  //protected:
-  //  std::vector<D3D11_VIEWPORT> vp_items;
+  protected:
+    std::vector<D3D12_VIEWPORT> vp_items;
+    std::vector<D3D12_RECT> sr_items;
 
-  //protected:
-  //  std::vector<uint32_t> strides; //TODO: Remove
+  protected:
+    std::vector<uint32_t> strides; //TODO: Remove
 
-  //public:
-  //  const std::vector<uint32_t>& GetStrides() const { return strides; }
+  protected:
+    D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
+
+  public:
+    const std::vector<uint32_t>& GetStrides() const { return strides; }
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,

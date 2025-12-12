@@ -64,10 +64,9 @@ namespace RayGene3D
       debug_controller->EnableDebugLayer();
     }
 
-    const D3D_FEATURE_LEVEL feature_level = D3D_FEATURE_LEVEL_12_0;
-    const D3D_DRIVER_TYPE driver_type = D3D_DRIVER_TYPE_UNKNOWN;
 
-    BLAST_ASSERT(S_OK == D3D12CreateDevice(adapter, feature_level, IID_PPV_ARGS(&device)));
+
+    BLAST_ASSERT(S_OK == D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&device)));
 
     {
       D3D12_COMMAND_QUEUE_DESC queue_desc = {};
@@ -169,6 +168,12 @@ namespace RayGene3D
       //BLAST_ASSERT(S_OK == device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, present_command_allocator, nullptr,
       //  IID_PPV_ARGS(&present_command_list)));
       //BLAST_ASSERT(S_OK == present_command_list->Close());
+    }
+
+    if (factory)
+    {
+      factory->Release();
+      factory = nullptr;
     }
 
     {
@@ -429,6 +434,12 @@ namespace RayGene3D
     {
       command_queue->Release();
       command_queue = nullptr;
+    }
+
+    if (fence)
+    {
+      fence->Release();
+      fence = nullptr;
     }
 
     if (device)

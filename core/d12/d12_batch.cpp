@@ -373,118 +373,185 @@ namespace RayGene3D
 
 
 
-    //if (pass->GetType() == Pass::TYPE_GRAPHIC)
-    //{
-    //  device->GetContext()->VSSetShaderResources(0, rr_items.size(), rr_items.data());
-    //  device->GetContext()->VSSetConstantBuffers(0, ub_items.size(), ub_items.data());
-    //  device->GetContext()->VSSetSamplers(0, sampler_states.size(), sampler_states.data());
+    if (pass->GetType() == Pass::TYPE_GRAPHIC)
+    {
+      device->GetCommandList()->SetGraphicsRootSignature(root_signature);
 
-    //  device->GetContext()->HSSetShaderResources(0, rr_items.size(), rr_items.data());
-    //  device->GetContext()->HSSetConstantBuffers(0, ub_items.size(), ub_items.data());
-    //  device->GetContext()->HSSetSamplers(0, sampler_states.size(), sampler_states.data());
+      auto parameter_offset = 0ull;
 
-    //  device->GetContext()->DSSetShaderResources(0, rr_items.size(), rr_items.data());
-    //  device->GetContext()->DSSetConstantBuffers(0, ub_items.size(), ub_items.data());
-    //  device->GetContext()->DSSetSamplers(0, sampler_states.size(), sampler_states.data());
+      for (size_t i = 0; i < ub_items.size(); ++i)
+      {
+        device->GetCommandList()->SetGraphicsRootConstantBufferView(parameter_offset + i, ub_items[i]);
+      }
+      parameter_offset += ub_items.size();
 
-    //  device->GetContext()->GSSetShaderResources(0, rr_items.size(), rr_items.data());
-    //  device->GetContext()->GSSetConstantBuffers(0, ub_items.size(), ub_items.data());
-    //  device->GetContext()->GSSetSamplers(0, sampler_states.size(), sampler_states.data());
+      for (size_t i = 0; i < sb_items.size(); ++i)
+      {
+        device->GetCommandList()->SetGraphicsRootConstantBufferView(parameter_offset + i, sb_items[i]);
+      }
+      parameter_offset += sb_items.size();
 
-    //  device->GetContext()->PSSetShaderResources(0, rr_items.size(), rr_items.data());
-    //  device->GetContext()->PSSetConstantBuffers(0, ub_items.size(), ub_items.data());
-    //  device->GetContext()->PSSetSamplers(0, sampler_states.size(), sampler_states.data());
+      for (size_t i = 0; i < rr_items.size(); ++i)
+      {
+        device->GetCommandList()->SetGraphicsRootDescriptorTable(parameter_offset + i, rr_items[i]);
+      }
+      parameter_offset += rr_items.size();
 
-    //  for (const auto& chunk : entities)
-    //  {
-    //    const size_t va_limit = D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
-    //    uint32_t va_strides[va_limit]{ 0 };
-    //    uint32_t va_offsets[va_limit]{ 0 };
-    //    ID3D11Buffer* va_items[va_limit]{ nullptr };
-    //    const auto va_count = std::min(va_limit, chunk.va_views.size());
-    //    for (size_t i = 0; i < va_count; ++i)
-    //    {
-    //      const auto& va_view = chunk.va_views.at(i);
-    //      if (va_view)
-    //      {
-    //        va_items[i] = (reinterpret_cast<D11Resource*>(&va_view->GetResource()))->GetBuffer();
-    //        va_offsets[i] = va_view->GetLevelsOrLength().offset;
-    //        va_strides[i] = config->GetStrides().at(i);
-    //      }
-    //    }
-    //    device->GetContext()->IASetVertexBuffers(0, va_count, va_items, va_strides, va_offsets);
+      for (size_t i = 0; i < wr_items.size(); ++i)
+      {
+        device->GetCommandList()->SetGraphicsRootDescriptorTable(parameter_offset + i, wr_items[i]);
+      }
+      parameter_offset += wr_items.size();
 
-    //    const size_t ia_limit = 1u;
-    //    uint32_t ia_offsets[ia_limit]{ 0 };
-    //    DXGI_FORMAT ia_formats[ia_limit]{ DXGI_FORMAT_UNKNOWN };
-    //    ID3D11Buffer* ia_items[ia_limit]{ nullptr };
-    //    const auto ia_count = std::min(ia_limit, chunk.ia_views.size());
-    //    for (size_t i = 0; i < ia_count; ++i)
-    //    {
-    //      const auto& ia_view = chunk.ia_views.at(i);
-    //      if (ia_view)
-    //      {
-    //        ia_items[i] = (reinterpret_cast<D11Resource*>(&ia_view->GetResource()))->GetBuffer();
-    //        ia_offsets[i] = ia_view->GetLevelsOrLength().offset;
-    //        ia_formats[i] = config->GetIAState().indexer
-    //          == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
-    //          : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
-    //          : DXGI_FORMAT_UNKNOWN;
-    //      }
-    //    }
-    //    device->GetContext()->IASetIndexBuffer(ia_items[0], ia_formats[0], ia_offsets[0]);
+      for (size_t i = 0; i < entities.size(); ++i)
+      {
+        const auto& entity = entities[i];
 
-    //      if (!sb_views.empty())
-    //    {
-    //      const auto sb_limit = size_t(4u);
-    //      const auto sb_count = std::min(sb_limit, sb_views.size());
+        if (!sb_views.empty())
+        {
+          const auto sb_limit = size_t(4u);
+          const auto sb_count = std::min(sb_limit, sb_views.size());
 
-    //      uint32_t sb_offsets[sb_limit] = {};
-    //      uint32_t sb_strides[sb_limit] = {};
+          uint32_t sb_offsets[sb_limit] = {};
+          uint32_t sb_strides[sb_limit] = {};
 
-    //      for (size_t i = 0; i < sb_count; ++i)
-    //      {
-    //        const auto& sb_view = sb_views[i];
-    //        if (sb_view)
-    //        {
-    //          sb_offsets[i] = chunk.sb_offset ? chunk.sb_offset.value()[i] / 16u : 0u;
-    //          const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
-    //          sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
-    //        }
-    //      }
+          for (size_t j = 0; j < sb_count; ++j)
+          {
+            const auto& sb_view = sb_views[j];
+            if (sb_view)
+            {
+              sb_offsets[j] = entity.sb_offset ? entity.sb_offset.value()[j] : 0u;
+              device->GetCommandList()->SetGraphicsRootConstantBufferView(ub_items.size() + j, sb_items[j] + sb_offsets[j]);
+            }
+          }
+        }
 
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //      reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(ub_items.size(),
-    //        sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
-    //    }
 
-    //    if (chunk.arg_view)
-    //    {
-    //      const auto aa_buffer = (reinterpret_cast<D11Resource*>(&chunk.arg_view->GetResource()))->GetBuffer();
-    //      const auto aa_stride = uint32_t(sizeof(Graphic));
-    //      const auto aa_draws = 1u;
-    //      const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
-    //      device->GetContext()->DrawIndexedInstancedIndirect(aa_buffer, aa_offset);
-    //    }
-    //    else
-    //    {
-    //      const auto ins_count = chunk.ins_or_grid_x.length;
-    //      const auto ins_offset = chunk.ins_or_grid_x.offset;
-    //      const auto vtx_count = chunk.vtx_or_grid_y.length;
-    //      const auto vtx_offset = chunk.vtx_or_grid_y.offset;
-    //      const auto idx_count = chunk.idx_or_grid_z.length;
-    //      const auto idx_offset = chunk.idx_or_grid_z.offset;
-    //      device->GetContext()->DrawIndexedInstanced(idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
-    //    }
-    //  }
-    //}
+      //  if (entity.arg_view)
+      //  {
+      //    const auto aa_buffer = (reinterpret_cast<D12Resource*>(&entity.arg_view->GetResource()))->GetResource();
+      //    //const auto aa_stride = uint32_t(sizeof(Compute));
+      //    //const auto aa_offset = entity.arg_view->GetLevelsOrLength().offset;
+
+      //    device->GetCommandList()->ExecuteIndirect(
+      //      command_signature,
+      //      1,
+      //      aa_buffer,
+      //      0,
+      //      nullptr,
+      //      0);
+      //  }
+      //  else
+      //  {
+      //    const auto grid_x = entity.ins_or_grid_x.length;
+      //    const auto grid_y = entity.vtx_or_grid_y.length;
+      //    const auto grid_z = entity.idx_or_grid_z.length;
+      //    device->GetCommandList()->Dispatch(grid_x, grid_y, grid_z);
+      //  }
+      //}
+
+      //for (const auto& entity : entities)
+      //{
+
+        const size_t va_limit = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+        uint32_t va_strides[va_limit]{ 0 };
+        uint32_t va_offsets[va_limit]{ 0 };
+        D3D12_VERTEX_BUFFER_VIEW va_items[va_limit] = {};
+        const auto va_count = std::min(va_limit, entity.va_views.size());
+        for (size_t i = 0; i < va_count; ++i)
+        {
+          const auto& va_view = entity.va_views.at(i);
+          if (va_view)
+          {
+            const auto& resource = reinterpret_cast<const D12Resource*>(&va_view->GetResource());
+            va_items[i].BufferLocation = resource->GetAddress() + va_view->GetLevelsOrLength().offset;
+            va_items[i].SizeInBytes = resource->GetLevelsOrLength() * resource->GetLayersOrStride();
+            va_items[i].StrideInBytes = config->GetStrides().at(i);
+          }
+        }
+        device->GetCommandList()->IASetVertexBuffers(0, va_count, va_items);
+
+        const size_t ia_limit = 1u;
+        uint32_t ia_offsets[ia_limit]{ 0 };
+        DXGI_FORMAT ia_formats[ia_limit]{ DXGI_FORMAT_UNKNOWN };
+        D3D12_INDEX_BUFFER_VIEW ia_items[ia_limit] = {};
+        const auto ia_count = std::min(ia_limit, entity.ia_views.size());
+        for (size_t i = 0; i < ia_count; ++i)
+        {
+          const auto& ia_view = entity.ia_views.at(i);
+          if (ia_view)
+          {
+            const auto& resource = (reinterpret_cast<const D12Resource*>(&ia_view->GetResource()));
+            ia_items[i].BufferLocation = resource->GetAddress() + ia_view->GetLevelsOrLength().offset;
+            ia_items[i].SizeInBytes = resource->GetLevelsOrLength() * resource->GetLayersOrStride();
+            ia_items[i].Format = config->GetIAState().indexer
+              == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
+              : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
+              : DXGI_FORMAT_UNKNOWN;
+          }
+        }
+        device->GetCommandList()->IASetIndexBuffer(&ia_items[0]);
+
+
+        device->GetCommandList()->IASetPrimitiveTopology(config->GetPrimitiveTopology());
+
+        //if (!sb_views.empty())
+        //{
+        //  const auto sb_limit = size_t(4u);
+        //  const auto sb_count = std::min(sb_limit, sb_views.size());
+
+        //  uint32_t sb_offsets[sb_limit] = {};
+        //  uint32_t sb_strides[sb_limit] = {};
+
+        //  for (size_t i = 0; i < sb_count; ++i)
+        //  {
+        //    const auto& sb_view = sb_views[i];
+        //    if (sb_view)
+        //    {
+        //      sb_offsets[i] = chunk.sb_offset ? chunk.sb_offset.value()[i] / 16u : 0u;
+        //      const auto sb_resource = reinterpret_cast<D11Resource*>(&sb_view->GetResource());
+        //      sb_strides[i] = sb_resource->GetLayersOrStride() / 16u;
+        //    }
+        //  }
+
+        //  reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->VSSetConstantBuffers1(ub_items.size(),
+        //    sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+        //  reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->HSSetConstantBuffers1(ub_items.size(),
+        //    sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+        //  reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->DSSetConstantBuffers1(ub_items.size(),
+        //    sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+        //  reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->GSSetConstantBuffers1(ub_items.size(),
+        //    sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+        //  reinterpret_cast<ID3D11DeviceContext1*>(device->GetContext())->PSSetConstantBuffers1(ub_items.size(),
+        //    sb_items.size(), sb_items.data(), sb_offsets, sb_strides);
+        //}
+
+        if (entity.arg_view)
+        {
+          const auto aa_buffer = (reinterpret_cast<D12Resource*>(&entity.arg_view->GetResource()))->GetResource();
+          //const auto aa_stride = uint32_t(sizeof(Graphic));
+          //const auto aa_draws = 1u;
+          //const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
+          device->GetCommandList()->ExecuteIndirect(
+            command_signature,
+            1,
+            aa_buffer,
+            0,
+            nullptr,
+            0);
+        }
+        else
+        {
+          const auto ins_count = entity.ins_or_grid_x.length;
+          const auto ins_offset = entity.ins_or_grid_x.offset;
+          const auto vtx_count = entity.vtx_or_grid_y.length;
+          const auto vtx_offset = entity.vtx_or_grid_y.offset;
+          const auto idx_count = entity.idx_or_grid_z.length;
+          const auto idx_offset = entity.idx_or_grid_z.offset;
+          device->GetCommandList()->DrawIndexedInstanced(idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
+        }
+      }
+    }
 
 
     if (pass->GetType() == Pass::TYPE_COMPUTE)
@@ -499,7 +566,6 @@ namespace RayGene3D
       }
       parameter_offset += ub_items.size();
 
-      //root_parameters.resize(parameter_offset + sb_items.size());
       for (size_t i = 0; i < sb_items.size(); ++i)
       {
         device->GetCommandList()->SetComputeRootConstantBufferView(parameter_offset + i, sb_items[i]);
@@ -518,13 +584,6 @@ namespace RayGene3D
       }
       parameter_offset += wr_items.size();
 
-
-
-      //uint32_t wr_initials[8] = { 0 };
-      //device->GetContext()->CSSetUnorderedAccessViews(0, wr_items.size(), wr_items.data(), wr_initials);
-      //device->GetContext()->CSSetShaderResources(0, rr_items.size(), rr_items.data());
-      //device->GetContext()->CSSetConstantBuffers(0, ub_items.size(), ub_items.data());
-      //device->GetContext()->CSSetSamplers(0, sampler_states.size(), sampler_states.data());
 
       for (size_t i = 0; i < entities.size(); ++i)
       {
@@ -581,6 +640,19 @@ namespace RayGene3D
     {
       root_signature->Release();
       root_signature = nullptr;
+    }
+
+    if (pipeline_state)
+    {
+      pipeline_state->Release();
+      pipeline_state = nullptr;
+    }
+
+
+    if (command_signature)
+    {
+      command_signature->Release();
+      command_signature = nullptr;
     }
   }
 

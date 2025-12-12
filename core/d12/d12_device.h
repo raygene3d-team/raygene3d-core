@@ -69,10 +69,7 @@ namespace RayGene3D
     ID3D12GraphicsCommandList* command_list{ nullptr };
 
     IDXGISwapChain* swapchain{ nullptr };
-    std::vector<ID3D12Resource*> back_buffers;
-    //ID3D12CommandQueue* present_command_queue{ nullptr };
-    //ID3D12CommandAllocator* present_command_allocator{ nullptr };
-    //ID3D12GraphicsCommandList* present_command_list{ nullptr };    
+    std::vector<ID3D12Resource*> back_buffers;  
 
     ID3D12Resource* screen_buffer{ nullptr };
     ID3D12Resource* staging_buffer{ nullptr };
