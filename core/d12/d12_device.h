@@ -32,8 +32,9 @@ THE SOFTWARE.
 #include "d12_resource.h"
 #include "d12_pass.h"
 
-#include <dxgi.h>
+#include <dxgi1_3.h>
 #include <d3d12.h>
+#include "dxgidebug.h"
 
 namespace RayGene3D
 {
@@ -62,12 +63,15 @@ namespace RayGene3D
 
 
   protected:
-    ID3D12Debug* debug_controller{ nullptr };
+    ID3D12Debug* d3d12_debug{ nullptr };
     ID3D12Device* device{ nullptr };
     ID3D12CommandQueue* command_queue{ nullptr };
     ID3D12CommandAllocator* command_allocator{ nullptr };
     ID3D12GraphicsCommandList* command_list{ nullptr };
 
+    IDXGIFactory* factory{ nullptr };
+    IDXGIAdapter* adapter{ nullptr };
+    IDXGIDebug* dxgi_debug{ nullptr };
     IDXGISwapChain* swapchain{ nullptr };
     std::vector<ID3D12Resource*> back_buffers;  
 

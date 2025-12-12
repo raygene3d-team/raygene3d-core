@@ -32,6 +32,11 @@ THE SOFTWARE.
 #include "d12_view.h"
 #include "d12_resource.h"
 
+//#ifdef _DEBUG
+
+#pragma comment (lib, "dxguid.lib")
+//#endif
+
 #pragma comment (lib, "dxgi.lib")
 #pragma comment (lib, "d3d12.lib")
 
@@ -45,10 +50,13 @@ namespace RayGene3D
       return;
     }
 
-    IDXGIFactory* factory = nullptr;
-    BLAST_ASSERT(S_OK == CreateDXGIFactory(IID_PPV_ARGS(&factory)));
+    uint32_t dxgi_flags = 0;
+#ifdef _DEBUG
+    dxgi_flags |= DXGI_CREATE_FACTORY_DEBUG;
+#endif
 
-    IDXGIAdapter* adapter = nullptr;
+    BLAST_ASSERT(S_OK == CreateDXGIFactory2(dxgi_flags, IID_PPV_ARGS(&factory)));
+
     BLAST_ASSERT(S_OK == factory->EnumAdapters(ordinal, &adapter));
 
     DXGI_ADAPTER_DESC adapter_desc;
@@ -60,8 +68,8 @@ namespace RayGene3D
 
     if (debug)
     {
-      BLAST_ASSERT(S_OK == D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller)));
-      debug_controller->EnableDebugLayer();
+      BLAST_ASSERT(S_OK == D3D12GetDebugInterface(IID_PPV_ARGS(&d3d12_debug)));
+      d3d12_debug->EnableDebugLayer();
     }
 
 
@@ -170,11 +178,11 @@ namespace RayGene3D
       //BLAST_ASSERT(S_OK == present_command_list->Close());
     }
 
-    if (factory)
-    {
-      factory->Release();
-      factory = nullptr;
-    }
+    //if (factory)
+    //{
+    //  factory->Release();
+    //  factory = nullptr;
+    //}
 
     {
       D3D12_HEAP_PROPERTIES heap_properties = {};
@@ -412,12 +420,6 @@ namespace RayGene3D
       staging_buffer = nullptr;
     }
 
-    if (swapchain)
-    {
-      swapchain->Release();
-      swapchain = nullptr;
-    }
-
     if (command_list)
     {
       command_list->Release();
@@ -448,11 +450,42 @@ namespace RayGene3D
       device = nullptr;
     }
 
-    if (debug_controller)
+    if (d3d12_debug)
     {
-      debug_controller->Release();
-      debug_controller = nullptr;
+      d3d12_debug->Release();
+      d3d12_debug = nullptr;
     }
+
+    if (debug)
+    {
+      BLAST_ASSERT(S_OK == DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgi_debug)));
+      dxgi_debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_SUMMARY);
+    }
+
+    if (dxgi_debug)
+    {
+      dxgi_debug->Release();
+      dxgi_debug = nullptr;
+    }
+
+    if (swapchain)
+    {
+      swapchain->Release();
+      swapchain = nullptr;
+    }
+
+    if (adapter)
+    {
+      adapter->Release();
+      adapter = nullptr;
+    }
+
+    if (factory)
+    {
+      factory->Release();
+      factory = nullptr;
+    }
+
   }
 
 
