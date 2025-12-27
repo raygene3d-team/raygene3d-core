@@ -359,15 +359,15 @@ namespace RayGene3D
 
     }
 
-    if (swapchain)
-    {
-      swapchain->Present(1, 0);
-    }
+
 
     BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
     WaitForSingleObject(fence_event, INFINITE);
 
-
+    if (swapchain)
+    {
+      swapchain->Present(1, 0);
+    }
     
   }
 
@@ -455,18 +455,16 @@ namespace RayGene3D
       d3d12_debug->Release();
       d3d12_debug = nullptr;
     }
-
-    if (debug)
-    {
-      BLAST_ASSERT(S_OK == DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgi_debug)));
-      dxgi_debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_SUMMARY);
-    }
-
-    if (dxgi_debug)
-    {
-      dxgi_debug->Release();
-      dxgi_debug = nullptr;
-    }
+    
+    //for (auto& back_buffer : back_buffers)
+    //{
+    //  if (back_buffer)
+    //  {
+    //    back_buffer->Release();
+    //    back_buffer = nullptr;
+    //  }
+    //}
+    //back_buffers.clear();
 
     if (swapchain)
     {
@@ -484,6 +482,19 @@ namespace RayGene3D
     {
       factory->Release();
       factory = nullptr;
+    }
+
+
+    if (debug)
+    {
+      BLAST_ASSERT(S_OK == DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgi_debug)));
+      dxgi_debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_SUMMARY);
+    }
+
+    if (dxgi_debug)
+    {
+      dxgi_debug->Release();
+      dxgi_debug = nullptr;
     }
 
   }

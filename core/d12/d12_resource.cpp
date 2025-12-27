@@ -523,14 +523,6 @@ namespace RayGene3D
       view->Discard();
     }
 
-    //if (general_heap)
-    //{
-    //  general_heap->Release();
-    //  general_heap = nullptr;
-    //}
-
-
-
     if (resource)
     {
       resource->Release();
