@@ -140,7 +140,7 @@ namespace RayGene3D
 
         srv_desc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
         srv_desc.Format = DXGI_FORMAT_UNKNOWN;
-        srv_desc.Shader4ComponentMapping = 0;
+        srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
         srv_desc.Buffer.FirstElement = levels_or_length.offset;
         srv_desc.Buffer.NumElements = levels_or_length.length == -1 ? resource->GetLevelsOrLength() : levels_or_length.length;
         srv_desc.Buffer.StructureByteStride = layers_or_stride.length = -1 ? resource->GetLayersOrStride() : layers_or_stride.length;

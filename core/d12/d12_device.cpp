@@ -146,7 +146,7 @@ namespace RayGene3D
       swapchain_desc.OutputWindow = reinterpret_cast<HWND>(window);
       swapchain_desc.Windowed = true;
       swapchain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-      swapchain_desc.Flags = 0;
+      swapchain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 
       //IDXGIDevice* dxgi_device = nullptr;
       //BLAST_ASSERT(S_OK == device->QueryInterface(IID_PPV_ARGS(&dxgi_device)));
@@ -366,7 +366,7 @@ namespace RayGene3D
 
     if (swapchain)
     {
-      swapchain->Present(1, 0);
+      swapchain->Present(0, DXGI_PRESENT_ALLOW_TEARING);
     }
     
   }
