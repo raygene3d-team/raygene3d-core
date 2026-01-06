@@ -46,6 +46,26 @@ namespace RayGene3D
     ID3D12CommandSignature* command_signature{ nullptr };
 
   protected:
+    ID3D12StateObject* state_object{ nullptr };
+    ID3D12Resource* table_buffer{ nullptr };
+
+  protected:
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE rgen_region;
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE xhit_region;
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE miss_region;
+    //D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE call_region;
+
+  protected:
+    static constexpr const wchar_t* rgen_name{ L"rgen" };
+    static constexpr const wchar_t* ahit_name{ L"ahit" };
+    static constexpr const wchar_t* chit_name{ L"chit" };
+    static constexpr const wchar_t* isec_name{ L"isec" };
+    static constexpr const wchar_t* miss_name{ L"miss" };
+
+  protected:
+    static constexpr const wchar_t* xhit_name{ L"xhit" };
+
+  protected:
     std::vector<D3D12_ROOT_PARAMETER> root_parameters;
 
   protected:
@@ -61,6 +81,16 @@ namespace RayGene3D
     void Initialize() override;
     void Use() override;
     void Discard() override;
+
+  //public:
+  //  ID3D12StateObject* GetStateObject() const { return state_object; }
+  //  ID3D12Resource* GetTableBuffer() const { return table_buffer; }
+
+  //public:
+  //  const D3D12_GPU_VIRTUAL_ADDRESS_RANGE& GetRgenRegion() const { return rgen_region; }
+  //  const D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE& GetXhitRegion() const { return xhit_region; }
+  //  const D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE& GetMissRegion() const { return miss_region; }
+  //  const D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE& GetCallRegion() const { return call_region; }
 
   public:
     D12Batch(const std::string& name,

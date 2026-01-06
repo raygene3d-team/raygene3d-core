@@ -83,22 +83,40 @@ namespace RayGene3D
     virtual ~D12Includer() {}
   };
 
-  static void D12Compile(const std::string& source, const char* entry, const char* target,
-    std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
+  static void D12Compile(const char* name, const std::string& source, const std::string& path, const std::string& file,
+    const char* entry, const char* target, std::map<std::string, std::string> defines, std::vector<char>& bytecode)
   {
+    wchar_t* w_name = new wchar_t[64];
+    mbstowcs(w_name, name, 64);
+
+    wchar_t* w_filepath = new wchar_t[256];
+    mbstowcs(w_filepath, (path + file).c_str(), 256);
+
+    wchar_t* w_entry = new wchar_t[16];
+    mbstowcs(w_entry, entry, 16);
+
+    wchar_t* w_target = new wchar_t[16];
+    mbstowcs(w_target, target, 16);
+
     IDxcUtils* utils{ nullptr };
     BLAST_ASSERT(S_OK == DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&utils)));
 
-    IDxcIncludeHandler* includer{ nullptr };
-    includer = new D12Includer(utils, path);
-    includer->AddRef();
+    IDxcIncludeHandler* include_handler{ nullptr };
+    include_handler = new D12Includer(utils, path);
+    include_handler->AddRef();
 
-    // Create blob from shader source
-    IDxcBlobEncoding* encoding;
-    BLAST_ASSERT(S_OK == utils->CreateBlobFromPinned(source.c_str(), uint32_t(source.size()), DXC_CP_ACP, &encoding));
+    IDxcBlobEncoding* blob_encoding{ nullptr };
+     if (source.empty())
+     {
+       BLAST_ASSERT(S_OK == utils->LoadFile(w_filepath, DXC_CP_ACP, &blob_encoding));
+     }
+     else
+     {
+       BLAST_ASSERT(S_OK == utils->CreateBlobFromPinned(source.c_str(), uint32_t(source.size()), DXC_CP_ACP, &blob_encoding));
+     }
 
-    auto data = encoding->GetBufferPointer();
-    auto size = encoding->GetBufferSize();
+    //auto data = encoding->GetBufferPointer();
+    //auto size = encoding->GetBufferSize();
 
     const wchar_t* args[] =
     {
@@ -124,24 +142,19 @@ namespace RayGene3D
   //  m.Value = defines[i].second.c_str();
   //}
 
-    wchar_t* w_entry = new wchar_t[16];
-    mbstowcs(w_entry, entry, 16);
-
-    wchar_t* w_target = new wchar_t[16];
-    mbstowcs(w_target, target, 16);
-
     IDxcCompiler* compiler{ nullptr };
     BLAST_ASSERT(S_OK == DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler)));
 
     IDxcOperationResult* result{ nullptr };
-    BLAST_ASSERT(S_OK == compiler->Compile(encoding, L"nullptr", w_entry, w_target,
+    BLAST_ASSERT(S_OK == compiler->Compile(blob_encoding, 
+      w_name, w_entry, w_target,
       args, std::size(args), 
       nullptr, 0, 
-      includer, &result));    
+      include_handler, &result));
 
     if (compiler) { compiler->Release(); compiler = nullptr; }
-    if (encoding) { encoding->Release(); encoding = nullptr; }
-    if (includer) { includer->Release(); includer = nullptr; }
+    if (blob_encoding) { blob_encoding->Release(); blob_encoding = nullptr; }
+    if (include_handler) { include_handler->Release(); include_handler = nullptr; }
 
     if (utils) { utils->Release(); utils = nullptr; }
 
@@ -165,6 +178,96 @@ namespace RayGene3D
   }
 
 
+
+  //static void D12Compile(const char* name, const std::string& source, const std::string& path, const std::string& file,
+  //  const char* entry, const char* target, std::map<std::string, std::string> defines, std::vector<char>& bytecode)
+  //{
+  //  wchar_t* w_name = new wchar_t[64];
+  //  mbstowcs(w_name, name, 64);
+
+  //  wchar_t* w_filepath = new wchar_t[256];
+  //  mbstowcs(w_filepath, (path + file).c_str(), 256);
+
+  //  IDxcLibrary* library{ nullptr };
+  //  BLAST_ASSERT(S_OK == DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&library)));
+
+  //  IDxcBlobEncoding* blob_encoding{ nullptr };
+  //  if (source.empty())
+  //  {
+  //    BLAST_ASSERT(S_OK == library->CreateBlobFromFile(w_filepath, DXC_CP_ACP, &blob_encoding));
+  //  }
+  //  else
+  //  {
+  //    BLAST_ASSERT(S_OK == library->CreateBlobWithEncodingFromPinned(source.c_str(), uint32_t(source.size()), DXC_CP_ACP, &blob_encoding));
+  //  }
+
+  //  IDxcIncludeHandler* include_handler{ nullptr };
+  //  BLAST_ASSERT(S_OK == library->CreateIncludeHandler(&include_handler));
+
+  //  IDxcCompiler3* compiler{ nullptr };
+  //  BLAST_ASSERT(S_OK == DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler)));
+
+  //  const wchar_t* args[] =
+  //  {
+  //    //L"-Zpr",			//Row-major matrices
+  //    //L"-WX",				//Warnings as errors
+  //    //L"-Gec",
+  //    //L"-HV 2016",
+  //    //L"-flegacy-macro-expansion",
+  //    //L"-flegacy-resource-reservation",
+  //#ifdef _DEBUG
+  //    L"-Zi",				//Debug info
+  //    L"-Od",				//Disable optimization
+  //    L"-Qembed_debug"
+  //#else
+  //    L"-O3",				//Optimization level 3
+  //#endif
+  //  };
+
+  //  //std::vector<DxcDefine> dxcDefines(defines.size());
+  //  //for (size_t i = 0; i < defines.size(); ++i)
+  //  //{
+  //  //  DxcDefine& m = dxcDefines(i);
+  //  //  m.Name = defines[i].first.c_str();
+  //  //  m.Value = defines[i].second.c_str();
+  //  //}
+
+  //  wchar_t* w_entry = new wchar_t[16];
+  //  mbstowcs(w_entry, entry, 16);
+
+  //  wchar_t* w_target = new wchar_t[16];
+  //  mbstowcs(w_target, target, 16);
+
+  //  IDxcOperationResult* operation_result{ nullptr };
+  //  BLAST_ASSERT(S_OK == compiler->Compile(blob_encoding, 
+  //    w_name, w_entry, w_target,
+  //    args, std::size(args),
+  //    nullptr, 0,
+  //    include_handler, &operation_result));
+
+  //  if (compiler) { compiler->Release(); compiler = nullptr; }
+  //  if (blob_encoding) { blob_encoding->Release(); blob_encoding = nullptr; }
+  //  if (include_handler) { include_handler->Release(); include_handler = nullptr; }
+
+  //  HRESULT hr{ S_OK };
+  //  BLAST_ASSERT(S_OK == operation_result->GetStatus(&hr));
+  //  if (hr != S_OK)
+  //  {
+  //    IDxcBlobEncoding* error{ nullptr };
+  //    BLAST_ASSERT(S_OK == operation_result->GetErrorBuffer(&error));
+  //    BLAST_LOG("DXCompiler output: \n%s", reinterpret_cast<char*>(error->GetBufferPointer()));
+  //    if (error) error->Release();
+  //    return;
+  //  }
+
+  //  IDxcBlob* output{ nullptr };
+  //  operation_result->GetResult(&output);
+
+  //  bytecode.assign(reinterpret_cast<char*>(output->GetBufferPointer()), reinterpret_cast<char*>(output->GetBufferPointer()) + output->GetBufferSize());
+  //  output->Release();
+  //}
+
+
   void D12Config::Initialize()
   {
     auto pass = reinterpret_cast<D12Pass*>(&this->GetPass());
@@ -178,13 +281,29 @@ namespace RayGene3D
     tese_bytecode.clear();
     geom_bytecode.clear();
     frag_bytecode.clear();
+    if (compilation & COMPILATION_COMP) { D12Compile(name.c_str(), source, path, file, "cs_main", "cs_6_0", defines, comp_bytecode); BLAST_ASSERT(!comp_bytecode.empty()); }
+    if (compilation & COMPILATION_VERT) { D12Compile(name.c_str(), source, path, file, "vs_main", "vs_6_0", defines, vert_bytecode); BLAST_ASSERT(!vert_bytecode.empty()); }
+    if (compilation & COMPILATION_TESC) { D12Compile(name.c_str(), source, path, file, "hs_main", "hs_6_0", defines, tesc_bytecode); BLAST_ASSERT(!tesc_bytecode.empty()); }
+    if (compilation & COMPILATION_TESE) { D12Compile(name.c_str(), source, path, file, "ds_main", "ds_6_0", defines, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
+    if (compilation & COMPILATION_GEOM) { D12Compile(name.c_str(), source, path, file, "gs_main", "gs_6_0", defines, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
+    if (compilation & COMPILATION_FRAG) { D12Compile(name.c_str(), source, path, file, "ps_main", "ps_6_0", defines, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
 
-    if (compilation & COMPILATION_COMP) { D12Compile(source, "cs_main", "cs_6_0", defines, path, comp_bytecode); BLAST_ASSERT(!comp_bytecode.empty()); }
-    if (compilation & COMPILATION_VERT) { D12Compile(source, "vs_main", "vs_6_0", defines, path, vert_bytecode); BLAST_ASSERT(!vert_bytecode.empty()); }
-    if (compilation & COMPILATION_TESC) { D12Compile(source, "hs_main", "hs_6_0", defines, path, tesc_bytecode); BLAST_ASSERT(!tesc_bytecode.empty()); }
-    if (compilation & COMPILATION_TESE) { D12Compile(source, "ds_main", "ds_6_0", defines, path, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
-    if (compilation & COMPILATION_GEOM) { D12Compile(source, "gs_main", "gs_6_0", defines, path, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
-    if (compilation & COMPILATION_FRAG) { D12Compile(source, "ps_main", "ps_6_0", defines, path, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
+    task_bytecode.clear();
+    mesh_bytecode.clear();
+    rgen_bytecode.clear();
+    call_bytecode.clear();
+    isec_bytecode.clear();
+    chit_bytecode.clear();
+    ahit_bytecode.clear();
+    miss_bytecode.clear();
+    if (compilation & COMPILATION_TASK) { D12Compile(name.c_str(), source, path, file, "task", "as_6_5", defines, task_bytecode); BLAST_ASSERT(!task_bytecode.empty());}
+    if (compilation & COMPILATION_MESH) { D12Compile(name.c_str(), source, path, file, "mesh", "ms_6_5", defines, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
+    if (compilation & COMPILATION_RGEN) { D12Compile(name.c_str(), source, path, file, "rgen", "lib_6_3", defines, rgen_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
+    if (compilation & COMPILATION_CALL) { D12Compile(name.c_str(), source, path, file, "call", "lib_6_3", defines, call_bytecode); BLAST_ASSERT(!call_bytecode.empty()); }
+    if (compilation & COMPILATION_ISEC) { D12Compile(name.c_str(), source, path, file, "isec", "lib_6_3", defines, isec_bytecode); BLAST_ASSERT(!isec_bytecode.empty()); }
+    if (compilation & COMPILATION_CHIT) { D12Compile(name.c_str(), source, path, file, "chit", "lib_6_3", defines, chit_bytecode); BLAST_ASSERT(!chit_bytecode.empty()); }
+    if (compilation & COMPILATION_AHIT) { D12Compile(name.c_str(), source, path, file, "ahit", "lib_6_3", defines, ahit_bytecode); BLAST_ASSERT(!ahit_bytecode.empty()); }
+    if (compilation & COMPILATION_MISS) { D12Compile(name.c_str(), source, path, file, "miss", "lib_6_3", defines, miss_bytecode); BLAST_ASSERT(!miss_bytecode.empty()); }
 
     const auto get_format = [this](Format format)
     {

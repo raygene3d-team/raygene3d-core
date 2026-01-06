@@ -72,9 +72,8 @@ namespace RayGene3D
       d3d12_debug->EnableDebugLayer();
     }
 
-
-
     BLAST_ASSERT(S_OK == D3D12CreateDevice(adapter, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&device)));
+
 
     {
       D3D12_COMMAND_QUEUE_DESC queue_desc = {};
@@ -84,11 +83,25 @@ namespace RayGene3D
 
       BLAST_ASSERT(S_OK == device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&command_allocator)));
 
-      BLAST_ASSERT(S_OK == device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, command_allocator, nullptr,
-        IID_PPV_ARGS(&command_list)));
+      BLAST_ASSERT(S_OK == device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, command_allocator, nullptr, IID_PPV_ARGS(&command_list)));
       BLAST_ASSERT(S_OK == command_list->Close());
+
+      
     }
-    
+
+    // Check support for Ray Tracing
+    {
+      D3D12_FEATURE_DATA_D3D12_OPTIONS5 options = {};
+      BLAST_ASSERT(S_OK == device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &options, sizeof(options)));
+      ray_tracing_supported = options.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
+    }
+
+    // Check support for Mesh Shader
+    {
+      D3D12_FEATURE_DATA_D3D12_OPTIONS7 options = {};
+      BLAST_ASSERT(S_OK == device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &options, sizeof(options)));
+      mesh_shader_supported = options.MeshShaderTier != D3D12_MESH_SHADER_TIER_NOT_SUPPORTED;
+    }
 
     BLAST_ASSERT(S_OK == device->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
     fence_event = CreateEvent(nullptr, false, false, nullptr);
@@ -130,6 +143,11 @@ namespace RayGene3D
     sampler_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
     rt_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
     ds_size = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+    BLAST_LOG("Device is created on %s [RT:%s, MS:%s]",
+      adapter_name,
+      ray_tracing_supported ? "On" : "Off",
+      mesh_shader_supported ? "On" : "Off");
 
     if (window)
     {

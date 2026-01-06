@@ -43,16 +43,17 @@ namespace RayGene3D
       std::string content;
     };
 
-    std::string path;
-
     shaderc_include_result* GetInclude(
       const char* requested_source,
       shaderc_include_type type,
       const char* requesting_source,
       size_t include_depth) override
-    {      
+    {
+      const std::filesystem::path base_path = std::filesystem::path(requesting_source).parent_path();
+      const std::filesystem::path full_path = (base_path / requested_source).lexically_normal();
+      
       auto includee = new Includee;
-      includee->name = std::move(path + requested_source);
+      includee->name = full_path.string();
 
       std::fstream fs;
       fs.open(includee->name, std::fstream::in);
@@ -81,11 +82,11 @@ namespace RayGene3D
     }
 
   public:
-    VLKIncluder(const std::string& path) : path(path) {}
+    VLKIncluder() {}
     virtual ~VLKIncluder() {}
   };
 
-  static void CompileVLK(const std::string& path, const std::string& file, std::string& source, 
+  static void CompileVLK(const char* name, std::string& source, const std::string& path, const std::string& file,
     const char* target, const std::map<std::string, std::string>& defines, std::vector<char>& bytecode)
   {   
     if (source.empty())
@@ -105,7 +106,7 @@ namespace RayGene3D
     options.SetSourceLanguage(shaderc_source_language_glsl);
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
     options.SetTargetSpirv(shaderc_spirv_version_1_4);
-    options.SetIncluder(std::make_unique<VLKIncluder>(path));
+    options.SetIncluder(std::make_unique<VLKIncluder>());
 
     auto kind = shaderc_glsl_infer_from_source;
     if (strcmp(target, "comp") == 0) { options.AddMacroDefinition("COMP"); kind = shaderc_compute_shader; } else
@@ -137,7 +138,7 @@ namespace RayGene3D
     for (const auto& define : defines) options.AddMacroDefinition(define.first, define.second);
 
     shaderc::Compiler compiler;
-    const auto module = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)kind, file.empty() ? "unknown" : file.c_str(), entry, options);
+    const auto module = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)kind, file.empty() ? "unknown" : (path + file).c_str(), entry, options);
 
     if (module.GetCompilationStatus() != shaderc_compilation_status_success)
     {
@@ -173,20 +174,20 @@ namespace RayGene3D
     ahit_bytecode.clear();
     call_bytecode.clear();
 
-    if (compilation & COMPILATION_COMP) { CompileVLK(path, file, source, "comp", defines, comp_bytecode); BLAST_ASSERT(!comp_bytecode.empty()); }
-    if (compilation & COMPILATION_VERT) { CompileVLK(path, file, source, "vert", defines, vert_bytecode); BLAST_ASSERT(!vert_bytecode.empty()); }
-    if (compilation & COMPILATION_TESC) { CompileVLK(path, file, source, "tesc", defines, tesc_bytecode); BLAST_ASSERT(!tesc_bytecode.empty()); }
-    if (compilation & COMPILATION_TESE) { CompileVLK(path, file, source, "tese", defines, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
-    if (compilation & COMPILATION_GEOM) { CompileVLK(path, file, source, "geom", defines, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
-    if (compilation & COMPILATION_FRAG) { CompileVLK(path, file, source, "frag", defines, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
-    if (compilation & COMPILATION_TASK) { CompileVLK(path, file, source, "task", defines, task_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
-    if (compilation & COMPILATION_MESH) { CompileVLK(path, file, source, "mesh", defines, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
-    if (compilation & COMPILATION_RGEN) { CompileVLK(path, file, source, "rgen", defines, rgen_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
-    if (compilation & COMPILATION_ISEC) { CompileVLK(path, file, source, "isec", defines, isec_bytecode); BLAST_ASSERT(!isec_bytecode.empty()); }
-    if (compilation & COMPILATION_MISS) { CompileVLK(path, file, source, "miss", defines, miss_bytecode); BLAST_ASSERT(!miss_bytecode.empty()); }
-    if (compilation & COMPILATION_CHIT) { CompileVLK(path, file, source, "chit", defines, chit_bytecode); BLAST_ASSERT(!chit_bytecode.empty()); }
-    if (compilation & COMPILATION_AHIT) { CompileVLK(path, file, source, "ahit", defines, ahit_bytecode); BLAST_ASSERT(!ahit_bytecode.empty()); }
-    if (compilation & COMPILATION_CALL) { CompileVLK(path, file, source, "call", defines, call_bytecode); BLAST_ASSERT(!call_bytecode.empty()); }
+    if (compilation & COMPILATION_COMP) { CompileVLK(name.c_str(), source, path, file, "comp", defines, comp_bytecode); BLAST_ASSERT(!comp_bytecode.empty()); }
+    if (compilation & COMPILATION_VERT) { CompileVLK(name.c_str(), source, path, file, "vert", defines, vert_bytecode); BLAST_ASSERT(!vert_bytecode.empty()); }
+    if (compilation & COMPILATION_TESC) { CompileVLK(name.c_str(), source, path, file, "tesc", defines, tesc_bytecode); BLAST_ASSERT(!tesc_bytecode.empty()); }
+    if (compilation & COMPILATION_TESE) { CompileVLK(name.c_str(), source, path, file, "tese", defines, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
+    if (compilation & COMPILATION_GEOM) { CompileVLK(name.c_str(), source, path, file, "geom", defines, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
+    if (compilation & COMPILATION_FRAG) { CompileVLK(name.c_str(), source, path, file, "frag", defines, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
+    if (compilation & COMPILATION_TASK) { CompileVLK(name.c_str(), source, path, file, "task", defines, task_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
+    if (compilation & COMPILATION_MESH) { CompileVLK(name.c_str(), source, path, file, "mesh", defines, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
+    if (compilation & COMPILATION_RGEN) { CompileVLK(name.c_str(), source, path, file, "rgen", defines, rgen_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
+    if (compilation & COMPILATION_ISEC) { CompileVLK(name.c_str(), source, path, file, "isec", defines, isec_bytecode); BLAST_ASSERT(!isec_bytecode.empty()); }
+    if (compilation & COMPILATION_MISS) { CompileVLK(name.c_str(), source, path, file, "miss", defines, miss_bytecode); BLAST_ASSERT(!miss_bytecode.empty()); }
+    if (compilation & COMPILATION_CHIT) { CompileVLK(name.c_str(), source, path, file, "chit", defines, chit_bytecode); BLAST_ASSERT(!chit_bytecode.empty()); }
+    if (compilation & COMPILATION_AHIT) { CompileVLK(name.c_str(), source, path, file, "ahit", defines, ahit_bytecode); BLAST_ASSERT(!ahit_bytecode.empty()); }
+    if (compilation & COMPILATION_CALL) { CompileVLK(name.c_str(), source, path, file, "call", defines, call_bytecode); BLAST_ASSERT(!call_bytecode.empty()); }
 
     {
       const auto create_shader_module = [device](const std::vector<char>& bytecode)

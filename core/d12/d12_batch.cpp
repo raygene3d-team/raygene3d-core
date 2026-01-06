@@ -47,43 +47,43 @@ namespace RayGene3D
     auto device = reinterpret_cast<D12Device*>(&pass->GetDevice());
 
     const auto get_filter = [this](Sampler::Filtering filtering, bool compare)
-    {
-      switch (filtering)
       {
-      default: return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-      case Sampler::FILTERING_NEAREST: return compare ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
-      case Sampler::FILTERING_LINEAR: return compare ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR : D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-      case Sampler::FILTERING_ANISOTROPIC: return compare ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
-      }
-    };
+        switch (filtering)
+        {
+        default: return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        case Sampler::FILTERING_NEAREST: return compare ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_POINT : D3D12_FILTER_MIN_MAG_MIP_POINT;
+        case Sampler::FILTERING_LINEAR: return compare ? D3D12_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR : D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+        case Sampler::FILTERING_ANISOTROPIC: return compare ? D3D12_FILTER_COMPARISON_ANISOTROPIC : D3D12_FILTER_ANISOTROPIC;
+        }
+      };
 
     const auto get_addressing = [this](Sampler::Addressing addressing)
-    {
-      switch (addressing)
       {
-      default: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-      case Sampler::ADDRESSING_REPEAT: return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
-      case Sampler::ADDRESSING_MIRROR: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
-      case Sampler::ADDRESSING_CLAMP: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
-      case Sampler::ADDRESSING_BORDER: return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
-      }
-    };
+        switch (addressing)
+        {
+        default: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        case Sampler::ADDRESSING_REPEAT: return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+        case Sampler::ADDRESSING_MIRROR: return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+        case Sampler::ADDRESSING_CLAMP: return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+        case Sampler::ADDRESSING_BORDER: return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+        }
+      };
 
     const auto get_comparison = [this](Sampler::Comparison comparison)
-    {
-      switch (comparison)
       {
-      default: return D3D12_COMPARISON_FUNC_NONE;
-      case Sampler::COMPARISON_NEVER: return D3D12_COMPARISON_FUNC_NEVER;
-      case Sampler::COMPARISON_LESS: return D3D12_COMPARISON_FUNC_LESS;
-      case Sampler::COMPARISON_EQUAL: return D3D12_COMPARISON_FUNC_EQUAL;
-      case Sampler::COMPARISON_LESS_EQUAL: return D3D12_COMPARISON_FUNC_LESS_EQUAL;
-      case Sampler::COMPARISON_GREATER: return D3D12_COMPARISON_FUNC_GREATER;
-      case Sampler::COMPARISON_NOT_EQUAL: return D3D12_COMPARISON_FUNC_NOT_EQUAL;
-      case Sampler::COMPARISON_GREATER_EQUAL: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-      case Sampler::COMPARISON_ALWAYS: return D3D12_COMPARISON_FUNC_ALWAYS;
-      }
-    };
+        switch (comparison)
+        {
+        default: return D3D12_COMPARISON_FUNC_NONE;
+        case Sampler::COMPARISON_NEVER: return D3D12_COMPARISON_FUNC_NEVER;
+        case Sampler::COMPARISON_LESS: return D3D12_COMPARISON_FUNC_LESS;
+        case Sampler::COMPARISON_EQUAL: return D3D12_COMPARISON_FUNC_EQUAL;
+        case Sampler::COMPARISON_LESS_EQUAL: return D3D12_COMPARISON_FUNC_LESS_EQUAL;
+        case Sampler::COMPARISON_GREATER: return D3D12_COMPARISON_FUNC_GREATER;
+        case Sampler::COMPARISON_NOT_EQUAL: return D3D12_COMPARISON_FUNC_NOT_EQUAL;
+        case Sampler::COMPARISON_GREATER_EQUAL: return D3D12_COMPARISON_FUNC_GREATER_EQUAL;
+        case Sampler::COMPARISON_ALWAYS: return D3D12_COMPARISON_FUNC_ALWAYS;
+        }
+      };
 
     sampler_descs.resize(samplers.size());
     for (uint32_t i = 0; i < sampler_descs.size(); ++i)
@@ -140,14 +140,14 @@ namespace RayGene3D
       {
         size_t offset = 0u;
         if (i - offset < rb_views.size() && rb_views[i - offset])
-        { 
+        {
           const auto slot = (reinterpret_cast<D12View*>(rb_views[i - offset].get()))->GetSlot();
           rr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
         }
 
         offset += rb_views.size();
         if (i - offset < ri_views.size() && ri_views[i - offset])
-        { 
+        {
           const auto slot = (reinterpret_cast<D12View*>(ri_views[i - offset].get()))->GetSlot();
           rr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
         }
@@ -161,15 +161,15 @@ namespace RayGene3D
       if (i < wr_count)
       {
         size_t offset = 0u;
-        if (i - offset < wb_views.size() && wb_views[i - offset]) 
-        { 
+        if (i - offset < wb_views.size() && wb_views[i - offset])
+        {
           const auto slot = (reinterpret_cast<D12View*>(wb_views[i - offset].get()))->GetSlot();
           wr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
         }
 
         offset += wb_views.size();
         if (i - offset < wi_views.size() && wi_views[i - offset])
-        { 
+        {
           const auto slot = (reinterpret_cast<D12View*>(wi_views[i - offset].get()))->GetSlot();
           wr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
         }
@@ -186,7 +186,7 @@ namespace RayGene3D
       root_parameters[parameter_offset + i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     }
     parameter_offset += ub_items.size();
-    
+
     root_parameters.resize(parameter_offset + sb_items.size());
     for (size_t i = 0; i < sb_items.size(); ++i)
     {
@@ -206,7 +206,7 @@ namespace RayGene3D
       rr_ranges[i].BaseShaderRegister = i;
       rr_ranges[i].RegisterSpace = 0;
       rr_ranges[i].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-      
+
       root_parameters[parameter_offset + i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
       root_parameters[parameter_offset + i].DescriptorTable = { 1u, &rr_ranges[i] };
       root_parameters[parameter_offset + i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
@@ -255,7 +255,7 @@ namespace RayGene3D
         IID_PPV_ARGS(&root_signature)));
       signature->Release();
     }
-    
+
     switch (pass->GetType())
     {
     case Pass::TYPE_GRAPHIC:
@@ -313,6 +313,9 @@ namespace RayGene3D
         pso_desc.NodeMask = 0;
         pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateComputePipelineState(&pso_desc, IID_PPV_ARGS(&pipeline_state)));
+
+        //D3D12_PIPELINE_STATE_STREAM_DESC state_desc = {};
+        //device->GetDevice()->CreatePipelineState(&state_desc, IID_PPV_ARGS(&pipeline_state));
       }
 
       {
@@ -327,6 +330,104 @@ namespace RayGene3D
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommandSignature(&signature_desc, nullptr, IID_PPV_ARGS(&command_signature)));
       }
     } break;
+
+
+    case Pass::TYPE_TRACING:
+    {
+      std::vector<D3D12_STATE_SUBOBJECT> state_subobjects;
+      
+      {
+        D3D12_GLOBAL_ROOT_SIGNATURE global_root_signature = {};
+        global_root_signature.pGlobalRootSignature = root_signature;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE, (const void*)&global_root_signature });
+
+        //D3D12_LOCAL_ROOT_SIGNATURE local_root_signature = {};
+        //local_root_signature.pLocalRootSignature = root_signature;
+        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE, (const void*)&local_root_signature });
+
+        D3D12_EXPORT_DESC rgen_export_desc = { rgen_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        D3D12_DXIL_LIBRARY_DESC rgen_library_desc = {};
+        rgen_library_desc.DXILLibrary = config->GetRGenBytecode();
+        rgen_library_desc.pExports = &rgen_export_desc;
+        rgen_library_desc.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &rgen_library_desc });
+
+        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION rgen_export_association = {};
+        const wchar_t* rgen_export_name[] = {rgen_name};
+        rgen_export_association.pSubobjectToAssociate = &state_subobjects[0];
+        rgen_export_association.pExports = rgen_export_name;
+        rgen_export_association.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&rgen_export_association });
+
+        D3D12_EXPORT_DESC ahit_export_desc = { ahit_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        D3D12_DXIL_LIBRARY_DESC ahit_library_desc = {};
+        ahit_library_desc.DXILLibrary = config->GetAHitBytecode();
+        ahit_library_desc.pExports = &ahit_export_desc;
+        ahit_library_desc.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &ahit_library_desc });
+
+        D3D12_EXPORT_DESC chit_export_desc = { chit_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        D3D12_DXIL_LIBRARY_DESC chit_library_desc = {};
+        chit_library_desc.DXILLibrary = config->GetCHitBytecode();
+        chit_library_desc.pExports = &chit_export_desc;
+        chit_library_desc.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &chit_library_desc });
+
+        D3D12_EXPORT_DESC isec_export_desc = { isec_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        D3D12_DXIL_LIBRARY_DESC isec_library_desc = {};
+        isec_library_desc.DXILLibrary = config->GetISecBytecode();
+        isec_library_desc.pExports = &isec_export_desc;
+        isec_library_desc.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &isec_library_desc });
+        
+        D3D12_HIT_GROUP_DESC hit_group_desc = {};
+        hit_group_desc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
+        hit_group_desc.HitGroupExport = xhit_name;
+        hit_group_desc.AnyHitShaderImport = ahit_name;
+        hit_group_desc.ClosestHitShaderImport = chit_name;
+        hit_group_desc.IntersectionShaderImport = isec_name;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, (const void*)&hit_group_desc }); 
+        
+        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION xhit_export_association = {};
+        const wchar_t* xhit_export_name[] = { xhit_name };
+        xhit_export_association.pSubobjectToAssociate = &state_subobjects[0];
+        xhit_export_association.pExports = xhit_export_name;
+        xhit_export_association.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&xhit_export_association });
+
+        D3D12_EXPORT_DESC miss_export_desc = { miss_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        D3D12_DXIL_LIBRARY_DESC miss_library_desc = {};
+        miss_library_desc.DXILLibrary = config->GetMissBytecode();
+        miss_library_desc.pExports = &miss_export_desc;
+        miss_library_desc.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &miss_library_desc });
+
+        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION miss_export_association = {};
+        const wchar_t* miss_export_name[] = { miss_name };
+        miss_export_association.pSubobjectToAssociate = &state_subobjects[0];
+        miss_export_association.pExports = miss_export_name;
+        miss_export_association.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&miss_export_association });
+
+        D3D12_RAYTRACING_SHADER_CONFIG raytracing_shader_config = {};
+        raytracing_shader_config.MaxAttributeSizeInBytes = 2 * sizeof(float);
+        raytracing_shader_config.MaxPayloadSizeInBytes = 4 * sizeof(float);
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG, (const void*)&raytracing_shader_config });
+
+        D3D12_RAYTRACING_PIPELINE_CONFIG raytracing_pipeline_config = {};
+        raytracing_pipeline_config.MaxTraceRecursionDepth = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG, (const void*)&raytracing_pipeline_config });
+      }
+
+      {
+        D3D12_STATE_OBJECT_DESC state_desc = {};
+        state_desc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+        state_desc.pSubobjects = state_subobjects.data();
+        state_desc.NumSubobjects = state_subobjects.size();
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreateStateObject(&state_desc, IID_PPV_ARGS(&state_object)));
+      }
+    }
+    break;
     }
   }
 
@@ -404,8 +505,9 @@ namespace RayGene3D
             if (va_view)
             {
               const auto& resource = reinterpret_cast<const D12Resource*>(&va_view->GetResource());
+              const auto desc = resource->GetResource()->GetDesc();
               va_items[i].BufferLocation = resource->GetAddress() + va_view->GetLevelsOrLength().offset;
-              va_items[i].SizeInBytes = resource->GetLevelsOrLength() * resource->GetLayersOrStride();
+              va_items[i].SizeInBytes = va_view->GetLevelsOrLength().length == -1 ? size_t(resource->GetLevelsOrLength() * resource->GetLayersOrStride()) : va_view->GetLevelsOrLength().length;
               va_items[i].StrideInBytes = config->GetStrides().at(i);
             }
           }
@@ -423,7 +525,7 @@ namespace RayGene3D
             {
               const auto& resource = (reinterpret_cast<const D12Resource*>(&ia_view->GetResource()));
               ia_items[i].BufferLocation = resource->GetAddress() + ia_view->GetLevelsOrLength().offset;
-              ia_items[i].SizeInBytes = resource->GetLevelsOrLength() * resource->GetLayersOrStride();
+              ia_items[i].SizeInBytes = ia_view->GetLevelsOrLength().length == -1 ? size_t(resource->GetLevelsOrLength() * resource->GetLayersOrStride()) : ia_view->GetLevelsOrLength().length;
               ia_items[i].Format = config->GetIAState().indexer
                 == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
                 : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
@@ -541,6 +643,57 @@ namespace RayGene3D
           device->GetCommandList()->Dispatch(grid_x, grid_y, grid_z);
         }
       }
+    }
+
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
+    {
+      device->GetCommandList()->SetComputeRootSignature(root_signature);
+
+      auto parameter_offset = 0ull;
+
+      for (size_t i = 0; i < ub_items.size(); ++i)
+      {
+        device->GetCommandList()->SetComputeRootConstantBufferView(parameter_offset + i, ub_items[i]);
+      }
+      parameter_offset += ub_items.size();
+
+      for (size_t i = 0; i < sb_items.size(); ++i)
+      {
+        device->GetCommandList()->SetComputeRootConstantBufferView(parameter_offset + i, sb_items[i]);
+      }
+      parameter_offset += sb_items.size();
+
+      for (size_t i = 0; i < rr_items.size(); ++i)
+      {
+        device->GetCommandList()->SetComputeRootDescriptorTable(parameter_offset + i, rr_items[i]);
+      }
+      parameter_offset += rr_items.size();
+
+      for (size_t i = 0; i < wr_items.size(); ++i)
+      {
+        device->GetCommandList()->SetComputeRootDescriptorTable(parameter_offset + i, wr_items[i]);
+      }
+      parameter_offset += wr_items.size();
+
+      //const auto grid_x = subset.vtx_or_grid_x.length;
+      //const auto grid_y = subset.idx_or_grid_y.length;
+      //const auto grid_z = subset.ins_or_grid_z.length;
+
+      const auto extent_x = device->GetExtentX();
+      const auto extent_y = device->GetExtentY();
+      const auto extent_z = 1;
+
+      D3D12_DISPATCH_RAYS_DESC dispatch_desc = {};
+      dispatch_desc.RayGenerationShaderRecord = rgen_region;
+      dispatch_desc.HitGroupTable = xhit_region;
+      dispatch_desc.MissShaderTable = miss_region;
+      //dispatch_desc.CallableShaderTable = call_region;     
+      dispatch_desc.Width = extent_x;
+      dispatch_desc.Height = extent_y;
+      dispatch_desc.Depth = extent_z;
+
+      (reinterpret_cast<ID3D12GraphicsCommandList4*>(device->GetCommandList()))->SetPipelineState1(state_object);
+      (reinterpret_cast<ID3D12GraphicsCommandList4*>(device->GetCommandList()))->DispatchRays(&dispatch_desc);
     }
   }
 

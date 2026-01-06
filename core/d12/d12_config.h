@@ -56,7 +56,16 @@ namespace RayGene3D
     D3D12_SHADER_BYTECODE GetGSBytecode() const { return { geom_bytecode.data(), geom_bytecode.size() }; }
     D3D12_SHADER_BYTECODE GetPSBytecode() const { return { frag_bytecode.data(), frag_bytecode.size() }; }
     D3D12_SHADER_BYTECODE GetCSBytecode() const { return { comp_bytecode.data(), comp_bytecode.size() }; }
-
+ 
+  public:
+    D3D12_SHADER_BYTECODE GetTaskBytecode() const { return { task_bytecode.data(), task_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetMeshBytecode() const { return { mesh_bytecode.data(), mesh_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetRGenBytecode() const { return { rgen_bytecode.data(), rgen_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetCallBytecode() const { return { call_bytecode.data(), call_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetISecBytecode() const { return { isec_bytecode.data(), isec_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetCHitBytecode() const { return { chit_bytecode.data(), chit_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetAHitBytecode() const { return { ahit_bytecode.data(), ahit_bytecode.size() }; }
+    D3D12_SHADER_BYTECODE GetMissBytecode() const { return { miss_bytecode.data(), miss_bytecode.size() }; }
   public:
     D3D12_PRIMITIVE_TOPOLOGY_TYPE GetTopologyType() const { return topology_type; }
     D3D_PRIMITIVE_TOPOLOGY GetPrimitiveTopology() const { return primitive_topology; }
@@ -77,7 +86,7 @@ namespace RayGene3D
     std::vector<uint32_t> strides; //TODO: Remove
 
   protected:
-    D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
+    D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };   
 
   public:
     const std::vector<uint32_t>& GetStrides() const { return strides; }

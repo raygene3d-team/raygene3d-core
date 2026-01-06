@@ -40,9 +40,7 @@ namespace RayGene3D
   {
   protected:
     ID3D12Resource* resource{ nullptr };
-    D3D12_GPU_VIRTUAL_ADDRESS address{ 0 };
-
-  
+    D3D12_GPU_VIRTUAL_ADDRESS address{ 0 };  
 
   public:
     void Commit() override;

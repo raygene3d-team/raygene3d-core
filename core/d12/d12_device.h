@@ -64,10 +64,10 @@ namespace RayGene3D
 
   protected:
     ID3D12Debug* d3d12_debug{ nullptr };
-    ID3D12Device* device{ nullptr };
+    ID3D12Device9* device{ nullptr };
     ID3D12CommandQueue* command_queue{ nullptr };
     ID3D12CommandAllocator* command_allocator{ nullptr };
-    ID3D12GraphicsCommandList* command_list{ nullptr };
+    ID3D12GraphicsCommandList7* command_list{ nullptr };
 
     IDXGIFactory* factory{ nullptr };
     IDXGIAdapter* adapter{ nullptr };
@@ -98,6 +98,10 @@ namespace RayGene3D
     ID3D12Fence* fence{ nullptr };
     HANDLE fence_event{ nullptr };
 
+  //protected:
+  //  ID3D12Device5* ray_tracing_device{ nullptr };
+  //  ID3D12GraphicsCommandList4* ray_tracing_command_list{ nullptr };
+
   protected:
     uint32_t sampler_size{ 0 };
     uint32_t general_size{ 0 };
@@ -106,6 +110,10 @@ namespace RayGene3D
 
   protected:
     size_t staging_size{ 64 * 1024 * 1024 };
+
+  protected:
+    bool ray_tracing_supported{ false };
+    bool mesh_shader_supported{ false };
 
   public:
     void Update(std::pair<void*, size_t> src, std::pair<std::shared_ptr<Resource>, uint32_t> dst);
@@ -157,14 +165,26 @@ namespace RayGene3D
     }
 
   public:
-    ID3D12Device* GetDevice() const { return device; }
+    ID3D12Device9* GetDevice() const { return device; }
     ID3D12CommandQueue* GetCommandQueue() const { return command_queue; }
     ID3D12CommandAllocator* GetCommandAllocator() const { return command_allocator; }
-    ID3D12GraphicsCommandList* GetCommandList() const { return command_list; }
+    ID3D12GraphicsCommandList7* GetCommandList() const { return command_list; }
 
   public:
     size_t GetStagingSize() const { return staging_size; }
     ID3D12Resource* GetStagingBuffer() const { return staging_buffer; }
+
+  public:
+    bool GetRayTracingSupported() const { return ray_tracing_supported; }
+    bool GetMeshShaderSupported() const { return mesh_shader_supported; }
+
+  //public:
+  //  ID3D12Device5* GetRayTracingDevice() const { return ray_tracing_device; }
+  //  ID3D12GraphicsCommandList4* GetRayTracingCommandList() const { return ray_tracing_command_list; }
+
+  //public:
+  //  ID3D12Device5* GetMeshShaderDevice() const { return ray_tracing_device; }
+  //  ID3D12GraphicsCommandList6* GetMeshShaderCommandList() const { return mesh_shader_command_list; }
 
   public:
     ID3D12DescriptorHeap* GetSamplerHeap() const { return sampler_heap; }
