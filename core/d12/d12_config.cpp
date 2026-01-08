@@ -129,6 +129,7 @@ namespace RayGene3D
   #ifdef _DEBUG
       L"-Zi",				//Debug info
       L"-Od",				//Disable optimization
+      L"-Qembed_debug",
   #else
       L"-O3",				//Optimization level 3
   #endif

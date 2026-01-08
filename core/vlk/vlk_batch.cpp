@@ -393,9 +393,10 @@ namespace RayGene3D
       if (!sb_views.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, uint32_t(sb_views.size()) }); }
       if (!ri_views.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, uint32_t(ri_views.size()) }); }
       if (!rb_views.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, uint32_t(rb_views.size()) }); }
+      if (!as_items.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, uint32_t(as_items.size()) }); }
       if (!wi_views.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, uint32_t(wi_views.size()) }); }
       if (!wb_views.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, uint32_t(wb_views.size()) }); }
-      if (!as_items.empty()) { pool_sizes.push_back({ VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR, uint32_t(as_items.size()) }); }
+      
 
       VkDescriptorPoolCreateInfo poolCreateInfo = {};
       poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -477,6 +478,19 @@ namespace RayGene3D
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
       {
+        std::vector<VkDescriptorSetLayoutBinding> descriptors(as_items.size());
+        for (uint32_t i = 0; i < uint32_t(descriptors.size()); ++i)
+        {
+          auto& descriptor = descriptors.at(i);
+          descriptor.binding = i + uint32_t(bindings.size());
+          descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+          descriptor.descriptorCount = 1;
+          descriptor.pImmutableSamplers = nullptr;
+          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
+        }
+        bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
+      }
+      {
         std::vector<VkDescriptorSetLayoutBinding> descriptors(wb_views.size());
         for (uint32_t i = 0; i < uint32_t(descriptors.size()); ++i)
         {
@@ -502,19 +516,7 @@ namespace RayGene3D
         }
         bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
       }
-      {
-        std::vector<VkDescriptorSetLayoutBinding> descriptors(as_items.size());
-        for (uint32_t i = 0; i < uint32_t(descriptors.size()); ++i)
-        {
-          auto& descriptor = descriptors.at(i);
-          descriptor.binding = i + uint32_t(bindings.size());
-          descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-          descriptor.descriptorCount = 1;
-          descriptor.pImmutableSamplers = nullptr;
-          descriptor.stageFlags = VK_SHADER_STAGE_ALL;
-        }
-        bindings.insert(bindings.end(), descriptors.begin(), descriptors.end());
-      }
+
 
       VkDescriptorSetLayoutCreateInfo create_info = {};
       create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -679,6 +681,34 @@ namespace RayGene3D
       write_offset += uint32_t(ri_views.size());
     }
 
+    if (as_items.size() > 0)
+    {
+      std::vector<VkWriteDescriptorSetAccelerationStructureKHR> acceleration_infos(as_items.size());
+      std::vector<VkWriteDescriptorSet> descriptors(as_items.size());
+      for (uint32_t i = 0; i < uint32_t(descriptors.size()); ++i)
+      {
+        auto& acceleration_info = acceleration_infos.at(i);
+        acceleration_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+        acceleration_info.accelerationStructureCount = 1;
+        acceleration_info.pAccelerationStructures = &as_items[i];
+
+        auto& descriptor = descriptors.at(i);
+        descriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor.pNext = &acceleration_info;
+        descriptor.dstSet = sets.at(0);
+        descriptor.dstBinding = 0 + write_offset;
+        descriptor.dstArrayElement = 0;
+        descriptor.descriptorCount = 1;
+        descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+        descriptor.pImageInfo = nullptr;
+        descriptor.pBufferInfo = nullptr;
+        descriptor.pTexelBufferView = nullptr;
+      }
+
+      vkUpdateDescriptorSets(device->GetDevice(), uint32_t(descriptors.size()), descriptors.data(), 0, nullptr);
+      write_offset += uint32_t(wi_views.size());
+    }
+
     if (wb_views.size() > 0)
     {
       std::vector<VkDescriptorBufferInfo> buffer_infos(wb_views.size());
@@ -727,34 +757,6 @@ namespace RayGene3D
         descriptor.pBufferInfo = nullptr;
         descriptor.pTexelBufferView = nullptr;
       }
-      vkUpdateDescriptorSets(device->GetDevice(), uint32_t(descriptors.size()), descriptors.data(), 0, nullptr);
-      write_offset += uint32_t(wi_views.size());
-    }
-
-    if (as_items.size() > 0)
-    {
-      std::vector<VkWriteDescriptorSetAccelerationStructureKHR> acceleration_infos(as_items.size());
-      std::vector<VkWriteDescriptorSet> descriptors(as_items.size());
-      for (uint32_t i = 0; i < uint32_t(descriptors.size()); ++i)
-      {
-        auto& acceleration_info = acceleration_infos.at(i);
-        acceleration_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-        acceleration_info.accelerationStructureCount = 1;
-        acceleration_info.pAccelerationStructures = &as_items[i];
-
-        auto& descriptor = descriptors.at(i);
-        descriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor.pNext = &acceleration_info;
-        descriptor.dstSet = sets.at(0);
-        descriptor.dstBinding = 0 + write_offset;
-        descriptor.dstArrayElement = 0;
-        descriptor.descriptorCount = 1;
-        descriptor.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-        descriptor.pImageInfo = nullptr;
-        descriptor.pBufferInfo = nullptr;
-        descriptor.pTexelBufferView = nullptr;
-      }
-
       vkUpdateDescriptorSets(device->GetDevice(), uint32_t(descriptors.size()), descriptors.data(), 0, nullptr);
       write_offset += uint32_t(wi_views.size());
     }
