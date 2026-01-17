@@ -231,6 +231,35 @@ namespace RayGene3D
         IID_PPV_ARGS(&staging_buffer)));
     }
 
+    {
+      D3D12_HEAP_PROPERTIES heap_properties = {};
+      heap_properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+      heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+      heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+      heap_properties.CreationNodeMask = 0;
+      heap_properties.VisibleNodeMask = 0;
+
+      D3D12_RESOURCE_DESC  resource_desc = {};
+      resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+      resource_desc.Alignment = 0;
+      resource_desc.Width = scratch_size;
+      resource_desc.Height = 1;
+      resource_desc.DepthOrArraySize = 1;
+      resource_desc.MipLevels = 1;
+      resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+      resource_desc.SampleDesc = { 1, 0 };
+      resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+      resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+      BLAST_ASSERT(S_OK == device->CreateCommittedResource(
+        &heap_properties,
+        D3D12_HEAP_FLAG_NONE,
+        &resource_desc,
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        nullptr,
+        IID_PPV_ARGS(&scratch_buffer)));
+    }
+
     //for (auto& resource : resources)
     //{
     //  if (resource) { resource->Initialize(); }
@@ -436,6 +465,12 @@ namespace RayGene3D
     {
       staging_buffer->Release();
       staging_buffer = nullptr;
+    }
+
+    if (scratch_buffer)
+    {
+      scratch_buffer->Release();
+      scratch_buffer = nullptr;
     }
 
     if (command_list)

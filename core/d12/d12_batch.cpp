@@ -103,6 +103,204 @@ namespace RayGene3D
       sampler_descs[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
     }
 
+    if (pass->GetType() == Pass::TYPE_TRACING && device->GetRayTracingSupported())
+    {
+      ID3D12GraphicsCommandList7* command_list = nullptr;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
+        device->GetCommandAllocator(), nullptr, IID_PPV_ARGS(&command_list)));
+      BLAST_ASSERT(S_OK == command_list->Close());
+
+      size_t fence_value = 0;
+      ID3D12Fence* fence = nullptr;
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateFence(fence_value, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+      HANDLE fence_event = CreateEvent(nullptr, false, false, nullptr);
+
+      {
+        BLAST_ASSERT(S_OK == command_list->Reset(device->GetCommandAllocator(), nullptr));
+
+        blas_items.resize(entities.size(), nullptr);
+        for (auto i = 0u; i < uint32_t(entities.size()); ++i)
+        {
+          const auto& entity = entities[i];
+
+          const auto vtx_resource = reinterpret_cast<D12Resource*>(&entity.va_views[0]->GetResource());
+          const auto vtx_stride = vtx_resource->GetLayersOrStride();
+          const auto vtx_count = entity.vtx_or_grid_y.length;
+          const auto vtx_offset = entity.vtx_or_grid_y.offset;
+          const auto vtx_address = vtx_resource->GetAddress();
+
+          const auto idx_resource = reinterpret_cast<D12Resource*>(&entity.ia_views[0]->GetResource());
+          const auto idx_stride = idx_resource->GetLayersOrStride();
+          const auto idx_count = entity.idx_or_grid_z.length;
+          const auto idx_offset = entity.idx_or_grid_z.offset;
+          const auto idx_address = idx_resource->GetAddress();
+
+          D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
+          geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+          geometry_desc.Triangles.VertexBuffer.StartAddress = vtx_address;
+          geometry_desc.Triangles.VertexBuffer.StrideInBytes = vtx_stride;
+          geometry_desc.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+          geometry_desc.Triangles.VertexCount = vtx_count;
+          geometry_desc.Triangles.IndexBuffer = idx_address;
+          geometry_desc.Triangles.IndexFormat = DXGI_FORMAT_R32_UINT;
+          geometry_desc.Triangles.IndexCount = idx_count;
+          geometry_desc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+
+          D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC as_desc = {};
+          as_desc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+          as_desc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+          as_desc.Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+          as_desc.Inputs.NumDescs = 1;
+          as_desc.Inputs.pGeometryDescs = &geometry_desc;
+
+          D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuild_info = {};
+          device->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&as_desc.Inputs, &prebuild_info);
+
+          BLAST_ASSERT(device->GetScratchSize() >= prebuild_info.ScratchDataSizeInBytes);
+          {
+            D3D12_RESOURCE_DESC resource_desc = {};
+            resource_desc.Alignment = 0;
+            resource_desc.DepthOrArraySize = 1;
+            resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+            resource_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+            resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+            resource_desc.Height = 1;
+            resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+            resource_desc.MipLevels = 1;
+            resource_desc.SampleDesc.Count = 1;
+            resource_desc.SampleDesc.Quality = 0;
+            resource_desc.Width = prebuild_info.ResultDataMaxSizeInBytes;
+
+            D3D12_HEAP_PROPERTIES heap_prop = {};
+            heap_prop.Type = D3D12_HEAP_TYPE_DEFAULT;
+            heap_prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+            heap_prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+            heap_prop.CreationNodeMask = 0;
+            heap_prop.VisibleNodeMask = 0;
+
+            BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommittedResource(&heap_prop, D3D12_HEAP_FLAG_NONE,
+              &resource_desc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, nullptr, IID_PPV_ARGS(&blas_items[i])));
+          }
+
+          as_desc.DestAccelerationStructureData = blas_items[i]->GetGPUVirtualAddress();
+          as_desc.ScratchAccelerationStructureData = device->GetScratchBuffer()->GetGPUVirtualAddress();
+
+          command_list->BuildRaytracingAccelerationStructure(&as_desc, 0, nullptr);
+
+          D3D12_RESOURCE_BARRIER barrier = {};
+          barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+          barrier.UAV.pResource = blas_items[i];
+          command_list->ResourceBarrier(1, &barrier);
+        }
+
+        {
+          D3D12_RESOURCE_DESC resource_desc = {};
+          resource_desc.Alignment = 0;
+          resource_desc.DepthOrArraySize = 1;
+          resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+          resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+          resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+          resource_desc.Height = 1;
+          resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+          resource_desc.MipLevels = 1;
+          resource_desc.SampleDesc.Count = 1;
+          resource_desc.SampleDesc.Quality = 0;
+          resource_desc.Width = sizeof(D3D12_RAYTRACING_INSTANCE_DESC) * entities.size();
+
+          D3D12_HEAP_PROPERTIES heap_prop = {};
+          heap_prop.Type = D3D12_HEAP_TYPE_UPLOAD;
+          heap_prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+          heap_prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+          heap_prop.CreationNodeMask = 0;
+          heap_prop.VisibleNodeMask = 0;
+
+          BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommittedResource(&heap_prop, D3D12_HEAP_FLAG_NONE,
+            &resource_desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&instances_item)));
+        }
+
+        D3D12_RAYTRACING_INSTANCE_DESC* instance_descs = nullptr;
+        instances_item->Map(0, nullptr, (void**)&instance_descs);
+        for (auto i = 0u; i < uint32_t(entities.size()); ++i)
+        {
+          instance_descs[i] = { {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f
+          }, i, 0xFF, 0, D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE, blas_items[i]->GetGPUVirtualAddress() };
+        }
+        instances_item->Unmap(0, nullptr);
+
+        D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC as_desc = {};
+        as_desc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+        as_desc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+        as_desc.Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
+        as_desc.Inputs.NumDescs = 1;
+        as_desc.Inputs.InstanceDescs = instances_item->GetGPUVirtualAddress();
+
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuild_info;
+        device->GetDevice()->GetRaytracingAccelerationStructurePrebuildInfo(&as_desc.Inputs, &prebuild_info);
+
+        BLAST_ASSERT(device->GetScratchSize() >= prebuild_info.ScratchDataSizeInBytes);
+        {
+          D3D12_RESOURCE_DESC resource_desc = {};
+          resource_desc.Alignment = 0;
+          resource_desc.DepthOrArraySize = 1;
+          resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+          resource_desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+          resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+          resource_desc.Height = 1;
+          resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+          resource_desc.MipLevels = 1;
+          resource_desc.SampleDesc.Count = 1;
+          resource_desc.SampleDesc.Quality = 0;
+          resource_desc.Width = prebuild_info.ResultDataMaxSizeInBytes;
+
+          D3D12_HEAP_PROPERTIES heap_prop = {};
+          heap_prop.Type = D3D12_HEAP_TYPE_DEFAULT;
+          heap_prop.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+          heap_prop.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+          heap_prop.CreationNodeMask = 0;
+          heap_prop.VisibleNodeMask = 0;
+
+          BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommittedResource(&heap_prop, D3D12_HEAP_FLAG_NONE,
+            &resource_desc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, nullptr, IID_PPV_ARGS(&tlas_item)));
+        }
+
+        as_desc.DestAccelerationStructureData = tlas_item->GetGPUVirtualAddress();
+        as_desc.ScratchAccelerationStructureData = device->GetScratchBuffer()->GetGPUVirtualAddress();
+
+        command_list->BuildRaytracingAccelerationStructure(&as_desc, 0, nullptr);
+
+        D3D12_RESOURCE_BARRIER barrier = {};
+        barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+        barrier.UAV.pResource = tlas_item;
+        command_list->ResourceBarrier(1, &barrier);
+
+        BLAST_ASSERT(S_OK == command_list->Close());
+        device->GetCommandQueue()->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
+
+        ++fence_value;
+        BLAST_ASSERT(S_OK == device->GetCommandQueue()->Signal(fence, fence_value));
+        BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
+        WaitForSingleObject(fence_event, INFINITE);
+      }
+      command_list->Release();
+      fence->Release();
+      CloseHandle(fence_event);
+
+      D3D12_SHADER_RESOURCE_VIEW_DESC srv_desc = {};
+      srv_desc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+      srv_desc.Format = DXGI_FORMAT_UNKNOWN;
+      srv_desc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+      srv_desc.RaytracingAccelerationStructure.Location = tlas_item->GetGPUVirtualAddress();
+
+      tlas_slot = device->ObtainGeneralSlot(); const auto handle = device->GetGeneralHandle(tlas_slot);
+      device->GetDevice()->CreateShaderResourceView(nullptr, &srv_desc, handle.cpu);
+      
+
+      //as_items.push_back(tlas_item);
+    }
+
 
     const auto ub_count = ub_views.size();
     ub_items.resize(std::min(ub_count, size_t(D3D12_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT - 1)));
@@ -152,6 +350,13 @@ namespace RayGene3D
           rr_items[i] = device->GetGeneralHandle(slot, true).gpu; continue;
         }
       }
+    }
+
+    if (tlas_slot != uint32_t(-1))
+    {
+      size_t offset = rr_items.size();
+      rr_items.resize(offset + 1);
+      rr_items[offset] = device->GetGeneralHandle(tlas_slot, true).gpu;
     }
 
     const auto wr_count = wb_views.size() + wi_views.size();
@@ -333,10 +538,10 @@ namespace RayGene3D
 
 
     case Pass::TYPE_TRACING:
-    {
-      std::vector<D3D12_STATE_SUBOBJECT> state_subobjects;
-      
+    {      
       {
+        std::vector<D3D12_STATE_SUBOBJECT> state_subobjects;
+
         D3D12_GLOBAL_ROOT_SIGNATURE global_root_signature = {};
         global_root_signature.pGlobalRootSignature = root_signature;
         state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE, (const void*)&global_root_signature });
@@ -352,48 +557,48 @@ namespace RayGene3D
         rgen_library_desc.NumExports = 1;
         state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &rgen_library_desc });
 
-        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION rgen_export_association = {};
-        const wchar_t* rgen_export_name[] = {rgen_name};
-        rgen_export_association.pSubobjectToAssociate = &state_subobjects[0];
-        rgen_export_association.pExports = rgen_export_name;
-        rgen_export_association.NumExports = 1;
-        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&rgen_export_association });
+        //D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION rgen_export_association = {};
+        //const wchar_t* rgen_export_name[] = {rgen_name};
+        //rgen_export_association.pSubobjectToAssociate = &state_subobjects[0];
+        //rgen_export_association.pExports = rgen_export_name;
+        //rgen_export_association.NumExports = 1;
+        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&rgen_export_association });
 
-        D3D12_EXPORT_DESC ahit_export_desc = { ahit_name, nullptr, D3D12_EXPORT_FLAG_NONE };
-        D3D12_DXIL_LIBRARY_DESC ahit_library_desc = {};
-        ahit_library_desc.DXILLibrary = config->GetAHitBytecode();
-        ahit_library_desc.pExports = &ahit_export_desc;
-        ahit_library_desc.NumExports = 1;
-        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &ahit_library_desc });
+        //D3D12_EXPORT_DESC ahit_export_desc = { ahit_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        //D3D12_DXIL_LIBRARY_DESC ahit_library_desc = {};
+        //ahit_library_desc.DXILLibrary = config->GetAHitBytecode();
+        //ahit_library_desc.pExports = &ahit_export_desc;
+        //ahit_library_desc.NumExports = 1;
+        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &ahit_library_desc });
 
-        D3D12_EXPORT_DESC chit_export_desc = { chit_name, nullptr, D3D12_EXPORT_FLAG_NONE };
-        D3D12_DXIL_LIBRARY_DESC chit_library_desc = {};
-        chit_library_desc.DXILLibrary = config->GetCHitBytecode();
-        chit_library_desc.pExports = &chit_export_desc;
-        chit_library_desc.NumExports = 1;
-        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &chit_library_desc });
+        //D3D12_EXPORT_DESC chit_export_desc = { chit_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        //D3D12_DXIL_LIBRARY_DESC chit_library_desc = {};
+        //chit_library_desc.DXILLibrary = config->GetCHitBytecode();
+        //chit_library_desc.pExports = &chit_export_desc;
+        //chit_library_desc.NumExports = 1;
+        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &chit_library_desc });
 
-        D3D12_EXPORT_DESC isec_export_desc = { isec_name, nullptr, D3D12_EXPORT_FLAG_NONE };
-        D3D12_DXIL_LIBRARY_DESC isec_library_desc = {};
-        isec_library_desc.DXILLibrary = config->GetISecBytecode();
-        isec_library_desc.pExports = &isec_export_desc;
-        isec_library_desc.NumExports = 1;
-        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &isec_library_desc });
+        //D3D12_EXPORT_DESC isec_export_desc = { isec_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        //D3D12_DXIL_LIBRARY_DESC isec_library_desc = {};
+        //isec_library_desc.DXILLibrary = config->GetISecBytecode();
+        //isec_library_desc.pExports = &isec_export_desc;
+        //isec_library_desc.NumExports = 1;
+        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &isec_library_desc });
+        //
+        //D3D12_HIT_GROUP_DESC hit_group_desc = {};
+        //hit_group_desc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
+        //hit_group_desc.HitGroupExport = xhit_name;
+        //hit_group_desc.AnyHitShaderImport = ahit_name;
+        //hit_group_desc.ClosestHitShaderImport = chit_name;
+        //hit_group_desc.IntersectionShaderImport = isec_name;
+        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, (const void*)&hit_group_desc }); 
         
-        D3D12_HIT_GROUP_DESC hit_group_desc = {};
-        hit_group_desc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
-        hit_group_desc.HitGroupExport = xhit_name;
-        hit_group_desc.AnyHitShaderImport = ahit_name;
-        hit_group_desc.ClosestHitShaderImport = chit_name;
-        hit_group_desc.IntersectionShaderImport = isec_name;
-        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, (const void*)&hit_group_desc }); 
-        
-        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION xhit_export_association = {};
-        const wchar_t* xhit_export_name[] = { xhit_name };
-        xhit_export_association.pSubobjectToAssociate = &state_subobjects[0];
-        xhit_export_association.pExports = xhit_export_name;
-        xhit_export_association.NumExports = 1;
-        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&xhit_export_association });
+        //D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION xhit_export_association = {};
+        //const wchar_t* xhit_export_name[] = { xhit_name };
+        //xhit_export_association.pSubobjectToAssociate = &state_subobjects[0];
+        //xhit_export_association.pExports = xhit_export_name;
+        //xhit_export_association.NumExports = 1;
+        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&xhit_export_association });
 
         D3D12_EXPORT_DESC miss_export_desc = { miss_name, nullptr, D3D12_EXPORT_FLAG_NONE };
         D3D12_DXIL_LIBRARY_DESC miss_library_desc = {};
@@ -402,12 +607,12 @@ namespace RayGene3D
         miss_library_desc.NumExports = 1;
         state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &miss_library_desc });
 
-        D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION miss_export_association = {};
-        const wchar_t* miss_export_name[] = { miss_name };
-        miss_export_association.pSubobjectToAssociate = &state_subobjects[0];
-        miss_export_association.pExports = miss_export_name;
-        miss_export_association.NumExports = 1;
-        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&miss_export_association });
+        //D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION miss_export_association = {};
+        //const wchar_t* miss_export_name[] = { miss_name };
+        //miss_export_association.pSubobjectToAssociate = &state_subobjects[0];
+        //miss_export_association.pExports = miss_export_name;
+        //miss_export_association.NumExports = 1;
+        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION, (const void*)&miss_export_association });
 
         D3D12_RAYTRACING_SHADER_CONFIG raytracing_shader_config = {};
         raytracing_shader_config.MaxAttributeSizeInBytes = 2 * sizeof(float);
@@ -417,9 +622,7 @@ namespace RayGene3D
         D3D12_RAYTRACING_PIPELINE_CONFIG raytracing_pipeline_config = {};
         raytracing_pipeline_config.MaxTraceRecursionDepth = 1;
         state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG, (const void*)&raytracing_pipeline_config });
-      }
 
-      {
         D3D12_STATE_OBJECT_DESC state_desc = {};
         state_desc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
         state_desc.pSubobjects = state_subobjects.data();
@@ -437,10 +640,11 @@ namespace RayGene3D
     auto pass = reinterpret_cast<D12Pass*>(&config->GetPass());
     auto device = reinterpret_cast<D12Device*>(&pass->GetDevice());
 
-    device->GetCommandList()->SetPipelineState(pipeline_state);
+    
 
     if (pass->GetType() == Pass::TYPE_GRAPHIC)
     {
+      device->GetCommandList()->SetPipelineState(pipeline_state);
       device->GetCommandList()->SetGraphicsRootSignature(root_signature);
 
       auto parameter_offset = 0ull;
@@ -568,6 +772,7 @@ namespace RayGene3D
 
     if (pass->GetType() == Pass::TYPE_COMPUTE)
     {
+      device->GetCommandList()->SetPipelineState(pipeline_state);
       device->GetCommandList()->SetComputeRootSignature(root_signature);
 
       auto parameter_offset = 0ull;
@@ -692,13 +897,42 @@ namespace RayGene3D
       dispatch_desc.Height = extent_y;
       dispatch_desc.Depth = extent_z;
 
-      (reinterpret_cast<ID3D12GraphicsCommandList4*>(device->GetCommandList()))->SetPipelineState1(state_object);
-      (reinterpret_cast<ID3D12GraphicsCommandList4*>(device->GetCommandList()))->DispatchRays(&dispatch_desc);
+      device->GetCommandList()->SetPipelineState1(state_object);
+      device->GetCommandList()->DispatchRays(&dispatch_desc);
     }
   }
 
   void D12Batch::Discard()
   {
+    if (tlas_item)
+    {
+      tlas_item->Release();
+      tlas_item = nullptr;
+    }
+
+    if (tlas_slot != uint32_t(-1))
+    {
+      auto config = reinterpret_cast<D12Config*>(&this->GetConfig());
+      auto pass = reinterpret_cast<D12Pass*>(&config->GetPass());
+      auto device = reinterpret_cast<D12Device*>(&pass->GetDevice());
+
+      device->DropGeneralSlot(tlas_slot);
+    }
+
+    for (auto& blas_item : blas_items)
+    {
+      blas_item->Release();
+      blas_item = nullptr;
+    }
+    blas_items.clear();
+
+    if (instances_item)
+    {
+      instances_item->Release();
+      instances_item = nullptr;
+    }
+
+
     if (root_signature)
     {
       root_signature->Release();

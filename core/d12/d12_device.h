@@ -77,6 +77,7 @@ namespace RayGene3D
 
     ID3D12Resource* screen_buffer{ nullptr };
     ID3D12Resource* staging_buffer{ nullptr };
+    ID3D12Resource* scratch_buffer{ nullptr };
 
     uint32_t current_index = 0;
 
@@ -110,6 +111,7 @@ namespace RayGene3D
 
   protected:
     size_t staging_size{ 64 * 1024 * 1024 };
+    size_t scratch_size{ 64 * 1024 * 1024 };
 
   protected:
     bool ray_tracing_supported{ false };
@@ -173,6 +175,10 @@ namespace RayGene3D
   public:
     size_t GetStagingSize() const { return staging_size; }
     ID3D12Resource* GetStagingBuffer() const { return staging_buffer; }
+
+  public:
+    size_t GetScratchSize() const { return scratch_size; }
+    ID3D12Resource* GetScratchBuffer() const { return scratch_buffer; }
 
   public:
     bool GetRayTracingSupported() const { return ray_tracing_supported; }

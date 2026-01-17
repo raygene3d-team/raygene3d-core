@@ -56,6 +56,12 @@ namespace RayGene3D
     //D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE call_region;
 
   protected:
+    ID3D12Resource* tlas_item{ nullptr };
+    uint32_t tlas_slot{ uint32_t(-1) };
+    std::vector<ID3D12Resource*> blas_items;
+    ID3D12Resource* instances_item{ nullptr };
+
+  protected:
     static constexpr const wchar_t* rgen_name{ L"rgen" };
     static constexpr const wchar_t* ahit_name{ L"ahit" };
     static constexpr const wchar_t* chit_name{ L"chit" };
