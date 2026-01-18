@@ -48,11 +48,9 @@ namespace RayGene3D
   protected:
     ID3D12StateObject* state_object{ nullptr };
     ID3D12Resource* table_buffer{ nullptr };
-
-  protected:
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE rgen_region;
-    D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE xhit_region;
     D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE miss_region;
+    D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE xhit_region;    
     //D3D12_GPU_VIRTUAL_ADDRESS_RANGE_AND_STRIDE call_region;
 
   protected:

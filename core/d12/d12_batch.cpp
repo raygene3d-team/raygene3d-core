@@ -219,7 +219,7 @@ namespace RayGene3D
         }
 
         D3D12_RAYTRACING_INSTANCE_DESC* instance_descs = nullptr;
-        instances_item->Map(0, nullptr, (void**)&instance_descs);
+        BLAST_ASSERT(S_OK == instances_item->Map(0, nullptr, (void**)&instance_descs));
         for (auto i = 0u; i < uint32_t(entities.size()); ++i)
         {
           instance_descs[i] = { {
@@ -538,7 +538,7 @@ namespace RayGene3D
 
 
     case Pass::TYPE_TRACING:
-    {      
+    {
       {
         std::vector<D3D12_STATE_SUBOBJECT> state_subobjects;
 
@@ -592,7 +592,7 @@ namespace RayGene3D
         //hit_group_desc.ClosestHitShaderImport = chit_name;
         //hit_group_desc.IntersectionShaderImport = isec_name;
         //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, (const void*)&hit_group_desc }); 
-        
+
         //D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION xhit_export_association = {};
         //const wchar_t* xhit_export_name[] = { xhit_name };
         //xhit_export_association.pSubobjectToAssociate = &state_subobjects[0];
@@ -628,6 +628,92 @@ namespace RayGene3D
         state_desc.pSubobjects = state_subobjects.data();
         state_desc.NumSubobjects = state_subobjects.size();
         BLAST_ASSERT(S_OK == device->GetDevice()->CreateStateObject(&state_desc, IID_PPV_ARGS(&state_object)));
+      }
+
+      {
+        uint32_t identifier_size = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
+        uint32_t align_size = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
+        uint32_t signature_size = (ub_items.size() + sb_items.size() + rr_items.size() + wr_items.size()) * 8;
+        uint32_t entry_size = ((identifier_size + signature_size + align_size - 1) / align_size) * align_size;
+        uint32_t entry_count = 2; //hardcoded now for 2 shader records 
+        uint32_t table_size = entry_size * entry_count;
+
+        {
+          D3D12_HEAP_PROPERTIES heap_properties = {};
+          heap_properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+          heap_properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+          heap_properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+          heap_properties.CreationNodeMask = 0;
+          heap_properties.VisibleNodeMask = 0;
+
+          D3D12_RESOURCE_DESC  resource_desc = {};
+          resource_desc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+          resource_desc.Alignment = 0;
+          resource_desc.Width = table_size;
+          resource_desc.Height = 1;
+          resource_desc.DepthOrArraySize = 1;
+          resource_desc.MipLevels = 1;
+          resource_desc.Format = DXGI_FORMAT_UNKNOWN;
+          resource_desc.SampleDesc = { 1, 0 };
+          resource_desc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+          resource_desc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+          BLAST_ASSERT(S_OK == device->GetDevice()->CreateCommittedResource(&heap_properties, D3D12_HEAP_FLAG_NONE,
+            &resource_desc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&table_buffer)));
+        }
+
+        ID3D12StateObjectProperties* so_properties;
+        BLAST_ASSERT(S_OK == state_object->QueryInterface(IID_PPV_ARGS(&so_properties)));
+
+        uint8_t* mapped = nullptr;
+        BLAST_ASSERT(S_OK == table_buffer->Map(0, nullptr, (void**)&mapped));
+        {
+          {
+            auto entry_data = mapped + entry_size * 0;
+            memcpy(entry_data, so_properties->GetShaderIdentifier(rgen_name), identifier_size);
+            entry_data += identifier_size;
+            memcpy(entry_data, ub_items.data(), ub_items.size() * 8);
+            entry_data += ub_items.size() * 8;
+            memcpy(entry_data, sb_items.data(), sb_items.size() * 8);
+            entry_data += sb_items.size() * 8;
+            memcpy(entry_data, rr_items.data(), rr_items.size() * 8);
+            entry_data += rr_items.size() * 8;
+            memcpy(entry_data, wr_items.data(), wr_items.size() * 8);
+            entry_data += wr_items.size() * 8;
+          }
+          {
+            auto entry_data = mapped + entry_size * 1;
+            memcpy(entry_data, so_properties->GetShaderIdentifier(miss_name), identifier_size);
+            entry_data += identifier_size;
+            memcpy(entry_data, ub_items.data(), ub_items.size() * 8);
+            entry_data += ub_items.size() * 8;
+            memcpy(entry_data, sb_items.data(), sb_items.size() * 8);
+            entry_data += sb_items.size() * 8;
+            memcpy(entry_data, rr_items.data(), rr_items.size() * 8);
+            entry_data += rr_items.size() * 8;
+            memcpy(entry_data, wr_items.data(), wr_items.size() * 8);
+            entry_data += wr_items.size() * 8;
+          }
+          {
+            //auto entry_data = mapped + entry_size * 2;
+            //memcpy(entry_data, so_properties->GetShaderIdentifier(xhit_name), identifier_size);
+            //entry_data += identifier_size;
+            //memcpy(entry_data, ub_items.data(), ub_items.size() * 8);
+            //entry_data += ub_items.size() * 8;
+            //memcpy(entry_data, sb_items.data(), sb_items.size() * 8);
+            //entry_data += sb_items.size() * 8;
+            //memcpy(entry_data, rr_items.data(), rr_items.size() * 8);
+            //entry_data += rr_items.size() * 8;
+            //memcpy(entry_data, wr_items.data(), wr_items.size() * 8);
+            //entry_data += wr_items.size() * 8;
+          }
+        }
+        table_buffer->Unmap(0, nullptr);
+
+        so_properties->Release();
+
+        rgen_region = { table_buffer->GetGPUVirtualAddress() + entry_size * 0, entry_size };
+        miss_region = { table_buffer->GetGPUVirtualAddress() + entry_size * 1, entry_size, entry_size };
       }
     }
     break;
@@ -890,8 +976,8 @@ namespace RayGene3D
 
       D3D12_DISPATCH_RAYS_DESC dispatch_desc = {};
       dispatch_desc.RayGenerationShaderRecord = rgen_region;
-      dispatch_desc.HitGroupTable = xhit_region;
       dispatch_desc.MissShaderTable = miss_region;
+      //dispatch_desc.HitGroupTable = xhit_region;
       //dispatch_desc.CallableShaderTable = call_region;     
       dispatch_desc.Width = extent_x;
       dispatch_desc.Height = extent_y;
@@ -932,6 +1018,11 @@ namespace RayGene3D
       instances_item = nullptr;
     }
 
+    if (table_buffer)
+    {
+      table_buffer->Release();
+      table_buffer = nullptr;
+    }
 
     if (root_signature)
     {
