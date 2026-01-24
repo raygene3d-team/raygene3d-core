@@ -119,21 +119,21 @@ namespace RayGene3D
         BLAST_ASSERT(S_OK == command_list->Reset(device->GetCommandAllocator(), nullptr));
 
         blas_items.resize(entities.size(), nullptr);
-        for (auto i = 0u; i < uint32_t(entities.size()); ++i)
+        for (auto i = 0ull; i < entities.size(); ++i)
         {
           const auto& entity = entities[i];
 
           const auto vtx_resource = reinterpret_cast<D12Resource*>(&entity.va_views[0]->GetResource());
-          const auto vtx_stride = vtx_resource->GetLayersOrStride();
+          const auto vtx_stride = 64;
           const auto vtx_count = entity.vtx_or_grid_y.length;
           const auto vtx_offset = entity.vtx_or_grid_y.offset;
-          const auto vtx_address = vtx_resource->GetAddress();
+          const auto vtx_address = vtx_resource->GetAddress() + vtx_stride * vtx_offset;
 
           const auto idx_resource = reinterpret_cast<D12Resource*>(&entity.ia_views[0]->GetResource());
-          const auto idx_stride = idx_resource->GetLayersOrStride();
+          const auto idx_stride = 4;
           const auto idx_count = entity.idx_or_grid_z.length;
           const auto idx_offset = entity.idx_or_grid_z.offset;
-          const auto idx_address = idx_resource->GetAddress();
+          const auto idx_address = idx_resource->GetAddress() + idx_stride * idx_offset;
 
           D3D12_RAYTRACING_GEOMETRY_DESC geometry_desc = {};
           geometry_desc.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
@@ -220,13 +220,13 @@ namespace RayGene3D
 
         D3D12_RAYTRACING_INSTANCE_DESC* instance_descs = nullptr;
         BLAST_ASSERT(S_OK == instances_item->Map(0, nullptr, (void**)&instance_descs));
-        for (auto i = 0u; i < uint32_t(entities.size()); ++i)
+        for (auto i = 0u; i < entities.size(); ++i)
         {
-          instance_descs[i] = { {
+          instance_descs[i] = {
             1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 0.0f
-          }, i, 0xFF, 0, D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE, blas_items[i]->GetGPUVirtualAddress() };
+            0.0f, 0.0f, 1.0f, 0.0f,
+            i, 0xFF, 0, D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE, blas_items[i]->GetGPUVirtualAddress() };
         }
         instances_item->Unmap(0, nullptr);
 
@@ -234,7 +234,7 @@ namespace RayGene3D
         as_desc.Inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
         as_desc.Inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
         as_desc.Inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
-        as_desc.Inputs.NumDescs = 1;
+        as_desc.Inputs.NumDescs = entities.size();
         as_desc.Inputs.InstanceDescs = instances_item->GetGPUVirtualAddress();
 
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO prebuild_info;
@@ -571,12 +571,12 @@ namespace RayGene3D
         //ahit_library_desc.NumExports = 1;
         //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &ahit_library_desc });
 
-        //D3D12_EXPORT_DESC chit_export_desc = { chit_name, nullptr, D3D12_EXPORT_FLAG_NONE };
-        //D3D12_DXIL_LIBRARY_DESC chit_library_desc = {};
-        //chit_library_desc.DXILLibrary = config->GetCHitBytecode();
-        //chit_library_desc.pExports = &chit_export_desc;
-        //chit_library_desc.NumExports = 1;
-        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &chit_library_desc });
+        D3D12_EXPORT_DESC chit_export_desc = { chit_name, nullptr, D3D12_EXPORT_FLAG_NONE };
+        D3D12_DXIL_LIBRARY_DESC chit_library_desc = {};
+        chit_library_desc.DXILLibrary = config->GetCHitBytecode();
+        chit_library_desc.pExports = &chit_export_desc;
+        chit_library_desc.NumExports = 1;
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &chit_library_desc });
 
         //D3D12_EXPORT_DESC isec_export_desc = { isec_name, nullptr, D3D12_EXPORT_FLAG_NONE };
         //D3D12_DXIL_LIBRARY_DESC isec_library_desc = {};
@@ -585,13 +585,13 @@ namespace RayGene3D
         //isec_library_desc.NumExports = 1;
         //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY, &isec_library_desc });
         //
-        //D3D12_HIT_GROUP_DESC hit_group_desc = {};
-        //hit_group_desc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
-        //hit_group_desc.HitGroupExport = xhit_name;
+        D3D12_HIT_GROUP_DESC hit_group_desc = {};
+        hit_group_desc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
+        hit_group_desc.HitGroupExport = xhit_name;
         //hit_group_desc.AnyHitShaderImport = ahit_name;
-        //hit_group_desc.ClosestHitShaderImport = chit_name;
+        hit_group_desc.ClosestHitShaderImport = chit_name;
         //hit_group_desc.IntersectionShaderImport = isec_name;
-        //state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, (const void*)&hit_group_desc }); 
+        state_subobjects.push_back({ D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP, (const void*)&hit_group_desc }); 
 
         //D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION xhit_export_association = {};
         //const wchar_t* xhit_export_name[] = { xhit_name };
@@ -635,7 +635,7 @@ namespace RayGene3D
         uint32_t align_size = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
         uint32_t signature_size = (ub_items.size() + sb_items.size() + rr_items.size() + wr_items.size()) * 8;
         uint32_t entry_size = ((identifier_size + signature_size + align_size - 1) / align_size) * align_size;
-        uint32_t entry_count = 2; //hardcoded now for 2 shader records 
+        uint32_t entry_count = 3; //hardcoded now for 3 shader records 
         uint32_t table_size = entry_size * entry_count;
 
         {
@@ -695,17 +695,17 @@ namespace RayGene3D
             entry_data += wr_items.size() * 8;
           }
           {
-            //auto entry_data = mapped + entry_size * 2;
-            //memcpy(entry_data, so_properties->GetShaderIdentifier(xhit_name), identifier_size);
-            //entry_data += identifier_size;
-            //memcpy(entry_data, ub_items.data(), ub_items.size() * 8);
-            //entry_data += ub_items.size() * 8;
-            //memcpy(entry_data, sb_items.data(), sb_items.size() * 8);
-            //entry_data += sb_items.size() * 8;
-            //memcpy(entry_data, rr_items.data(), rr_items.size() * 8);
-            //entry_data += rr_items.size() * 8;
-            //memcpy(entry_data, wr_items.data(), wr_items.size() * 8);
-            //entry_data += wr_items.size() * 8;
+            auto entry_data = mapped + entry_size * 2;
+            memcpy(entry_data, so_properties->GetShaderIdentifier(xhit_name), identifier_size);
+            entry_data += identifier_size;
+            memcpy(entry_data, ub_items.data(), ub_items.size() * 8);
+            entry_data += ub_items.size() * 8;
+            memcpy(entry_data, sb_items.data(), sb_items.size() * 8);
+            entry_data += sb_items.size() * 8;
+            memcpy(entry_data, rr_items.data(), rr_items.size() * 8);
+            entry_data += rr_items.size() * 8;
+            memcpy(entry_data, wr_items.data(), wr_items.size() * 8);
+            entry_data += wr_items.size() * 8;
           }
         }
         table_buffer->Unmap(0, nullptr);
@@ -714,6 +714,7 @@ namespace RayGene3D
 
         rgen_region = { table_buffer->GetGPUVirtualAddress() + entry_size * 0, entry_size };
         miss_region = { table_buffer->GetGPUVirtualAddress() + entry_size * 1, entry_size, entry_size };
+        xhit_region = { table_buffer->GetGPUVirtualAddress() + entry_size * 2, entry_size, entry_size };
       }
     }
     break;
@@ -977,7 +978,7 @@ namespace RayGene3D
       D3D12_DISPATCH_RAYS_DESC dispatch_desc = {};
       dispatch_desc.RayGenerationShaderRecord = rgen_region;
       dispatch_desc.MissShaderTable = miss_region;
-      //dispatch_desc.HitGroupTable = xhit_region;
+      dispatch_desc.HitGroupTable = xhit_region;
       //dispatch_desc.CallableShaderTable = call_region;     
       dispatch_desc.Width = extent_x;
       dispatch_desc.Height = extent_y;

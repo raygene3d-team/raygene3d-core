@@ -286,6 +286,19 @@ namespace RayGene3D
       }
     }
 
+    //D3D12_GLOBAL_BARRIER global_barrier = {};
+    //global_barrier.SyncBefore = D3D12_BARRIER_SYNC_ALL;
+    //global_barrier.SyncAfter = D3D12_BARRIER_SYNC_ALL;
+    //global_barrier.AccessBefore = D3D12_BARRIER_ACCESS_COMMON;
+    //global_barrier.AccessAfter = D3D12_BARRIER_ACCESS_COMMON;
+
+    //D3D12_BARRIER_GROUP barrier_group = {};
+    //barrier_group.Type = D3D12_BARRIER_TYPE_GLOBAL;
+    //barrier_group.pGlobalBarriers = &global_barrier;
+    //barrier_group.NumBarriers = 1;
+
+    //device->GetCommandList()->Barrier(1, &barrier_group);
+
     //device->GetCommandList()->ClearState();
   }
 
