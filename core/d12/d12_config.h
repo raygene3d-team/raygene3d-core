@@ -86,10 +86,16 @@ namespace RayGene3D
     std::vector<uint32_t> strides; //TODO: Remove
 
   protected:
-    D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };   
+    D3D_PRIMITIVE_TOPOLOGY primitive_topology{ D3D_PRIMITIVE_TOPOLOGY_UNDEFINED };
+
+  protected:
+    bool use_mesh_pipeline{ false };
 
   public:
     const std::vector<uint32_t>& GetStrides() const { return strides; }
+
+  public:
+    bool UseMeshPipeline() const { return use_mesh_pipeline; }
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,

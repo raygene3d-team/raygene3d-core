@@ -297,8 +297,8 @@ namespace RayGene3D
     chit_bytecode.clear();
     ahit_bytecode.clear();
     miss_bytecode.clear();
-    if (compilation & COMPILATION_TASK) { D12Compile(name.c_str(), source, path, file, "task", "as_6_5", defines, task_bytecode); BLAST_ASSERT(!task_bytecode.empty());}
-    if (compilation & COMPILATION_MESH) { D12Compile(name.c_str(), source, path, file, "mesh", "ms_6_5", defines, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
+    if (compilation & COMPILATION_TASK) { D12Compile(name.c_str(), source, path, file, "task_main", "as_6_5", defines, task_bytecode); BLAST_ASSERT(!task_bytecode.empty());}
+    if (compilation & COMPILATION_MESH) { D12Compile(name.c_str(), source, path, file, "mesh_main", "ms_6_5", defines, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
     if (compilation & COMPILATION_RGEN) { D12Compile(name.c_str(), source, path, file, "rgen", "lib_6_3", defines, rgen_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
     if (compilation & COMPILATION_CALL) { D12Compile(name.c_str(), source, path, file, "call", "lib_6_3", defines, call_bytecode); BLAST_ASSERT(!call_bytecode.empty()); }
     if (compilation & COMPILATION_ISEC) { D12Compile(name.c_str(), source, path, file, "isec", "lib_6_3", defines, isec_bytecode); BLAST_ASSERT(!isec_bytecode.empty()); }
@@ -619,6 +619,8 @@ namespace RayGene3D
       }
     };
     topology_type = get_topology_type(ia_state.topology);
+
+    use_mesh_pipeline = ia_state.topology == TOPOLOGY_UNKNOWN;
 
     const auto vp_count = rc_state.viewports.size();
     vp_items.resize(std::min(vp_count, size_t(D3D12_VIEWPORT_AND_SCISSORRECT_MAX_INDEX)), { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f });

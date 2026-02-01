@@ -46,10 +46,10 @@ namespace RayGene3D
     void Discard() override;
 
   public:
-    DXGI_FORMAT GetRTFormat(size_t index) const;
-    size_t GetRTCount() const { return rt_attachments.size(); }
-    DXGI_FORMAT GetDSFormat(size_t index) const;
-    size_t GetDSCount() const { return ds_attachments.size(); }
+    DXGI_FORMAT GetRTFormat(uint32_t index) const;
+    uint32_t GetRTCount() const { return uint32_t(rt_attachments.size()); }
+    DXGI_FORMAT GetDSFormat(uint32_t index) const;
+    uint32_t GetDSCount() const { return uint32_t(ds_attachments.size()); }
 
   public:
     const std::shared_ptr<Config>& CreateConfig(const std::string& name,

@@ -115,7 +115,7 @@ namespace RayGene3D
   }
 
 
-  DXGI_FORMAT D12Pass::GetRTFormat(size_t index) const
+  DXGI_FORMAT D12Pass::GetRTFormat(uint32_t index) const
   {
     return index < rt_attachments.size()
       ? rt_attachments[index].view
@@ -124,7 +124,7 @@ namespace RayGene3D
       : DXGI_FORMAT_UNKNOWN;
   }
 
-  DXGI_FORMAT D12Pass::GetDSFormat(size_t index) const
+  DXGI_FORMAT D12Pass::GetDSFormat(uint32_t index) const
   {
     return index < ds_attachments.size()
       ? ds_attachments[index].view

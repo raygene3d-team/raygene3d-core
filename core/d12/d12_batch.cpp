@@ -465,6 +465,43 @@ namespace RayGene3D
     {
     case Pass::TYPE_GRAPHIC:
     {
+      if (config->UseMeshPipeline() && device->GetMeshShaderSupported())
+      {
+        MSPipelineStateStream state_stream = {};
+
+        state_stream.root_signature = root_signature;
+        state_stream.as_bytecode = config->GetTaskBytecode();
+        state_stream.ms_bytecode = config->GetMeshBytecode();
+        state_stream.ps_bytecode = config->GetPSBytecode();
+        state_stream.blend_desc = config->GetBlendDesc();
+        state_stream.raster_desc = config->GetRasterDesc();
+        state_stream.depth_desc = config->GetDepthDesc();
+        //state_stream.view_desc = nullptr;
+        state_stream.topology_type = config->GetTopologyType();
+        state_stream.sample_mask = UINT_MAX;
+        state_stream.sample_desc = DXGI_SAMPLE_DESC{ 1, 0 };
+        state_stream.node_mask = 0;
+        state_stream.state_flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+        state_stream.ds_format = pass->GetDSFormat(0);
+        state_stream.rt_formats = D3D12_RT_FORMAT_ARRAY{
+          pass->GetRTFormat(0),
+          pass->GetRTFormat(1),
+          pass->GetRTFormat(2),
+          pass->GetRTFormat(3),
+          pass->GetRTFormat(4),
+          pass->GetRTFormat(5),
+          pass->GetRTFormat(6),
+          pass->GetRTFormat(7),
+          pass->GetRTCount()
+        };
+
+        D3D12_PIPELINE_STATE_STREAM_DESC stream_desc = {};
+        stream_desc.SizeInBytes = sizeof(state_stream);
+        stream_desc.pPipelineStateSubobjectStream = &state_stream;
+
+        BLAST_ASSERT(S_OK == device->GetDevice()->CreatePipelineState(&stream_desc, IID_PPV_ARGS(&pipeline_state)));
+      }
+      else
       {
         D3D12_GRAPHICS_PIPELINE_STATE_DESC pso_desc = {};
         pso_desc.pRootSignature = root_signature;
@@ -475,7 +512,6 @@ namespace RayGene3D
         pso_desc.GS = config->GetGSBytecode();
         pso_desc.StreamOutput = {};
         pso_desc.BlendState = config->GetBlendDesc();
-        pso_desc.SampleMask = UINT_MAX;
         pso_desc.RasterizerState = config->GetRasterDesc();
         pso_desc.DepthStencilState = config->GetDepthDesc();
         pso_desc.InputLayout = config->GetLayoutDesc();
@@ -491,6 +527,7 @@ namespace RayGene3D
         pso_desc.RTVFormats[6] = pass->GetRTFormat(6);
         pso_desc.RTVFormats[7] = pass->GetRTFormat(7);
         pso_desc.DSVFormat = pass->GetDSFormat(0);
+        pso_desc.SampleMask = UINT_MAX;
         pso_desc.SampleDesc = { 1, 0 };
         pso_desc.NodeMask = 0;
         pso_desc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
