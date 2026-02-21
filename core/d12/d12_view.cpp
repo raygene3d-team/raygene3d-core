@@ -144,7 +144,7 @@ namespace RayGene3D
         srv_desc.Buffer.FirstElement = levels_or_length.offset;
         srv_desc.Buffer.NumElements = levels_or_length.length == -1 ? resource->GetLevelsOrLength() : levels_or_length.length;
         srv_desc.Buffer.StructureByteStride = layers_or_stride.length = -1 ? resource->GetLayersOrStride() : layers_or_stride.length;
-        srv_desc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+        srv_desc.Buffer.Flags = srv_desc.Buffer.StructureByteStride == 1 ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
         break;
       }
       case Resource::TYPE_TEX1D:
@@ -376,7 +376,7 @@ namespace RayGene3D
         uav_desc.Buffer.FirstElement = levels_or_length.offset;
         uav_desc.Buffer.NumElements = levels_or_length.length == -1 ? resource->GetLevelsOrLength() : levels_or_length.length;
         uav_desc.Buffer.StructureByteStride = layers_or_stride.length = -1 ? resource->GetLayersOrStride() : layers_or_stride.length;
-        uav_desc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+        uav_desc.Buffer.Flags = uav_desc.Buffer.StructureByteStride == 1 ? D3D12_BUFFER_UAV_FLAG_RAW : D3D12_BUFFER_UAV_FLAG_NONE;
         break;
       }
       case Resource::TYPE_TEX1D:

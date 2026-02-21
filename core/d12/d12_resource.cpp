@@ -214,7 +214,7 @@ namespace RayGene3D
 
     case TYPE_TEX3D:
     {
-      desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+      desc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
       desc.Alignment = 0;
       desc.Width = size_x;
       desc.Height = size_y;

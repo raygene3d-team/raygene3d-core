@@ -820,74 +820,83 @@ namespace RayGene3D
           }
         }
 
+        if (config->UseMeshPipeline() && device->GetMeshShaderSupported())
         {
-
-          const size_t va_limit = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
-          uint32_t va_strides[va_limit]{ 0 };
-          uint32_t va_offsets[va_limit]{ 0 };
-          D3D12_VERTEX_BUFFER_VIEW va_items[va_limit] = {};
-          const auto va_count = std::min(va_limit, entity.va_views.size());
-          for (size_t i = 0; i < va_count; ++i)
+          const auto grid_x = entity.ins_or_grid_x.length;
+          const auto grid_y = entity.vtx_or_grid_y.length;
+          const auto grid_z = entity.idx_or_grid_z.length;
+          device->GetCommandList()->DispatchMesh(grid_x, grid_y, grid_z);
+        }
+        else
+        {
           {
-            const auto& va_view = entity.va_views.at(i);
-            if (va_view)
+            const size_t va_limit = D3D12_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
+            uint32_t va_strides[va_limit]{ 0 };
+            uint32_t va_offsets[va_limit]{ 0 };
+            D3D12_VERTEX_BUFFER_VIEW va_items[va_limit] = {};
+            const auto va_count = std::min(va_limit, entity.va_views.size());
+            for (size_t i = 0; i < va_count; ++i)
             {
-              const auto& resource = reinterpret_cast<const D12Resource*>(&va_view->GetResource());
-              const auto desc = resource->GetResource()->GetDesc();
-              va_items[i].BufferLocation = resource->GetAddress() + va_view->GetLevelsOrLength().offset;
-              va_items[i].SizeInBytes = va_view->GetLevelsOrLength().length == -1 ? size_t(resource->GetLevelsOrLength() * resource->GetLayersOrStride()) : va_view->GetLevelsOrLength().length;
-              va_items[i].StrideInBytes = config->GetStrides().at(i);
+              const auto& va_view = entity.va_views.at(i);
+              if (va_view)
+              {
+                const auto& resource = reinterpret_cast<const D12Resource*>(&va_view->GetResource());
+                const auto desc = resource->GetResource()->GetDesc();
+                va_items[i].BufferLocation = resource->GetAddress() + va_view->GetLevelsOrLength().offset;
+                va_items[i].SizeInBytes = va_view->GetLevelsOrLength().length == -1 ? size_t(resource->GetLevelsOrLength() * resource->GetLayersOrStride()) : va_view->GetLevelsOrLength().length;
+                va_items[i].StrideInBytes = config->GetStrides().at(i);
+              }
             }
-          }
-          device->GetCommandList()->IASetVertexBuffers(0, va_count, va_items);
+            device->GetCommandList()->IASetVertexBuffers(0, va_count, va_items);
 
-          const size_t ia_limit = 1u;
-          uint32_t ia_offsets[ia_limit]{ 0 };
-          DXGI_FORMAT ia_formats[ia_limit]{ DXGI_FORMAT_UNKNOWN };
-          D3D12_INDEX_BUFFER_VIEW ia_items[ia_limit] = {};
-          const auto ia_count = std::min(ia_limit, entity.ia_views.size());
-          for (size_t i = 0; i < ia_count; ++i)
-          {
-            const auto& ia_view = entity.ia_views.at(i);
-            if (ia_view)
+            const size_t ia_limit = 1u;
+            uint32_t ia_offsets[ia_limit]{ 0 };
+            DXGI_FORMAT ia_formats[ia_limit]{ DXGI_FORMAT_UNKNOWN };
+            D3D12_INDEX_BUFFER_VIEW ia_items[ia_limit] = {};
+            const auto ia_count = std::min(ia_limit, entity.ia_views.size());
+            for (size_t i = 0; i < ia_count; ++i)
             {
-              const auto& resource = (reinterpret_cast<const D12Resource*>(&ia_view->GetResource()));
-              ia_items[i].BufferLocation = resource->GetAddress() + ia_view->GetLevelsOrLength().offset;
-              ia_items[i].SizeInBytes = ia_view->GetLevelsOrLength().length == -1 ? size_t(resource->GetLevelsOrLength() * resource->GetLayersOrStride()) : ia_view->GetLevelsOrLength().length;
-              ia_items[i].Format = config->GetIAState().indexer
-                == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
-                : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
-                : DXGI_FORMAT_UNKNOWN;
+              const auto& ia_view = entity.ia_views.at(i);
+              if (ia_view)
+              {
+                const auto& resource = (reinterpret_cast<const D12Resource*>(&ia_view->GetResource()));
+                ia_items[i].BufferLocation = resource->GetAddress() + ia_view->GetLevelsOrLength().offset;
+                ia_items[i].SizeInBytes = ia_view->GetLevelsOrLength().length == -1 ? size_t(resource->GetLevelsOrLength() * resource->GetLayersOrStride()) : ia_view->GetLevelsOrLength().length;
+                ia_items[i].Format = config->GetIAState().indexer
+                  == Config::INDEXER_32_BIT ? DXGI_FORMAT_R32_UINT
+                  : Config::INDEXER_16_BIT ? DXGI_FORMAT_R16_UINT
+                  : DXGI_FORMAT_UNKNOWN;
+              }
             }
-          }
-          device->GetCommandList()->IASetIndexBuffer(&ia_items[0]);
+            device->GetCommandList()->IASetIndexBuffer(&ia_items[0]);
 
-          device->GetCommandList()->IASetPrimitiveTopology(config->GetPrimitiveTopology());
+            device->GetCommandList()->IASetPrimitiveTopology(config->GetPrimitiveTopology());
 
 
-          if (entity.arg_view)
-          {
-            const auto aa_buffer = (reinterpret_cast<D12Resource*>(&entity.arg_view->GetResource()))->GetResource();
-            //const auto aa_stride = uint32_t(sizeof(Graphic));
-            //const auto aa_draws = 1u;
-            //const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
-            device->GetCommandList()->ExecuteIndirect(
-              command_signature,
-              1,
-              aa_buffer,
-              0,
-              nullptr,
-              0);
-          }
-          else
-          {
-            const auto ins_count = entity.ins_or_grid_x.length;
-            const auto ins_offset = entity.ins_or_grid_x.offset;
-            const auto vtx_count = entity.vtx_or_grid_y.length;
-            const auto vtx_offset = entity.vtx_or_grid_y.offset;
-            const auto idx_count = entity.idx_or_grid_z.length;
-            const auto idx_offset = entity.idx_or_grid_z.offset;
-            device->GetCommandList()->DrawIndexedInstanced(idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
+            if (entity.arg_view)
+            {
+              const auto aa_buffer = (reinterpret_cast<D12Resource*>(&entity.arg_view->GetResource()))->GetResource();
+              //const auto aa_stride = uint32_t(sizeof(Graphic));
+              //const auto aa_draws = 1u;
+              //const auto aa_offset = chunk.arg_view->GetLevelsOrLength().offset;
+              device->GetCommandList()->ExecuteIndirect(
+                command_signature,
+                1,
+                aa_buffer,
+                0,
+                nullptr,
+                0);
+            }
+            else
+            {
+              const auto ins_count = entity.ins_or_grid_x.length;
+              const auto ins_offset = entity.ins_or_grid_x.offset;
+              const auto vtx_count = entity.vtx_or_grid_y.length;
+              const auto vtx_offset = entity.vtx_or_grid_y.offset;
+              const auto idx_count = entity.idx_or_grid_z.length;
+              const auto idx_offset = entity.idx_or_grid_z.offset;
+              device->GetCommandList()->DrawIndexedInstanced(idx_count, ins_count, idx_offset, vtx_offset, ins_offset);
+            }
           }
         }
       }

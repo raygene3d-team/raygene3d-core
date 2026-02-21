@@ -90,6 +90,19 @@ namespace RayGene3D
       size_t length{ 0 };
     };
 
+    template<typename T>
+    struct BufferTypedDesc
+    {
+      Usage usage{ USAGE_UNKNOWN };
+      size_t length{ 0 };
+    };
+
+    struct BufferBytesDesc
+    {
+      Usage usage{ USAGE_UNKNOWN };
+      size_t length{ 0 };
+    };
+
     struct Tex1DDesc
     {
       Usage usage{ USAGE_UNKNOWN };
@@ -185,6 +198,14 @@ namespace RayGene3D
     void Discard() override = 0;
 
   public:
+    //template<typename T> Resource(const std::string& name,
+    //  Device& device, const Resource::BufferTypedDesc<T>& desc,
+    //  Resource::Hint hint = Resource::HINT_UNKNOWN,
+    //  std::pair<const uint8_t*, size_t> interop = {});
+    //Resource(const std::string& name,
+    //  Device& device, const Resource::BufferBytesDesc& desc,
+    //  Resource::Hint hint = Resource::HINT_UNKNOWN,
+    //  std::pair<const uint8_t*, size_t> interop = {});
     Resource(const std::string& name,
       Device& device, const Resource::BufferDesc& desc,
       Resource::Hint hint = Resource::HINT_UNKNOWN,
