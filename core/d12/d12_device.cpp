@@ -255,7 +255,7 @@ namespace RayGene3D
         &heap_properties,
         D3D12_HEAP_FLAG_NONE,
         &resource_desc,
-        D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+        D3D12_RESOURCE_STATE_COMMON,
         nullptr,
         IID_PPV_ARGS(&scratch_buffer)));
     }
