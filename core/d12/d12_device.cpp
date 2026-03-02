@@ -338,8 +338,7 @@ namespace RayGene3D
     BLAST_ASSERT(S_OK == command_list->Close());
     command_queue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
 
-    ++fence_value;
-    BLAST_ASSERT(S_OK == command_queue->Signal(fence, fence_value));
+    BLAST_ASSERT(S_OK == command_queue->Signal(fence, ++fence_value));
 
 
     if (screen && !back_buffers.empty())
@@ -401,15 +400,14 @@ namespace RayGene3D
       BLAST_ASSERT(S_OK == command_list->Close());
       command_queue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList**>(&command_list));
 
-      ++fence_value;
-      BLAST_ASSERT(S_OK == command_queue->Signal(fence, fence_value));
+      BLAST_ASSERT(S_OK == command_queue->Signal(fence, ++fence_value));
 
     }
 
-
-
     BLAST_ASSERT(S_OK == fence->SetEventOnCompletion(fence_value, fence_event));
     WaitForSingleObject(fence_event, INFINITE);
+
+    BLAST_ASSERT(S_OK == command_allocator->Reset());
 
     if (swapchain)
     {
