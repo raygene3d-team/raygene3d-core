@@ -61,6 +61,9 @@ namespace RayGene3D
     const std::unique_ptr<Device>& GetDevice() { return device; }
 
   public:
+    DeviceType GetType() const { return type; }
+
+  public:
     void AddView(const std::shared_ptr<View>& view) { views.push_back(view); }
     void VisitView(std::function<void(const std::shared_ptr<View>&)> visitor) { for (const auto& view : views) visitor(view.lock()); }
     //void RemoveView(const std::shared_ptr<View>& view) { views.remove(view); }

@@ -53,7 +53,7 @@ namespace RayGene3D
     {
       D3D12_CPU_DESCRIPTOR_HANDLE cpu;
       D3D12_GPU_DESCRIPTOR_HANDLE gpu;
-    } handle;
+    };
 
   protected:
     static constexpr size_t sampler_limit{ 4 * 1024 };
