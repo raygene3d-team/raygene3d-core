@@ -26,61 +26,42 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ================================================================================*/
 
-#include "core.h"
 
-#include "core/vlk/vlk_device.h"
+#pragma once
+#include "../view.h"
 
-#ifdef _WIN32
-#include "core/d11/d11_device.h"
-#include "core/d12/d12_device.h"
-#endif
+#include <dxgi.h>
+#include <d3d12.h>
+#include <wrl.h>
 
 namespace RayGene3D
 {
-  void Core::Initialize()
+  class D12View : public View
   {
-    device->Initialize();
-  }
+  protected:
+    D3D12_GPU_VIRTUAL_ADDRESS address;
 
-  void Core::Use()
-  {
-    device->Use();
-  }
+  protected:
+    uint32_t slot{ uint32_t(-1) };
 
-  void Core::Discard()
-  {
-    device->Discard();
-  }
+  public:
+    D3D12_GPU_VIRTUAL_ADDRESS GetAddress() const { return address; }
 
-  Core::Core(DeviceType type)
-    : Usable("raygene3d-core")
-    , type(type)
-  {
-    switch (type)
-    {
-    case DEVICE_VLK:
-      device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
-      break;
+  public:
+    uint32_t GetSlot() const { return slot; }
 
-    case DEVICE_D11:
-#ifdef _WIN32
-      device = std::unique_ptr<Device>(new D11Device("d11_device"));
-#else
-      device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
-#endif
-      break;
-    case DEVICE_D12:
-#ifdef _WIN32
-      device = std::unique_ptr<Device>(new D12Device("d12_device"));
-#else
-      device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
-#endif
-      break;
-    }
-  }
+  public:
+    void Initialize() override;
+    void Use() override;
+    void Discard() override;
 
-  Core::~Core()
-  {
-    device.reset();
+  public:
+    D12View(const std::string& name,
+      Resource& resource,
+      Usage usage,
+      const Range& levels_or_length = Range{ 0u, size_t(-1) },
+      const Range& layers_or_stride = Range{ 0u, size_t(-1) },
+      View::Bind bind = View::BIND_UNKNOWN);
+    virtual ~D12View();
   };
 }

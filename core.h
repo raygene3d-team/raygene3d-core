@@ -40,6 +40,7 @@ namespace RayGene3D
       DEVICE_UNKNOWN = 0,
       DEVICE_D11 = 1,
       DEVICE_VLK = 2,
+      DEVICE_D12 = 3
     };
 
   protected:
@@ -58,6 +59,9 @@ namespace RayGene3D
 
   public:
     const std::unique_ptr<Device>& GetDevice() { return device; }
+
+  public:
+    DeviceType GetType() const { return type; }
 
   public:
     void AddView(const std::shared_ptr<View>& view) { views.push_back(view); }

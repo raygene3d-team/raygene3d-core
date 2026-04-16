@@ -39,116 +39,57 @@ THE SOFTWARE.
 
 namespace RayGene3D
 {
-  //void D11Compile(const std::string& source, const wchar_t* entry, const wchar_t* target, std::vector<char>& bytecode)
-  //{
-  //  IDxcLibrary* library{ nullptr };
-  //  BLAST_ASSERT(S_OK == DxcCreateInstance(CLSID_DxcLibrary, __uuidof(IDxcLibrary), (void**)(&library)));
-
-  //  IDxcBlobEncoding* input;
-  //  BLAST_ASSERT(S_OK == library->CreateBlobWithEncodingFromPinned(source.c_str(), uint32_t(source.size()), CP_UTF8, &input));
-
-  //  if (library) { library->Release(); library = nullptr; }
-
-  //  std::vector<const wchar_t*> args =
-  //  {
-  //    //L"-Zpr",			//Row-major matrices
-  //    //L"-WX",				//Warnings as errors
-  //    //L"-Gec",
-  //    //L"-HV 2016",
-  //    //L"-flegacy-macro-expansion",
-  //    //L"-flegacy-resource-reservation",
-  //#ifdef _DEBUG
-  //    L"-Zi",				//Debug info
-  //    L"-Od",				//Disable optimization
-  //#else
-  //    L"-O3",				//Optimization level 3
-  //#endif
-  //  };
-
-  ////std::vector<DxcDefine> dxcDefines(defines.size());
-  ////for (size_t i = 0; i < defines.size(); ++i)
-  ////{
-  ////  DxcDefine& m = dxcDefines(i);
-  ////  m.Name = defines[i].first.c_str();
-  ////  m.Value = defines[i].second.c_str();
-  ////}
-
-  //  IDxcCompiler* compiler{ nullptr };
-  //  BLAST_ASSERT(S_OK == DxcCreateInstance(CLSID_DxcCompiler, __uuidof(IDxcCompiler), (void**)(&compiler)));
-
-  //  IDxcOperationResult* result{ nullptr };
-  //  BLAST_ASSERT(S_OK == compiler->Compile(input, nullptr, entry, target, args.data(), uint32_t(args.size()), nullptr, 0, nullptr, &result));
-  //  input->Release();
-
-  //  if (compiler) { compiler->Release(); compiler = nullptr; }
-
-  //  HRESULT hr{ S_OK };
-  //  BLAST_ASSERT(S_OK == result->GetStatus(&hr));
-  //  if (hr != S_OK)
-  //  {
-  //    IDxcBlobEncoding* error{ nullptr };
-  //    BLAST_ASSERT(S_OK == result->GetErrorBuffer(&error));
-  //    BLAST_LOG("DXCompiler output: \n%s", reinterpret_cast<char*>(error->GetBufferPointer()));
-  //    if(error) error->Release();
-  //    return;
-  //  }
-
-  //  IDxcBlob* output{ nullptr };
-  //  result->GetResult(&output);
-
-  //  bytecode.assign(reinterpret_cast<char*>(output->GetBufferPointer()), reinterpret_cast<char*>(output->GetBufferPointer()) + output->GetBufferSize());
-  //  output->Release();
-  //}
-
   class D11Includer : public ID3DInclude
   {
   private:
-    std::string path;
+    std::string initial_path;
+    std::map<LPCVOID, std::string> data_to_path;
 
   public:
     HRESULT Open(D3D_INCLUDE_TYPE IncludeType, LPCSTR pFileName, LPCVOID pParentData, LPCVOID* ppData, UINT* pBytes) override
     {
-      const auto file_path = path + std::string(pFileName);
+      const std::filesystem::path path = data_to_path.count(pParentData) ? data_to_path[pParentData] : initial_path;
+      const std::filesystem::path file = (path / pFileName).lexically_normal();
 
       std::fstream fs;
-      fs.open(file_path, std::fstream::in);
+      fs.open(file, std::fstream::in);
       std::stringstream ss;
       ss << fs.rdbuf();
+      fs.close();
 
       const auto size = ss.str().size();
       const auto data = new char[size];
       BLAST_ASSERT(data);
 
+      data_to_path[data] = file.parent_path().string();
       memcpy(data, ss.str().data(), size);
 
       *ppData = data;
-      *pBytes = size;
+      *pBytes = size;     
 
       return S_OK;
     }
 
     HRESULT Close(LPCVOID pData) override
     {
-      if (pData)
-      {
-        delete[] pData;
-      }
+      if (pData) delete[] pData;
 
       return S_OK;
     }
 
   public:
-    D11Includer(const std::string& path) : ID3DInclude(), path(path) {}
+    D11Includer(const std::string& path) : ID3DInclude(), initial_path(path) {}
     virtual ~D11Includer() {}
   };
 
 
-  static void D11Compile(const std::string& source, const char* entry, const char* target, 
-    std::map<std::string, std::string> defines, const std::string& path, std::vector<char>& bytecode)
+  static void D11Compile(const char* name, std::string& source, const std::string& path, const std::string& file,
+    const char* entry, const char* target, std::map<std::string, std::string> defines, std::vector<char>& bytecode)
   {
-
-
     D11Includer includer(path);
+
+    wchar_t* w_filepath = new wchar_t[256];
+    mbstowcs(w_filepath, (path + file).c_str(), 256);
 
     const uint32_t flags{ D3DCOMPILE_PREFER_FLOW_CONTROL | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_IEEE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3 };
 
@@ -164,7 +105,16 @@ namespace RayGene3D
 
     ID3DBlob* errors = nullptr;
     ID3DBlob* shader = nullptr;
-    HRESULT hr = D3DCompile(source.c_str(), source.size(), nullptr, macros, &includer, entry, target, flags, 0, &shader, &errors);
+
+    if (source.empty())
+    {
+      HRESULT hr = D3DCompileFromFile(w_filepath, macros, &includer, entry, target, flags, 0, &shader, &errors);
+    }
+    else
+    {
+      HRESULT hr = D3DCompile(source.c_str(), source.size(), name, macros, &includer, entry, target, flags, 0, &shader, &errors);
+    }
+
     if (errors)
     {
       BLAST_LOG("shader compilation output: \n%s", reinterpret_cast<char*>(errors->GetBufferPointer()));
@@ -192,12 +142,12 @@ namespace RayGene3D
     geom_bytecode.clear();
     frag_bytecode.clear();
 
-    if (compilation & COMPILATION_COMP) { D11Compile(source, "cs_main", "cs_5_0", defines, path, comp_bytecode); BLAST_ASSERT(!comp_bytecode.empty()); }
-    if (compilation & COMPILATION_VERT) { D11Compile(source, "vs_main", "vs_5_0", defines, path, vert_bytecode); BLAST_ASSERT(!vert_bytecode.empty()); }
-    if (compilation & COMPILATION_TESC) { D11Compile(source, "hs_main", "hs_5_0", defines, path, tesc_bytecode); BLAST_ASSERT(!tesc_bytecode.empty()); }
-    if (compilation & COMPILATION_TESE) { D11Compile(source, "ds_main", "ds_5_0", defines, path, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
-    if (compilation & COMPILATION_GEOM) { D11Compile(source, "gs_main", "gs_5_0", defines, path, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
-    if (compilation & COMPILATION_FRAG) { D11Compile(source, "ps_main", "ps_5_0", defines, path, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
+    if (compilation & COMPILATION_COMP) { D11Compile(name.c_str(), source, path, file, "cs_main", "cs_5_0", defines, comp_bytecode); BLAST_ASSERT(!comp_bytecode.empty()); }
+    if (compilation & COMPILATION_VERT) { D11Compile(name.c_str(), source, path, file, "vs_main", "vs_5_0", defines, vert_bytecode); BLAST_ASSERT(!vert_bytecode.empty()); }
+    if (compilation & COMPILATION_TESC) { D11Compile(name.c_str(), source, path, file, "hs_main", "hs_5_0", defines, tesc_bytecode); BLAST_ASSERT(!tesc_bytecode.empty()); }
+    if (compilation & COMPILATION_TESE) { D11Compile(name.c_str(), source, path, file, "ds_main", "ds_5_0", defines, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
+    if (compilation & COMPILATION_GEOM) { D11Compile(name.c_str(), source, path, file, "gs_main", "gs_5_0", defines, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
+    if (compilation & COMPILATION_FRAG) { D11Compile(name.c_str(), source, path, file, "ps_main", "ps_5_0", defines, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
 
     const auto get_format = [this](Format format)
     {

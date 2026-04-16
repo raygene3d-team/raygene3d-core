@@ -28,81 +28,42 @@ THE SOFTWARE.
 
 
 #pragma once
-#include "config.h"
+#include "../pass.h"
+#include "d12_config.h"
+
+#include <dxgi.h>
+#include <d3d12.h>
 
 namespace RayGene3D
 {
-  class Device;
+  class D12Resource;
 
-  class Pass : public Usable
+  class D12Pass : public Pass
   {
   public:
-    using RTValue = std::optional<std::array<float, 4>>;
-    using DSValue = std::pair<std::optional<float>, std::optional<uint8_t>>;
-
-    enum Type
-    {
-      TYPE_UNKNOWN = 0,
-      TYPE_GRAPHIC = 1,
-      TYPE_COMPUTE = 2,
-      TYPE_TRACING = 3,
-    };
-
-  protected:
-    Type type{ TYPE_UNKNOWN };
+    void Initialize() override;
+    void Use() override;
+    void Discard() override;
 
   public:
-    struct RTAttachment
-    {
-      std::shared_ptr<View> view;
-      RTValue value;
-    };
-
-    struct DSAttachment
-    {
-      std::shared_ptr<View> view;
-      DSValue value;
-    };
-
-  protected:
-    std::vector<RTAttachment> rt_attachments;
-    std::vector<DSAttachment> ds_attachments;
-
-  protected:
-    uint32_t size_x{ 0u };
-    uint32_t size_y{ 0u };
-    uint32_t layers{ 1u };
-
-  protected:
-    bool enabled{ false };
-
-  protected:
-    Device& device;
-
-  protected:
-    std::list<std::shared_ptr<Config>> configs;
+    DXGI_FORMAT GetRTFormat(uint32_t index) const;
+    uint32_t GetRTCount() const { return uint32_t(rt_attachments.size()); }
+    DXGI_FORMAT GetDSFormat(uint32_t index) const;
+    uint32_t GetDSCount() const { return uint32_t(ds_attachments.size()); }
 
   public:
-    void SetType(Type type) { this->type = type; }
-    Type GetType() const { return type; }
-
-    void SetEnabled(bool enabled) { this->enabled = enabled; }
-    bool GetEnabled() const { return enabled; }
-
-  public:
-    Device& GetDevice() { return device; }
-    const Device& GetDevice() const { return device; }
-
-  public:
-    virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,
+    const std::shared_ptr<Config>& CreateConfig(const std::string& name,
       const std::string& source,
       Config::Compilation compilation,
       const std::pair<const std::pair<std::string, std::string>*, size_t>& defines,
       const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
-      const Config::OMState& om_state) = 0;
-    virtual const std::shared_ptr<Config>& CreateConfig(const std::string& name,
+      const Config::OMState& om_state) override
+    {
+      return configs.emplace_back(new D12Config(name, *this, source, compilation, defines, ia_state, rc_state, ds_state, om_state));
+    }
+    const std::shared_ptr<Config>& CreateConfig(const std::string& name,
       const std::string& path,
       const std::string& file,
       Config::Compilation compilation,
@@ -110,32 +71,20 @@ namespace RayGene3D
       const Config::IAState& ia_state,
       const Config::RCState& rc_state,
       const Config::DSState& ds_state,
-      const Config::OMState& om_state) = 0;
-    //void VisitConfig(std::function<void(const std::shared_ptr<Config>&)> visitor) { for (const auto& effect : effects) visitor(effect); }
-    void DestroyConfig(const std::shared_ptr<Config>& config) 
-    { 
-      if(config) configs.remove(config);
+      const Config::OMState& om_state) override
+    {
+      return configs.emplace_back(new D12Config(name, *this, path, file, compilation, defines, ia_state, rc_state, ds_state, om_state));
     }
 
   public:
-    void Initialize() override = 0;
-    void Use() override = 0;
-    void Discard() override = 0;
-
-  public:
-    Pass(const std::string& name,
+    D12Pass(const std::string& name,
       Device& device,
       Pass::Type type,
       uint32_t size_x,
       uint32_t size_y,
       size_t layers,
       const std::pair<const Pass::RTAttachment*, size_t>& rt_attachments,
-      const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments
-    );
-    virtual ~Pass();
+      const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments);
+    virtual ~D12Pass();
   };
-
-  typedef std::shared_ptr<Pass> SPtrPass;
-  typedef std::weak_ptr<Pass> WPtrPass;
-  typedef std::unique_ptr<Pass> UPtrPass;
 }

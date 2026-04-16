@@ -32,6 +32,21 @@ set(CORE_D11_SOURCE
 	${CORE_D11_DIR}/d11_view.h
 	${CORE_D11_DIR}/d11_view.cpp
 )
+set(CORE_D12_DIR ${CORE_DIR}/d12)
+set(CORE_D12_SOURCE
+	${CORE_D12_DIR}/d12_batch.h
+	${CORE_D12_DIR}/d12_batch.cpp
+	${CORE_D12_DIR}/d12_config.h
+	${CORE_D12_DIR}/d12_config.cpp
+	${CORE_D12_DIR}/d12_device.h
+	${CORE_D12_DIR}/d12_device.cpp
+	${CORE_D12_DIR}/d12_pass.h
+	${CORE_D12_DIR}/d12_pass.cpp
+	${CORE_D12_DIR}/d12_resource.h
+	${CORE_D12_DIR}/d12_resource.cpp
+	${CORE_D12_DIR}/d12_view.h
+	${CORE_D12_DIR}/d12_view.cpp
+)
 set(CORE_VLK_DIR ${CORE_DIR}/vlk)
 set(CORE_VLK_SOURCE
 	${CORE_VLK_DIR}/vlk_batch.h
@@ -52,6 +67,7 @@ IF(WIN32)
 set(SOURCE core.h core.cpp
 	${CORE_SOURCE}
 	${CORE_D11_SOURCE}
+	${CORE_D12_SOURCE}
 	${CORE_VLK_SOURCE}
 )
 ELSE(WIN32)

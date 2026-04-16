@@ -144,6 +144,7 @@ namespace RayGene3D
     
   public:
     Config& GetConfig() { return config; }
+    const Config& GetConfig() const { return config; }
 
   //public:
   //  virtual const std::shared_ptr<Mesh>& CreateMesh(const std::string& name,

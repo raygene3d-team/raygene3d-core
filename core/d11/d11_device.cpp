@@ -55,8 +55,7 @@ namespace RayGene3D
     adapter->GetDesc(&adapter_desc);
 
     char adapter_name[256];
-    size_t adapter_size = 0;
-    wcstombs_s(&adapter_size, adapter_name, adapter_desc.Description, 256);
+    wcstombs(adapter_name, adapter_desc.Description, 256);
     name = std::string(adapter_name) + " (D3D11 API)\n";
 
     const uint32_t device_flags = debug ? D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_SINGLETHREADED : 0;
@@ -92,16 +91,16 @@ namespace RayGene3D
       swapchain_desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
       swapchain_desc.Flags = 0;
 
-      IDXGIDevice* dxgi_device = nullptr;
-      BLAST_ASSERT(S_OK == device->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgi_device));
+      //IDXGIDevice* dxgi_device = nullptr;
+      //BLAST_ASSERT(S_OK == device->QueryInterface(__uuidof(IDXGIDevice), (void**)&dxgi_device));
 
-      IDXGIAdapter* dxgi_adapter = nullptr;
-      BLAST_ASSERT(S_OK == dxgi_device->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgi_adapter));
+      //IDXGIAdapter* dxgi_adapter = nullptr;
+      //BLAST_ASSERT(S_OK == dxgi_device->GetParent(__uuidof(IDXGIAdapter), (void**)&dxgi_adapter));
 
-      IDXGIFactory* dxgi_factory = nullptr;
-      BLAST_ASSERT(S_OK == dxgi_adapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgi_factory));
+      //IDXGIFactory* dxgi_factory = nullptr;
+      //BLAST_ASSERT(S_OK == dxgi_adapter->GetParent(__uuidof(IDXGIFactory), (void**)&dxgi_factory));
 
-      BLAST_ASSERT(S_OK == dxgi_factory->CreateSwapChain(device, &swapchain_desc, &swapchain));
+      BLAST_ASSERT(S_OK == factory->CreateSwapChain(device, &swapchain_desc, &swapchain));
 
       BLAST_ASSERT(S_OK == swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&backbuffer));
     }
