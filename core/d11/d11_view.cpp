@@ -130,7 +130,7 @@ namespace RayGene3D
     {
     case USAGE_SHADER_RESOURCE:
     {
-      D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc;
+      D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc{};
       switch (resource->GetType())
       {
       case Resource::TYPE_BUFFER:
@@ -355,8 +355,69 @@ namespace RayGene3D
 
     case USAGE_UNORDERED_ACCESS:
     {
-      auto uav = reinterpret_cast<ID3D11UnorderedAccessView*>(view);
-      BLAST_ASSERT(S_OK == device->GetDevice()->CreateUnorderedAccessView(resource->GetResource(), nullptr, reinterpret_cast<ID3D11UnorderedAccessView**>(&view)));
+      D3D11_UNORDERED_ACCESS_VIEW_DESC uav_desc{};
+      switch (resource->GetType())
+      {
+      case Resource::TYPE_BUFFER:
+      {
+        D3D11_BUFFER_DESC desc;
+        resource->GetBuffer()->GetDesc(&desc);
+
+        uav_desc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+        uav_desc.Format = DXGI_FORMAT_UNKNOWN;
+        uav_desc.Buffer.FirstElement = levels_or_length.offset;
+        uav_desc.Buffer.NumElements = levels_or_length.length == -1 ? resource->GetLevelsOrLength() : levels_or_length.length;
+        //uav_desc.Buffer.Flags = 
+        break;
+      }
+      case Resource::TYPE_TEX1D:
+      {
+        if (resource->GetHint() & Resource::HINT_LAYERED_IMAGE)
+        {
+          uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1DARRAY;
+          uav_desc.Format = get_format(resource->GetFormat());
+          uav_desc.Texture1DArray.MipSlice = levels_or_length.offset;
+          uav_desc.Texture1DArray.FirstArraySlice = layers_or_stride.offset;
+          uav_desc.Texture1DArray.ArraySize = layers_or_stride.length == -1 ? resource->GetLevelsOrLength() : layers_or_stride.length;
+        }
+        else
+        {
+          uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE1D;
+          uav_desc.Format = get_format(resource->GetFormat());
+          uav_desc.Texture1D.MipSlice = levels_or_length.offset;
+        }
+        break;
+      }
+      case Resource::TYPE_TEX2D:
+      {
+        if (resource->GetHint() & Resource::HINT_LAYERED_IMAGE)
+        {
+          uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2DARRAY;
+          uav_desc.Format = get_format(resource->GetFormat());
+          uav_desc.Texture2DArray.MipSlice = levels_or_length.offset;
+          uav_desc.Texture2DArray.FirstArraySlice = layers_or_stride.offset;
+          uav_desc.Texture2DArray.ArraySize = layers_or_stride.length == -1 ? resource->GetLayersOrStride() : layers_or_stride.length;
+        }
+        else
+        {
+          uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+          uav_desc.Format = get_format(resource->GetFormat());
+          uav_desc.Texture2D.MipSlice = levels_or_length.offset;
+        }
+        break;
+      }
+      case Resource::TYPE_TEX3D:
+      {
+        uav_desc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+        uav_desc.Format = get_format(resource->GetFormat());
+        uav_desc.Texture3D.MipSlice = levels_or_length.offset;
+        uav_desc.Texture3D.FirstWSlice = layers_or_stride.offset;
+        uav_desc.Texture3D.WSize = layers_or_stride.length == -1 ? resource->GetLayersOrStride() : layers_or_stride.length;
+        break;
+      }
+      }
+
+      BLAST_ASSERT(S_OK == device->GetDevice()->CreateUnorderedAccessView(resource->GetResource(), &uav_desc, reinterpret_cast<ID3D11UnorderedAccessView**>(&view)));
       GetUAView()->GetDesc(&info.uav_desc);
       break;
     }
