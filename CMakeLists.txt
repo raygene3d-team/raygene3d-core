@@ -2,7 +2,7 @@ find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 
 set(NAME raygene3d)
 
-set(CORE_DIR ${CMAKE_SOURCE_DIR}/${NAME}-core/core)
+set(CORE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core)
 set(CORE_SOURCE
 	${CORE_DIR}/batch.h
 	${CORE_DIR}/batch.cpp
@@ -85,13 +85,7 @@ target_include_directories(${NAME}-core PUBLIC
 	${CMAKE_SOURCE_DIR}/3rdparty
 )
 
-target_link_libraries(${NAME}-core INTERFACE 
-    Vulkan::Vulkan Vulkan::shaderc_combined)
-target_link_libraries(${NAME}-core PRIVATE 
-    debug ${Vulkan_shaderc_combined_LIBRARY}
-    optimized ${Vulkan_shaderc_combined_LIBRARY}
-)
-
-target_link_libraries(${NAME}-core PRIVATE
+target_link_libraries(${NAME}-core PUBLIC
 	Vulkan::Vulkan
+	Vulkan::shaderc_combined
 )
