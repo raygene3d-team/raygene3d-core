@@ -28,7 +28,11 @@ THE SOFTWARE.
 
 
 #pragma once
+#ifndef __OBJC__
+#error "mtl_device.h must be included only from Objective-C++ (.mm) files"
+#endif
 #include "../device.h"
+#import <Metal/Metal.h>
 #include "mtl_resource.h"
 #include "mtl_pass.h"
 
@@ -37,15 +41,15 @@ namespace RayGene3D
   class MTLDevice : public Device
   {
   protected:
-    void* device{ nullptr };         // id<MTLDevice>
-    void* queue{ nullptr };          // id<MTLCommandQueue>
-    void* command_buffer{ nullptr }; // id<MTLCommandBuffer> for the current frame
-    void* layer{ nullptr };          // CAMetalLayer* taken from window handle
+    id<MTLDevice> device{ nil };                // owned
+    id<MTLCommandQueue> queue{ nil };           // owned
+    id<MTLCommandBuffer> command_buffer{ nil }; // current frame, retained until the end of Use()
+    void* layer{ nullptr };                     // CAMetalLayer* taken from window handle (borrowed)
 
   public:
-    void* GetDevice() const { return device; }
-    void* GetQueue() const { return queue; }
-    void* GetCommandBuffer() const { return command_buffer; }
+    id<MTLDevice> GetDevice() const { return device; }
+    id<MTLCommandQueue> GetQueue() const { return queue; }
+    id<MTLCommandBuffer> GetCommandBuffer() const { return command_buffer; }
     void* GetLayer() const { return layer; }
 
   public:
@@ -98,5 +102,7 @@ namespace RayGene3D
   public:
     MTLDevice(const std::string& name);
     virtual ~MTLDevice();
+    MTLDevice(const MTLDevice&) = delete;
+    MTLDevice& operator=(const MTLDevice&) = delete;
   };
 }

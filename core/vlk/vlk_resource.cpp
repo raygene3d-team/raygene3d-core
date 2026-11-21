@@ -45,6 +45,7 @@ namespace RayGene3D
 
     switch (type)
     {
+      case TYPE_UNKNOWN: break;
     case TYPE_BUFFER:
     {
       const auto get_bind = [this]()
@@ -437,6 +438,7 @@ namespace RayGene3D
     {
       switch (type)
       {
+        case TYPE_UNKNOWN: break;
       case TYPE_BUFFER:
       {
         if (buffer)
@@ -474,6 +476,7 @@ namespace RayGene3D
 
      switch (type)
      {
+       case TYPE_UNKNOWN: break;
      case TYPE_BUFFER:
      {
        if (interop.first != nullptr && interop.second > 0)

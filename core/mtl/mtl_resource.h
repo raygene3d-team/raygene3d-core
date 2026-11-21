@@ -28,7 +28,11 @@ THE SOFTWARE.
 
 
 #pragma once
+#ifndef __OBJC__
+#error "mtl_resource.h must be included only from Objective-C++ (.mm) files"
+#endif
 #include "../resource.h"
+#import <Metal/Metal.h>
 #include "mtl_view.h"
 
 namespace RayGene3D
@@ -36,10 +40,15 @@ namespace RayGene3D
   class MTLResource : public Resource
   {
   protected:
-    void* native{ nullptr }; // id<MTLBuffer> or id<MTLTexture> (bridged, retained)
+    id<MTLBuffer> buffer{ nil };    // owned, set for TYPE_BUFFER
+    id<MTLTexture> texture{ nil };  // owned, set for TYPE_TEX1D/2D/3D
 
   public:
-    void* GetNative() const { return native; }
+    id GetNative() const
+    {
+      if (buffer) return buffer;
+      return texture;
+    }
 
   public:
     const std::shared_ptr<View>& CreateView(const std::string& name,
@@ -87,5 +96,7 @@ namespace RayGene3D
       Resource::Hint hint = Resource::HINT_UNKNOWN,
       std::pair<const uint8_t*, size_t> interop = {});
     virtual ~MTLResource();
+    MTLResource(const MTLResource&) = delete;
+    MTLResource& operator=(const MTLResource&) = delete;
   };
 }

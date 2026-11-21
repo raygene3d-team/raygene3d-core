@@ -28,17 +28,21 @@ THE SOFTWARE.
 
 
 #pragma once
+#ifndef __OBJC__
+#error "mtl_batch.h must be included only from Objective-C++ (.mm) files"
+#endif
 #include "../batch.h"
+#import <Metal/Metal.h>
 
 namespace RayGene3D
 {
   class MTLBatch : public Batch
   {
   protected:
-    std::vector<void*> sampler_states; // id<MTLSamplerState>
+    std::vector<id<MTLSamplerState>> sampler_states; // owned
 
   public:
-    const std::vector<void*>& GetSamplerStates() const { return sampler_states; }
+    const std::vector<id<MTLSamplerState>>& GetSamplerStates() const { return sampler_states; }
 
   public:
     void Initialize() override;
@@ -57,5 +61,7 @@ namespace RayGene3D
       const std::pair<const std::shared_ptr<View>*, size_t>& rb_views,
       const std::pair<const std::shared_ptr<View>*, size_t>& wb_views);
     virtual ~MTLBatch();
+    MTLBatch(const MTLBatch&) = delete;
+    MTLBatch& operator=(const MTLBatch&) = delete;
   };
 }

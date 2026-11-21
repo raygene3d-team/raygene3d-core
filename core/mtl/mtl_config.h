@@ -28,8 +28,12 @@ THE SOFTWARE.
 
 
 #pragma once
+#ifndef __OBJC__
+#error "mtl_config.h must be included only from Objective-C++ (.mm) files"
+#endif
 #include "../config.h"
 #include "mtl_batch.h"
+#import <Metal/Metal.h>
 #include <array>
 
 namespace RayGene3D
@@ -37,24 +41,25 @@ namespace RayGene3D
   class MTLConfig : public Config
   {
   protected:
-    void* library{ nullptr };           // id<MTLLibrary> compiled from MSL source
-    void* vertex_function{ nullptr };   // id<MTLFunction>
-    void* fragment_function{ nullptr }; // id<MTLFunction>
-    void* mesh_function{ nullptr };     // id<MTLFunction> (mesh stage, from DXIL)
-    void* kernel_function{ nullptr };   // id<MTLFunction> (compute)
-    void* pipeline{ nullptr };          // MTLRenderPipelineState* or MTLComputePipelineState*
-    void* depth_stencil_state{ nullptr }; // id<MTLDepthStencilState> from DSState (graphic passes)
+    id<MTLLibrary> library{ nil };                        // compiled from MSL source, owned
+    id<MTLLibrary> fragment_library{ nil };               // holds fragment_function, owned
+    id<MTLFunction> vertex_function{ nil };               // owned
+    id<MTLFunction> fragment_function{ nil };             // owned
+    id<MTLFunction> mesh_function{ nil };                 // mesh stage, from DXIL, owned
+    id<MTLFunction> kernel_function{ nil };               // compute, owned
+    id pipeline{ nil };                                   // id<MTLRenderPipelineState> or id<MTLComputePipelineState>, owned
+    id<MTLDepthStencilState> depth_stencil_state{ nil };  // from DSState (graphic passes), owned
     std::array<uint32_t, 3> threads_per_group{ 1, 1, 1 }; // compute local_size from the kernel
 
   public:
     const std::array<uint32_t, 3>& GetThreadsPerGroup() const { return threads_per_group; }
-    void* GetDepthStencilState() const { return depth_stencil_state; }
-    void* GetLibrary() const { return library; }
-    void* GetVSFunction() const { return vertex_function; }
-    void* GetPSFunction() const { return fragment_function; }
-    void* GetMSFunction() const { return mesh_function; }
-    void* GetCSFunction() const { return kernel_function; }
-    void* GetPipeline() const { return pipeline; }
+    id<MTLDepthStencilState> GetDepthStencilState() const { return depth_stencil_state; }
+    id<MTLLibrary> GetLibrary() const { return library; }
+    id<MTLFunction> GetVSFunction() const { return vertex_function; }
+    id<MTLFunction> GetPSFunction() const { return fragment_function; }
+    id<MTLFunction> GetMSFunction() const { return mesh_function; }
+    id<MTLFunction> GetCSFunction() const { return kernel_function; }
+    id GetPipeline() const { return pipeline; }
 
   public:
     const std::shared_ptr<Batch>& CreateBatch(const std::string& name,
@@ -72,7 +77,7 @@ namespace RayGene3D
     }
 
   protected:
-    void BuildDXILLibrary(void* mtl_device, const std::string& path, const std::string& file); // id<MTLDevice>
+    void BuildDXILLibrary(id<MTLDevice> mtl_device, const std::string& path, const std::string& file);
     std::vector<std::pair<std::string, std::string>> defines_list() const;
 
   public:
@@ -101,5 +106,7 @@ namespace RayGene3D
       const Config::DSState& ds_state,
       const Config::OMState& om_state);
     virtual ~MTLConfig();
+    MTLConfig(const MTLConfig&) = delete;
+    MTLConfig& operator=(const MTLConfig&) = delete;
   };
 }

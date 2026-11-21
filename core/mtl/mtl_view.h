@@ -28,18 +28,22 @@ THE SOFTWARE.
 
 
 #pragma once
+#ifndef __OBJC__
+#error "mtl_view.h must be included only from Objective-C++ (.mm) files"
+#endif
 #include "../view.h"
+#import <Metal/Metal.h>
 
 namespace RayGene3D
 {
   class MTLView : public View
   {
   protected:
-    void* view{ nullptr }; //id<MTLTexture> or id<MTLBuffer> (bridged)
-    bool owns_view{ false }; //true when view is a retained MTLTexture view created by this object
+    id view{ nil };                    // id<MTLTexture> or id<MTLBuffer>, borrowed from the base resource or owned_view
+    id<MTLTexture> owned_view{ nil };  // texture view created by this object (nil when view is the base object)
 
   public:
-    void* GetView() const { return view; }
+    id GetView() const { return view; }
 
   public:
     void Initialize() override;
@@ -54,5 +58,7 @@ namespace RayGene3D
       const Range& layers_or_stride = Range{ 0u, size_t(-1) },
       View::Bind bind = View::BIND_UNKNOWN);
     virtual ~MTLView();
+    MTLView(const MTLView&) = delete;
+    MTLView& operator=(const MTLView&) = delete;
   };
 }

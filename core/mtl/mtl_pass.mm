@@ -50,7 +50,7 @@ namespace RayGene3D
         const auto& rt_value = rt_attachments[i].value;
         const auto& rt_view = rt_attachments[i].view;
 
-        id<MTLTexture> texture = (__bridge id<MTLTexture>)reinterpret_cast<MTLView*>(rt_view.get())->GetView();
+        id<MTLTexture> texture = reinterpret_cast<MTLView*>(rt_view.get())->GetView();
         MTLRenderPassColorAttachmentDescriptor* color = descriptor.colorAttachments[i];
         color.texture = texture;
         // Clear only when the attachment carries a clear value, otherwise keep the existing contents.
@@ -68,7 +68,7 @@ namespace RayGene3D
         const auto& ds_value = ds_attachments[i].value;
         const auto& ds_view = ds_attachments[i].view;
 
-        id<MTLTexture> texture = (__bridge id<MTLTexture>)reinterpret_cast<MTLView*>(ds_view.get())->GetView();
+        id<MTLTexture> texture = reinterpret_cast<MTLView*>(ds_view.get())->GetView();
         MTLRenderPassDepthAttachmentDescriptor* depth = descriptor.depthAttachment;
         depth.texture = texture;
         depth.loadAction = ds_value.first ? MTLLoadActionClear : MTLLoadActionLoad;
@@ -76,7 +76,8 @@ namespace RayGene3D
         depth.clearDepth = ds_value.first ? ds_value.first.value() : 0.0f;
       }
 
-      render_pass_descriptor = (__bridge_retained void*)descriptor;
+      // renderPassDescriptor is autoreleased, so retain it for the lifetime of this pass.
+      render_pass_descriptor = [descriptor retain];
     }
   }
 
@@ -85,13 +86,13 @@ namespace RayGene3D
     if (!enabled) return;
 
     auto device = reinterpret_cast<MTLDevice*>(&this->GetDevice());
-    id<MTLCommandBuffer> command_buffer = (__bridge id<MTLCommandBuffer>)device->GetCommandBuffer();
+    id<MTLCommandBuffer> command_buffer = device->GetCommandBuffer();
 
     if (type == TYPE_GRAPHIC)
     {
-      MTLRenderPassDescriptor* descriptor = (__bridge MTLRenderPassDescriptor*)render_pass_descriptor;
+      MTLRenderPassDescriptor* descriptor = render_pass_descriptor;
       id<MTLRenderCommandEncoder> render = [command_buffer renderCommandEncoderWithDescriptor:descriptor];
-      encoder = (__bridge_retained void*)render;
+      encoder = render;
 
       for (const auto& config : configs)
       {
@@ -99,14 +100,13 @@ namespace RayGene3D
       }
 
       [render endEncoding];
-      (void)(__bridge_transfer id)encoder;
-      encoder = nullptr;
+      encoder = nil;
     }
 
     if (type == TYPE_COMPUTE)
     {
       id<MTLComputeCommandEncoder> compute = [command_buffer computeCommandEncoder];
-      encoder = (__bridge_retained void*)compute;
+      encoder = compute;
 
       for (const auto& config : configs)
       {
@@ -114,8 +114,7 @@ namespace RayGene3D
       }
 
       [compute endEncoding];
-      (void)(__bridge_transfer id)encoder;
-      encoder = nullptr;
+      encoder = nil;
     }
 
     // TYPE_TRACING is not supported on Metal (no ray tracing pipeline); configs are skipped.
@@ -123,12 +122,8 @@ namespace RayGene3D
 
   void MTLPass::Discard()
   {
-    if (render_pass_descriptor)
-    {
-      id object = (__bridge_transfer id)render_pass_descriptor;
-      (void)object;
-      render_pass_descriptor = nullptr;
-    }
+    [render_pass_descriptor release];
+    render_pass_descriptor = nil;
   }
 
   MTLPass::MTLPass(const std::string& name,

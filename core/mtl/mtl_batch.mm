@@ -46,7 +46,7 @@ namespace RayGene3D
     auto config = reinterpret_cast<MTLConfig*>(&this->GetConfig());
     auto pass = reinterpret_cast<MTLPass*>(&config->GetPass());
     auto device = reinterpret_cast<MTLDevice*>(&pass->GetDevice());
-    id<MTLDevice> mtl_device = (__bridge id<MTLDevice>)device->GetDevice();
+    id<MTLDevice> mtl_device = device->GetDevice();
 
     const auto get_min_mag_filter = [](Sampler::Filtering filtering)
     {
@@ -113,9 +113,10 @@ namespace RayGene3D
       desc.lodMinClamp = sampler.min_lod;
       desc.lodMaxClamp = sampler.max_lod;
 
-      id<MTLSamplerState> state = [mtl_device newSamplerStateWithDescriptor:desc];
-      BLAST_ASSERT(state != nil);
-      sampler_states.at(i) = (__bridge_retained void*)state;
+      // newSamplerStateWithDescriptor returns +1; the element takes ownership.
+      sampler_states.at(i) = [mtl_device newSamplerStateWithDescriptor:desc];
+      [desc release];
+      BLAST_ASSERT(sampler_states.at(i) != nil);
     }
 
     // Total declared bindings (samplers + view slots), the Metal counterpart of Vulkan's descriptor write count.
@@ -130,10 +131,10 @@ namespace RayGene3D
     auto pass = reinterpret_cast<MTLPass*>(&config->GetPass());
 
     // The encoder was opened by MTLPass::Use() for this pass type.
-    const auto encoder = pass->GetEncoder();
+    const id encoder = pass->GetEncoder();
     if (!encoder) return;
 
-    const auto pipeline = config->GetPipeline();
+    const id pipeline = config->GetPipeline();
     if (!pipeline) return;
 
     // Binds a view as a buffer (at its offset) or a texture view (type/mip/slice from the view), at the shader index.
@@ -147,7 +148,7 @@ namespace RayGene3D
 
       if (resource->GetType() == Resource::TYPE_BUFFER)
       {
-        id native = (__bridge id)resource->GetNative();
+        id native = resource->GetNative();
         const auto offset = view->GetLevelsOrLength().offset + extra_offset;
         if (render) { [render setVertexBuffer:native offset:offset atIndex:index]; [render setFragmentBuffer:native offset:offset atIndex:index]; }
         if (compute) [compute setBuffer:native offset:offset atIndex:index];
@@ -155,7 +156,7 @@ namespace RayGene3D
       else
       {
         // Textures are bound through the view so a cube/array/mip view takes effect (not the base texture).
-        id native = (__bridge id)reinterpret_cast<MTLView*>(view.get())->GetView();
+        id native = reinterpret_cast<MTLView*>(view.get())->GetView();
         if (!native) return;
         if (render) [render setFragmentTexture:native atIndex:index];
         if (compute) [compute setTexture:native atIndex:index];
@@ -177,8 +178,8 @@ namespace RayGene3D
 
     if (pass->GetType() == Pass::TYPE_GRAPHIC)
     {
-      id<MTLRenderCommandEncoder> render = (__bridge id<MTLRenderCommandEncoder>)encoder;
-      [render setRenderPipelineState:(__bridge id<MTLRenderPipelineState>)pipeline];
+      id<MTLRenderCommandEncoder> render = encoder;
+      [render setRenderPipelineState:pipeline];
 
       // Rasterizer and depth-stencil state from the config, applied the same way as the Vulkan/D3D12 backends.
       const auto& rc_state = config->GetRCState();
@@ -191,11 +192,11 @@ namespace RayGene3D
       }
       // Front face is clockwise, matching VK_FRONT_FACE_CLOCKWISE and D3D12 FrontCounterClockwise = false.
       [render setFrontFacingWinding:MTLWindingClockwise];
-      [render setDepthStencilState:(__bridge id<MTLDepthStencilState>)config->GetDepthStencilState()];
+      [render setDepthStencilState:config->GetDepthStencilState()];
 
       for (uint32_t i = 0; i < uint32_t(sampler_states.size()); ++i)
       {
-        [render setFragmentSamplerState:(__bridge id<MTLSamplerState>)sampler_states[i] atIndex:i];
+        [render setFragmentSamplerState:sampler_states[i] atIndex:i];
       }
 
       for (const auto& entity : entities)
@@ -219,7 +220,7 @@ namespace RayGene3D
           const auto& va_view = entity.va_views[i];
           if (!va_view) continue;
           auto resource = reinterpret_cast<MTLResource*>(&va_view->GetResource());
-          [render setVertexBuffer:(__bridge id<MTLBuffer>)resource->GetNative() offset:va_view->GetLevelsOrLength().offset atIndex:i];
+          [render setVertexBuffer:resource->GetNative() offset:va_view->GetLevelsOrLength().offset atIndex:i];
         }
 
         const auto ins_count = entity.ins_or_grid_x.length;
@@ -233,7 +234,7 @@ namespace RayGene3D
         {
           const auto& ia_view = entity.ia_views[0];
           auto resource = reinterpret_cast<MTLResource*>(&ia_view->GetResource());
-          id<MTLBuffer> index_buffer = (__bridge id<MTLBuffer>)resource->GetNative();
+          id<MTLBuffer> index_buffer = resource->GetNative();
           const auto is_32 = config->GetIAState().indexer == Config::INDEXER_32_BIT;
           const auto index_type = is_32 ? MTLIndexTypeUInt32 : MTLIndexTypeUInt16;
           const auto index_stride = is_32 ? 4u : 2u;
@@ -246,7 +247,7 @@ namespace RayGene3D
                                 indexType:index_type
                               indexBuffer:index_buffer
                         indexBufferOffset:index_offset
-                           indirectBuffer:(__bridge id<MTLBuffer>)arg_resource->GetNative()
+                           indirectBuffer:arg_resource->GetNative()
                      indirectBufferOffset:entity.arg_view->GetLevelsOrLength().offset];
           }
           else
@@ -266,12 +267,12 @@ namespace RayGene3D
 
     if (pass->GetType() == Pass::TYPE_COMPUTE)
     {
-      id<MTLComputeCommandEncoder> compute = (__bridge id<MTLComputeCommandEncoder>)encoder;
-      [compute setComputePipelineState:(__bridge id<MTLComputePipelineState>)pipeline];
+      id<MTLComputeCommandEncoder> compute = encoder;
+      [compute setComputePipelineState:pipeline];
 
       for (uint32_t i = 0; i < uint32_t(sampler_states.size()); ++i)
       {
-        [compute setSamplerState:(__bridge id<MTLSamplerState>)sampler_states[i] atIndex:i];
+        [compute setSamplerState:sampler_states[i] atIndex:i];
       }
 
       for (const auto& chunk : entities)
@@ -296,7 +297,7 @@ namespace RayGene3D
         {
           // Indirect dispatch: the Compute argument list (grid_x, grid_y, grid_z) lives in the arg buffer.
           auto arg_resource = reinterpret_cast<MTLResource*>(&chunk.arg_view->GetResource());
-          [compute dispatchThreadgroupsWithIndirectBuffer:(__bridge id<MTLBuffer>)arg_resource->GetNative()
+          [compute dispatchThreadgroupsWithIndirectBuffer:arg_resource->GetNative()
                                      indirectBufferOffset:chunk.arg_view->GetLevelsOrLength().offset
                                     threadsPerThreadgroup:threads];
           continue;
@@ -312,9 +313,10 @@ namespace RayGene3D
 
   void MTLBatch::Discard()
   {
-    for (auto& state : sampler_states)
+    for (auto& sampler : sampler_states)
     {
-      if (state) { (void)(__bridge_transfer id)state; state = nullptr; }
+      [sampler release];
+      sampler = nil;
     }
     sampler_states.clear();
   }

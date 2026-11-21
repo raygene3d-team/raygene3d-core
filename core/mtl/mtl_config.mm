@@ -305,7 +305,7 @@ namespace RayGene3D
   {
     auto pass = reinterpret_cast<MTLPass*>(&this->GetPass());
     auto device = reinterpret_cast<MTLDevice*>(&pass->GetDevice());
-    id<MTLDevice> mtl_device = (__bridge id<MTLDevice>)device->GetDevice();
+    id<MTLDevice> mtl_device = device->GetDevice();
 
     const auto& path = device->GetPath();
 
@@ -330,8 +330,8 @@ namespace RayGene3D
     if (compilation & COMPILATION_COMP)
     {
       std::vector<uint32_t> spirv;
-      id<MTLLibrary> comp_library = create_library("comp", spirv);
-      library = (__bridge_retained void*)comp_library;
+      // create_library returns +1; the member takes ownership and Discard() releases it.
+      library = create_library("comp", spirv);
 
       // Threadgroup size must match the kernel's local_size (Vulkan workgroup size).
       spirv_cross::CompilerMSL reflect(spirv.data(), spirv.size());
@@ -340,37 +340,37 @@ namespace RayGene3D
         reflect.get_execution_mode_argument(spv::ExecutionModeLocalSize, 1),
         reflect.get_execution_mode_argument(spv::ExecutionModeLocalSize, 2) };
 
-      id<MTLFunction> function = [comp_library newFunctionWithName:@"main0"];
-      BLAST_ASSERT(function != nil);
-      kernel_function = (__bridge_retained void*)function;
+      // newFunctionWithName returns +1; the member takes ownership.
+      kernel_function = [library newFunctionWithName:@"main0"];
+      BLAST_ASSERT(kernel_function != nil);
 
       NSError* pipeline_error = nil;
-      id<MTLComputePipelineState> state = [mtl_device newComputePipelineStateWithFunction:function error:&pipeline_error];
-      BLAST_ASSERT(state != nil);
-      pipeline = (__bridge_retained void*)state;
+      // newComputePipelineStateWithFunction returns +1; the member takes ownership.
+      pipeline = [mtl_device newComputePipelineStateWithFunction:kernel_function error:&pipeline_error];
+      BLAST_ASSERT(pipeline != nil);
     }
 
     if ((compilation & COMPILATION_VERT) && (compilation & COMPILATION_FRAG) && pass->GetType() == Pass::TYPE_GRAPHIC)
     {
       std::vector<uint32_t> vert_spirv;
       std::vector<uint32_t> frag_spirv;
-      id<MTLLibrary> vert_library = create_library("vert", vert_spirv);
-      id<MTLLibrary> frag_library = create_library("frag", frag_spirv);
-      library = (__bridge_retained void*)vert_library;
+      // create_library returns +1; the members take ownership.
+      library = create_library("vert", vert_spirv);
+      fragment_library = create_library("frag", frag_spirv);
 
-      id<MTLFunction> vs = [vert_library newFunctionWithName:@"main0"];
-      id<MTLFunction> ps = [frag_library newFunctionWithName:@"main0"];
-      BLAST_ASSERT(vs != nil && ps != nil);
-      vertex_function = (__bridge_retained void*)vs;
-      fragment_function = (__bridge_retained void*)ps;
+      // newFunctionWithName returns +1; the members take ownership.
+      vertex_function = [library newFunctionWithName:@"main0"];
+      fragment_function = [fragment_library newFunctionWithName:@"main0"];
+      BLAST_ASSERT(vertex_function != nil && fragment_function != nil);
 
+      // alloc/init returns +1; released manually once the pipeline is created.
       MTLRenderPipelineDescriptor* desc = [[MTLRenderPipelineDescriptor alloc] init];
-      desc.vertexFunction = vs;
-      desc.fragmentFunction = ps;
+      desc.vertexFunction = vertex_function;
+      desc.fragmentFunction = fragment_function;
 
       // Pipeline attachment formats must match the render pass framebuffer exactly (Metal validation),
       // so take them from the pass descriptor's real textures, as the Vulkan backend does from the pass.
-      MTLRenderPassDescriptor* pass_descriptor = (__bridge MTLRenderPassDescriptor*)pass->GetRenderPassDescriptor();
+      MTLRenderPassDescriptor* pass_descriptor = (MTLRenderPassDescriptor*)pass->GetRenderPassDescriptor();
       for (NSUInteger i = 0; i < 8; ++i)
       {
         id<MTLTexture> target = pass_descriptor.colorAttachments[i].texture;
@@ -419,29 +419,31 @@ namespace RayGene3D
 
       desc.vertexDescriptor = build_vertex_descriptor(ia_state);
 
+      // newRenderPipelineStateWithDescriptor returns +1; the member takes ownership.
       NSError* pipeline_error = nil;
-      id<MTLRenderPipelineState> state = [mtl_device newRenderPipelineStateWithDescriptor:desc error:&pipeline_error];
-      if (state == nil)
+      pipeline = [mtl_device newRenderPipelineStateWithDescriptor:desc error:&pipeline_error];
+      if (pipeline == nil)
       {
         BLAST_LOG("MTL render pipeline failed (%s): %s", name.c_str(), [[pipeline_error localizedDescription] UTF8String]);
       }
-      BLAST_ASSERT(state != nil);
-      pipeline = (__bridge_retained void*)state;
+      BLAST_ASSERT(pipeline != nil);
+      [desc release];
 
       // Depth test and write come from DSState, as in the Vulkan/D3D12 backends. Without a depth-stencil
       // state Metal does no depth test, so the skybox (depth EQUAL at z=1) overwrites the geometry.
       MTLDepthStencilDescriptor* ds_desc = [[MTLDepthStencilDescriptor alloc] init];
       ds_desc.depthCompareFunction = ds_state.depth_enabled ? get_compare_function(ds_state.depth_comparison) : MTLCompareFunctionAlways;
       ds_desc.depthWriteEnabled = ds_state.depth_enabled && ds_state.depth_write;
-      id<MTLDepthStencilState> depth_state = [mtl_device newDepthStencilStateWithDescriptor:ds_desc];
-      BLAST_ASSERT(depth_state != nil);
-      depth_stencil_state = (__bridge_retained void*)depth_state;
+      // newDepthStencilStateWithDescriptor returns +1; the member takes ownership.
+      depth_stencil_state = [mtl_device newDepthStencilStateWithDescriptor:ds_desc];
+      BLAST_ASSERT(depth_stencil_state != nil);
+      [ds_desc release];
     }
 
     // Mesh and ray tracing stages: SPIRV-Cross cannot translate them, so they go HLSL -> DXIL -> metallib.
     if (compilation & (COMPILATION_MESH | COMPILATION_RGEN))
     {
-      BuildDXILLibrary((__bridge void*)mtl_device, path, file);
+      BuildDXILLibrary(mtl_device, path, file);
     }
   }
 
@@ -450,9 +452,8 @@ namespace RayGene3D
     return std::vector<std::pair<std::string, std::string>>(defines.begin(), defines.end());
   }
 
-  void MTLConfig::BuildDXILLibrary(void* device_ptr, const std::string& path, const std::string& file)
+  void MTLConfig::BuildDXILLibrary(id<MTLDevice> mtl_device, const std::string& path, const std::string& file)
   {
-    id<MTLDevice> mtl_device = (__bridge id<MTLDevice>)device_ptr;
 
     // File-path configs leave `source` empty; load it here, as CompileMSL's callers do for shaderc.
     if (source.empty())
@@ -504,26 +505,25 @@ namespace RayGene3D
     // A mesh config is one mesh stage plus an optional pixel stage; each stage gets its own library.
     if (compilation & COMPILATION_MESH)
     {
-      id<MTLLibrary> mesh_library = build("mesh_main", "ms_6_5", nullptr);
-      BLAST_ASSERT(mesh_library != nil);
-      library = (__bridge_retained void*)mesh_library;
-      mesh_function = (__bridge_retained void*)[mesh_library newFunctionWithName:@"mesh_main"];
+      // build returns +1; the members take ownership.
+      library = build("mesh_main", "ms_6_5", nullptr);
+      BLAST_ASSERT(library != nil);
+      mesh_function = [library newFunctionWithName:@"mesh_main"];
     }
 
     if ((compilation & COMPILATION_FRAG) && (compilation & COMPILATION_MESH))
     {
-      id<MTLLibrary> frag_library = build("ps_main", "ps_6_5", nullptr);
-      BLAST_ASSERT(frag_library != nil);
-      fragment_function = (__bridge_retained void*)[frag_library newFunctionWithName:@"ps_main"];
+      fragment_library = build("ps_main", "ps_6_5", nullptr);
+      BLAST_ASSERT(fragment_library != nil);
+      fragment_function = [fragment_library newFunctionWithName:@"ps_main"];
     }
 
     // Ray tracing library: lib_6_3 compiles every [shader] entry, so no single entry point is selected.
     if (compilation & COMPILATION_RGEN)
     {
       const MTLDXILRayTracingLayout layout{ 3, 4, 1 };
-      id<MTLLibrary> rt_library = build("", "lib_6_3", &layout);
-      BLAST_ASSERT(rt_library != nil);
-      library = (__bridge_retained void*)rt_library;
+      library = build("", "lib_6_3", &layout);
+      BLAST_ASSERT(library != nil);
     }
   }
 
@@ -539,12 +539,23 @@ namespace RayGene3D
   {
     batches.clear();
 
-    if (depth_stencil_state) { (void)(__bridge_transfer id)depth_stencil_state; depth_stencil_state = nullptr; }
-    if (pipeline) { (void)(__bridge_transfer id)pipeline; pipeline = nullptr; }
-    if (kernel_function) { (void)(__bridge_transfer id)kernel_function; kernel_function = nullptr; }
-    if (fragment_function) { (void)(__bridge_transfer id)fragment_function; fragment_function = nullptr; }
-    if (vertex_function) { (void)(__bridge_transfer id)vertex_function; vertex_function = nullptr; }
-    if (library) { (void)(__bridge_transfer id)library; library = nullptr; }
+    // Release order: pipeline and state objects first, then the functions and libraries they were built from.
+    [depth_stencil_state release];
+    depth_stencil_state = nil;
+    [pipeline release];
+    pipeline = nil;
+    [kernel_function release];
+    kernel_function = nil;
+    [mesh_function release];
+    mesh_function = nil;
+    [fragment_function release];
+    fragment_function = nil;
+    [vertex_function release];
+    vertex_function = nil;
+    [fragment_library release];
+    fragment_library = nil;
+    [library release];
+    library = nil;
   }
 
   MTLConfig::MTLConfig(const std::string& name,

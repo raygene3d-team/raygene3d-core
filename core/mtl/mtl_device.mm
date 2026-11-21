@@ -118,6 +118,7 @@ namespace RayGene3D
       }
 
       const size_t bytes_per_row = size_t(width) * 4u;
+      // newBufferWithLength returns +1; released once the readback below is complete.
       id<MTLBuffer> staging = [mtl_device newBufferWithLength:bytes_per_row * height options:MTLResourceStorageModeShared];
 
       id<MTLCommandBuffer> mtl_command_buffer = [mtl_queue commandBuffer];
@@ -176,6 +177,7 @@ namespace RayGene3D
         if (rgb[0] | rgb[1] | rgb[2]) ++nonzero;
       }
 
+      [staging release];
       const bool written = WriteBMP(path, width, height, pixels);
       BLAST_LOG("Dump [%s] %ux%u: nonzero pixels %zu of %zu, max channel %u -> %s%s",
         path.c_str(), width, height, nonzero, size_t(width) * height, unsigned(max_value),
@@ -188,23 +190,22 @@ namespace RayGene3D
     // window is the CAMetalLayer created in main.cpp (Apple branch).
     layer = window;
 
-    id<MTLDevice> mtl_device = MTLCreateSystemDefaultDevice();
-    BLAST_ASSERT(mtl_device != nil);
-    device = (__bridge_retained void*)mtl_device;
+    // MTLCreateSystemDefaultDevice and newCommandQueue return +1, so assignment takes ownership.
+    device = MTLCreateSystemDefaultDevice();
+    BLAST_ASSERT(device != nil);
 
-    id<MTLCommandQueue> mtl_queue = [mtl_device newCommandQueue];
-    BLAST_ASSERT(mtl_queue != nil);
-    queue = (__bridge_retained void*)mtl_queue;
+    queue = [device newCommandQueue];
+    BLAST_ASSERT(queue != nil);
 
-    CAMetalLayer* metal_layer = (__bridge CAMetalLayer*)layer;
-    metal_layer.device = mtl_device;
+    CAMetalLayer* metal_layer = (CAMetalLayer*)layer;
+    metal_layer.device = device;
     metal_layer.pixelFormat = MTLPixelFormatBGRA8Unorm;
     metal_layer.framebufferOnly = NO;
     metal_layer.drawableSize = CGSizeMake(extent_x, extent_y);
 
-    const std::string device_name = [[mtl_device name] UTF8String];
-    const bool ray_tracing_supported = [mtl_device supportsRaytracing];
-    const bool mesh_shader_supported = [mtl_device supportsFamily:MTLGPUFamilyMetal3];
+    const std::string device_name = [[device name] UTF8String];
+    const bool ray_tracing_supported = [device supportsRaytracing];
+    const bool mesh_shader_supported = [device supportsFamily:MTLGPUFamilyMetal3];
 
     name = device_name + " (Metal API)";
 
@@ -219,7 +220,7 @@ namespace RayGene3D
     // check that GPU frame capture (MTLCaptureManager) is available for this debug session.
     if (debug)
     {
-      BLAST_LOG("Metal debug enabled on device: %s", [[mtl_device name] UTF8String]);
+      BLAST_LOG("Metal debug enabled on device: %s", [[device name] UTF8String]);
       const auto capture_supported = [[MTLCaptureManager sharedCaptureManager] supportsDestination:MTLCaptureDestinationDeveloperTools];
       BLAST_LOG("Metal GPU capture (developer tools) supported: %s", capture_supported ? "yes" : "no");
       BLAST_LOG("Metal API validation: enable in Xcode scheme (Run > Diagnostics > Metal API Validation)");
@@ -228,8 +229,7 @@ namespace RayGene3D
 
   void MTLDevice::Use()
   {
-    id<MTLCommandQueue> mtl_queue = (__bridge id<MTLCommandQueue>)queue;
-    CAMetalLayer* metal_layer = (__bridge CAMetalLayer*)layer;
+    CAMetalLayer* metal_layer = (CAMetalLayer*)layer;
 
     // Debug: RAYGENE_CAPTURE_FRAME=<n> records frame n as a GPU trace into ./capture/frame_<n>.gputrace.
     // Open the bundle in Xcode to inspect passes, resources and shaders.
@@ -255,12 +255,14 @@ namespace RayGene3D
       else
       {
         MTLCaptureDescriptor* descriptor = [[MTLCaptureDescriptor alloc] init];
-        descriptor.captureObject = mtl_queue;
+        descriptor.captureObject = queue;
         descriptor.destination = MTLCaptureDestinationGPUTraceDocument;
         descriptor.outputURL = [NSURL fileURLWithPath:path];
 
         NSError* error = nil;
-        if (![manager startCaptureWithDescriptor:descriptor error:&error])
+        const BOOL started = [manager startCaptureWithDescriptor:descriptor error:&error];
+        [descriptor release];
+        if (!started)
         {
           BLAST_LOG("Metal GPU trace start failed: %s", [[error localizedDescription] UTF8String]);
         }
@@ -272,8 +274,9 @@ namespace RayGene3D
     }
 
     // One command buffer per frame: passes encode into it, then the screen is blitted to the drawable.
-    id<MTLCommandBuffer> mtl_command_buffer = [mtl_queue commandBuffer];
-    command_buffer = (__bridge void*)mtl_command_buffer;
+    // commandBuffer is autoreleased, so retain it for the duration of this frame.
+    command_buffer = [[queue commandBuffer] retain];
+    id<MTLCommandBuffer> mtl_command_buffer = command_buffer;
 
     for (auto& pass : passes)
     {
@@ -283,7 +286,7 @@ namespace RayGene3D
     id<CAMetalDrawable> drawable = [metal_layer nextDrawable];
     if (drawable != nil && screen)
     {
-      id<MTLTexture> src = (__bridge id<MTLTexture>)reinterpret_cast<MTLResource*>(screen.get())->GetNative();
+      id<MTLTexture> src = reinterpret_cast<MTLResource*>(screen.get())->GetNative();
       id<MTLBlitCommandEncoder> blit = [mtl_command_buffer blitCommandEncoder];
       [blit copyFromTexture:src
                 sourceSlice:0
@@ -304,30 +307,31 @@ namespace RayGene3D
     {
       [[MTLCaptureManager sharedCaptureManager] stopCapture];
     }
-    command_buffer = nullptr;
     // Debug: RAYGENE_DUMP_FRAME=<n> dumps all 2D textures and the backbuffer after frame n into ./dump/frame_<n>/.
     const char* dump_env = std::getenv("RAYGENE_DUMP_FRAME");
     if (dump_env && frame_index == std::strtoull(dump_env, nullptr, 10))
     {
       // Wait for this frame's GPU work to finish so the readback sees the completed frame.
       [mtl_command_buffer waitUntilCompleted];
-      id<MTLDevice> mtl_device = (__bridge id<MTLDevice>)device;
       const auto dir = std::string("./dump/frame_") + std::to_string(frame_index) + "/";
 
       for (const auto& resource : resources)
       {
         if (resource->GetType() != Resource::TYPE_TEX2D) continue;
-        id<MTLTexture> texture = (__bridge id<MTLTexture>)reinterpret_cast<MTLResource*>(resource.get())->GetNative();
+        id<MTLTexture> texture = reinterpret_cast<MTLResource*>(resource.get())->GetNative();
         if (texture == nil) continue;
-        DumpTexture(mtl_device, mtl_queue, texture, dir + resource->GetName() + ".bmp");
+        DumpTexture(device, queue, texture, dir + resource->GetName() + ".bmp");
       }
 
       if (screen)
       {
-        id<MTLTexture> texture = (__bridge id<MTLTexture>)reinterpret_cast<MTLResource*>(screen.get())->GetNative();
-        DumpTexture(mtl_device, mtl_queue, texture, dir + "backbuffer.bmp");
+        id<MTLTexture> texture = reinterpret_cast<MTLResource*>(screen.get())->GetNative();
+        DumpTexture(device, queue, texture, dir + "backbuffer.bmp");
       }
     }
+    // The frame's command buffer is retained above; release it now that the frame is submitted.
+    [command_buffer release];
+    command_buffer = nil;
     ++frame_index;
   }
 
@@ -337,19 +341,12 @@ namespace RayGene3D
     resources.clear();
     screen.reset();
 
-    if (queue)
-    {
-      id object = (__bridge_transfer id)queue;
-      (void)object;
-      queue = nullptr;
-    }
-
-    if (device)
-    {
-      id object = (__bridge_transfer id)device;
-      (void)object;
-      device = nullptr;
-    }
+    [command_buffer release];
+    command_buffer = nil;
+    [queue release];
+    queue = nil;
+    [device release];
+    device = nil;
 
     layer = nullptr;
   }

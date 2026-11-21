@@ -39,10 +39,11 @@ namespace RayGene3D
 {
   static MTLResourceOptions get_buffer_options(Resource::Hint hint)
   {
-    // Dynamic buffers are CPU-writable through contents; static buffers are GPU-private-leaning managed storage.
+    // Shared storage is CPU- and GPU-accessible without explicit range synchronization.
+    // Managed storage is deprecated on Apple Silicon, so static buffers use Shared as well.
     return (hint & Resource::HINT_DYNAMIC_BUFFER)
       ? MTLResourceStorageModeShared | MTLResourceCPUCacheModeDefaultCache
-      : MTLResourceStorageModeManaged;
+      : MTLResourceStorageModeShared;
   }
 
   static MTLPixelFormat get_pixel_format(Format format)
@@ -105,29 +106,23 @@ namespace RayGene3D
   void MTLResource::Initialize()
   {
     auto device = reinterpret_cast<MTLDevice*>(&this->GetDevice());
-    auto mtl_device = (__bridge id<MTLDevice>)device->GetDevice();
+    id<MTLDevice> mtl_device = device->GetDevice();
 
     switch (type)
     {
     case TYPE_BUFFER:
     {
       const auto size = levels_or_length * layers_or_stride;
-      id<MTLBuffer> buffer = [mtl_device newBufferWithLength:size options:get_buffer_options(hint)];
+      // newBufferWithLength returns +1; the member takes ownership and Discard() releases it.
+      buffer = [mtl_device newBufferWithLength:size options:get_buffer_options(hint)];
       BLAST_LOG("Allocating %llu bytes [%s]", (unsigned long long)buffer.allocatedSize, name.c_str());
 
       if (interop.first != nullptr && interop.second > 0)
       {
         BLAST_ASSERT(interop.second == size);
         memcpy([buffer contents], interop.first, interop.second);
-#if TARGET_OS_OSX
-        if (buffer.storageMode == MTLStorageModeManaged)
-        {
-          [buffer didModifyRange:NSMakeRange(0, buffer.length)];
-        }
-#endif
       }
 
-      native = (__bridge_retained void*)buffer;
       break;
     }
     case TYPE_TEX1D:
@@ -172,7 +167,9 @@ namespace RayGene3D
       const bool has_interop = interop.first != nullptr && interop.second > 0;
       desc.storageMode = has_interop ? MTLStorageModeShared : MTLStorageModePrivate;
       desc.usage = get_texture_usage(usage);
-      id<MTLTexture> texture = [mtl_device newTextureWithDescriptor:desc];
+      // newTextureWithDescriptor returns +1; the member takes ownership and Discard() releases it.
+      texture = [mtl_device newTextureWithDescriptor:desc];
+      [desc release];
       BLAST_LOG("Allocating %llu bytes [%s]", (unsigned long long)texture.allocatedSize, name.c_str());
 
       // Upload the initial data in the same layout Vulkan uses: layer-major, then mip level,
@@ -202,7 +199,6 @@ namespace RayGene3D
         }
       }
 
-      native = (__bridge_retained void*)texture;
       break;
     }
     default:
@@ -224,23 +220,16 @@ namespace RayGene3D
 
   void* MTLResource::Map()
   {
-    if (type != TYPE_BUFFER || !native) return nullptr;
+    if (type != TYPE_BUFFER || !buffer) return nullptr;
 
-    id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)native;
     return [buffer contents];
   }
 
   void MTLResource::Unmap()
   {
-    if (type != TYPE_BUFFER || !native) return;
+    if (type != TYPE_BUFFER || !buffer) return;
 
-    id<MTLBuffer> buffer = (__bridge id<MTLBuffer>)native;
-#if TARGET_OS_OSX
-    if (buffer.storageMode == MTLStorageModeManaged)
-    {
-      [buffer didModifyRange:NSMakeRange(0, buffer.length)];
-    }
-#endif
+    // Shared storage needs no explicit range flush, so there is nothing to do here.
   }
 
   void MTLResource::Use()
@@ -254,13 +243,10 @@ namespace RayGene3D
       reinterpret_cast<MTLView*>(view.get())->Discard();
     }
 
-    if (native)
-    {
-      // Balance the __bridge_retained taken in Initialize().
-      id object = (__bridge_transfer id)native;
-      (void)object;
-      native = nullptr;
-    }
+    [buffer release];
+    buffer = nil;
+    [texture release];
+    texture = nil;
   }
 
   MTLResource::MTLResource(const std::string& name,

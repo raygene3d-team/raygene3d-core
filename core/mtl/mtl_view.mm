@@ -38,7 +38,7 @@ namespace RayGene3D
   void MTLView::Initialize()
   {
     auto* resource = reinterpret_cast<MTLResource*>(&this->GetResource());
-    auto* native = resource->GetNative();
+    id native = resource->GetNative();
     if (!native) return;
 
     // Buffers are bound directly (the view only carries an offset), so the base object is used.
@@ -50,7 +50,7 @@ namespace RayGene3D
 
     // Image views mirror VLKView: texture type, format, mip range and slice range come from the view.
     // Metal requires a texture view to reinterpret the base texture (e.g. a cube as a 2D array for UAV).
-    id<MTLTexture> base = (__bridge id<MTLTexture>)native;
+    id<MTLTexture> base = native;
 
     const auto get_type = [&]() -> MTLTextureType
     {
@@ -83,7 +83,6 @@ namespace RayGene3D
     if (same_as_base)
     {
       view = native;
-      owns_view = false;
     }
     else
     {
@@ -92,8 +91,9 @@ namespace RayGene3D
                                                                  levels:levels
                                                                  slices:slices];
       BLAST_ASSERT(texture_view != nil);
-      view = (__bridge_retained void*)texture_view;
-      owns_view = true;
+      // newTextureViewWithPixelFormat returns +1; the member takes ownership.
+      owned_view = texture_view;
+      view = owned_view;
     }
 
     BLAST_LOG("Creating image view: [%s]", name.c_str());
@@ -106,13 +106,9 @@ namespace RayGene3D
   void MTLView::Discard()
   {
     // Only texture views created in Initialize() are owned here; the base resource is released by MTLResource.
-    if (view && owns_view)
-    {
-      id object = (__bridge_transfer id)view;
-      (void)object;
-    }
-    view = nullptr;
-    owns_view = false;
+    [owned_view release];
+    owned_view = nil;
+    view = nil;
   }
 
   MTLView::MTLView(const std::string& name,

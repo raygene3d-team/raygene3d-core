@@ -28,20 +28,24 @@ THE SOFTWARE.
 
 
 #pragma once
+#ifndef __OBJC__
+#error "mtl_pass.h must be included only from Objective-C++ (.mm) files"
+#endif
 #include "../pass.h"
 #include "mtl_config.h"
+#import <Metal/Metal.h>
 
 namespace RayGene3D
 {
   class MTLPass : public Pass
   {
   protected:
-    void* render_pass_descriptor{ nullptr }; // MTLRenderPassDescriptor* (graphic passes)
-    void* encoder{ nullptr };                // id<MTLRenderCommandEncoder> or id<MTLComputeCommandEncoder>, valid during Use()
+    MTLRenderPassDescriptor* render_pass_descriptor{ nil }; // graphic passes, retained
+    id encoder{ nil };  // id<MTLRenderCommandEncoder> or id<MTLComputeCommandEncoder>, valid during Use()
 
   public:
-    void* GetRenderPassDescriptor() const { return render_pass_descriptor; }
-    void* GetEncoder() const { return encoder; }
+    MTLRenderPassDescriptor* GetRenderPassDescriptor() const { return render_pass_descriptor; }
+    id GetEncoder() const { return encoder; }
 
   public:
     const std::shared_ptr<Config>& CreateConfig(const std::string& name,
@@ -83,5 +87,7 @@ namespace RayGene3D
       const std::pair<const Pass::RTAttachment*, size_t>& rt_attachments,
       const std::pair<const Pass::DSAttachment*, size_t>& ds_attachments);
     virtual ~MTLPass();
+    MTLPass(const MTLPass&) = delete;
+    MTLPass& operator=(const MTLPass&) = delete;
   };
 }

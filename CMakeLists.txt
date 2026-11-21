@@ -10,6 +10,8 @@ set(CORE_SOURCE
   ${CORE_DIR}/config.cpp
   ${CORE_DIR}/device.h
   ${CORE_DIR}/device.cpp
+  ${CORE_DIR}/factory.h
+  ${CORE_DIR}/factory.cpp
   ${CORE_DIR}/pass.h
   ${CORE_DIR}/pass.cpp
   ${CORE_DIR}/resource.h
@@ -25,6 +27,8 @@ set(CORE_D11_SOURCE
   ${CORE_D11_DIR}/d11_config.cpp
   ${CORE_D11_DIR}/d11_device.h
   ${CORE_D11_DIR}/d11_device.cpp
+  ${CORE_D11_DIR}/d11_factory.h
+  ${CORE_D11_DIR}/d11_factory.cpp
   ${CORE_D11_DIR}/d11_pass.h
   ${CORE_D11_DIR}/d11_pass.cpp
   ${CORE_D11_DIR}/d11_resource.h
@@ -40,6 +44,8 @@ set(CORE_D12_SOURCE
   ${CORE_D12_DIR}/d12_config.cpp
   ${CORE_D12_DIR}/d12_device.h
   ${CORE_D12_DIR}/d12_device.cpp
+  ${CORE_D12_DIR}/d12_factory.h
+  ${CORE_D12_DIR}/d12_factory.cpp
   ${CORE_D12_DIR}/d12_pass.h
   ${CORE_D12_DIR}/d12_pass.cpp
   ${CORE_D12_DIR}/d12_resource.h
@@ -55,6 +61,8 @@ set(CORE_MTL_SOURCE
 	${CORE_MTL_DIR}/mtl_config.mm
 	${CORE_MTL_DIR}/mtl_device.h
 	${CORE_MTL_DIR}/mtl_device.mm
+	${CORE_MTL_DIR}/mtl_factory.h
+	${CORE_MTL_DIR}/mtl_factory.mm
 	${CORE_MTL_DIR}/mtl_dxil.h
 	${CORE_MTL_DIR}/mtl_dxil.mm
 	${CORE_MTL_DIR}/mtl_pass.h
@@ -72,6 +80,8 @@ set(CORE_VLK_SOURCE
   ${CORE_VLK_DIR}/vlk_config.cpp
   ${CORE_VLK_DIR}/vlk_device.h
   ${CORE_VLK_DIR}/vlk_device.cpp
+  ${CORE_VLK_DIR}/vlk_factory.h
+  ${CORE_VLK_DIR}/vlk_factory.cpp
   ${CORE_VLK_DIR}/vlk_pass.h
   ${CORE_VLK_DIR}/vlk_pass.cpp
   ${CORE_VLK_DIR}/vlk_resource.h
