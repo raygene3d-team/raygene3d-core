@@ -137,7 +137,9 @@ namespace RayGene3D
     if (!pipeline) return;
 
     // Binds a view as a buffer (at its offset) or a texture view (type/mip/slice from the view), at the shader index.
-    const auto bind_resource = [](const std::shared_ptr<View>& view, uint32_t index, id<MTLRenderCommandEncoder> render, id<MTLComputeCommandEncoder> compute)
+    // extra_offset is the per-entity byte offset (Entity::sb_offset) applied to shader-buffer views,
+    // matching the dynamic offsets used by the Vulkan and D3D12 backends.
+    const auto bind_resource = [](const std::shared_ptr<View>& view, uint32_t index, uint32_t extra_offset, id<MTLRenderCommandEncoder> render, id<MTLComputeCommandEncoder> compute)
     {
       if (!view) return;
       auto resource = reinterpret_cast<MTLResource*>(&view->GetResource());
@@ -146,7 +148,7 @@ namespace RayGene3D
       if (resource->GetType() == Resource::TYPE_BUFFER)
       {
         id native = (__bridge id)resource->GetNative();
-        const auto offset = view->GetLevelsOrLength().offset;
+        const auto offset = view->GetLevelsOrLength().offset + extra_offset;
         if (render) { [render setVertexBuffer:native offset:offset atIndex:index]; [render setFragmentBuffer:native offset:offset atIndex:index]; }
         if (compute) [compute setBuffer:native offset:offset atIndex:index];
       }
@@ -165,11 +167,11 @@ namespace RayGene3D
     // that N as the Metal index in the matching table (buffer / texture / sampler), so the running
     // index must start after the samplers and must include every declared view.
     const auto bind_views = [&](const std::shared_ptr<View>* views, size_t count, uint32_t& index,
-      id<MTLRenderCommandEncoder> render, id<MTLComputeCommandEncoder> compute)
+      id<MTLRenderCommandEncoder> render, id<MTLComputeCommandEncoder> compute, uint32_t extra_offset = 0u)
     {
       for (size_t i = 0; i < count; ++i, ++index)
       {
-        bind_resource(views[i], index, render, compute);
+        bind_resource(views[i], index, extra_offset, render, compute);
       }
     };
 
@@ -201,7 +203,11 @@ namespace RayGene3D
         // Flat index: samplers occupy [0, S), resources follow in Vulkan order.
         uint32_t index = uint32_t(sampler_states.size());
         bind_views(ub_views.data(), ub_views.size(), index, render, nil);
-        bind_views(sb_views.data(), sb_views.size(), index, render, nil);
+        for (size_t i = 0; i < sb_views.size(); ++i, ++index)
+        {
+          const auto sb_offset = (entity.sb_offset && i < 4) ? entity.sb_offset.value()[i] : 0u;
+          bind_resource(sb_views[i], index, sb_offset, render, nil);
+        }
         bind_views(rb_views.data(), rb_views.size(), index, render, nil);
         bind_views(ri_views.data(), ri_views.size(), index, render, nil);
         bind_views(wb_views.data(), wb_views.size(), index, render, nil);
@@ -273,7 +279,11 @@ namespace RayGene3D
         // Same flat index as the graphics path (samplers first, then resources in Vulkan order).
         uint32_t index = uint32_t(sampler_states.size());
         bind_views(ub_views.data(), ub_views.size(), index, nil, compute);
-        bind_views(sb_views.data(), sb_views.size(), index, nil, compute);
+        for (size_t i = 0; i < sb_views.size(); ++i, ++index)
+        {
+          const auto sb_offset = (chunk.sb_offset && i < 4) ? chunk.sb_offset.value()[i] : 0u;
+          bind_resource(sb_views[i], index, sb_offset, nil, compute);
+        }
         bind_views(rb_views.data(), rb_views.size(), index, nil, compute);
         bind_views(ri_views.data(), ri_views.size(), index, nil, compute);
         bind_views(wb_views.data(), wb_views.size(), index, nil, compute);
