@@ -73,6 +73,12 @@ namespace RayGene3D
     device->Release();
     device = device1;
 
+    // D3D11 path uses neither ray tracing nor mesh shaders (feature level 11_1 only).
+    BLAST_LOG("Device is created on %s [RT:%s, MS:%s]",
+      adapter_name,
+      "Off",
+      "Off");
+
 
     if (window)
     {

@@ -40,7 +40,8 @@ namespace RayGene3D
       DEVICE_UNKNOWN = 0,
       DEVICE_D11 = 1,
       DEVICE_VLK = 2,
-      DEVICE_D12 = 3
+      DEVICE_D12 = 3,
+      DEVICE_MTL = 4
     };
 
   protected:

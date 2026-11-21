@@ -30,6 +30,10 @@ THE SOFTWARE.
 
 #include "core/vlk/vlk_device.h"
 
+#ifdef __APPLE__
+#include "core/mtl/mtl_device.h"
+#endif
+
 #ifdef _WIN32
 #include "core/d11/d11_device.h"
 #include "core/d12/d12_device.h"
@@ -60,6 +64,14 @@ namespace RayGene3D
     {
     case DEVICE_VLK:
       device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
+      break;
+
+    case DEVICE_MTL:
+#ifdef __APPLE__
+      device = std::unique_ptr<Device>(new MTLDevice("mtl_device"));
+#else
+      device = std::unique_ptr<Device>(new VLKDevice("vlk_device"));
+#endif
       break;
 
     case DEVICE_D11:

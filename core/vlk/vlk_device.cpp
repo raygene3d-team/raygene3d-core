@@ -42,7 +42,7 @@ namespace RayGene3D
       VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
     #elif _WIN32
       VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-    #elif __OBJC__
+    #elif __APPLE__
       VK_EXT_METAL_SURFACE_EXTENSION_NAME,
     #endif
     };
@@ -176,7 +176,7 @@ namespace RayGene3D
     create_info.hinstance = reinterpret_cast<HINSTANCE>(instance);
     create_info.flags = 0;
     BLAST_ASSERT(VK_SUCCESS == vkCreateWin32SurfaceKHR(instance, &create_info, nullptr, &surface));
-#elif __OBJC__
+#elif __APPLE__
     auto create_info = VkMetalSurfaceCreateInfoEXT{};
     create_info.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
     create_info.pLayer = reinterpret_cast<CAMetalLayer*>(window);
