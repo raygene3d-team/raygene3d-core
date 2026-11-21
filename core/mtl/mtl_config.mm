@@ -60,6 +60,68 @@ namespace RayGene3D
     }
   }
 
+  // Maps the engine blend operand onto the Metal blend factor (same mapping as the Vulkan/D3D12 backends).
+  static MTLBlendFactor get_blend_factor(Config::Operand operand)
+  {
+    switch (operand)
+    {
+    default: return MTLBlendFactorZero;
+    case Config::OPERAND_ZERO: return MTLBlendFactorZero;
+    case Config::OPERAND_ONE: return MTLBlendFactorOne;
+    case Config::OPERAND_SRC_COLOR: return MTLBlendFactorSourceColor;
+    case Config::OPERAND_INV_SRC_COLOR: return MTLBlendFactorOneMinusSourceColor;
+    case Config::OPERAND_SRC_ALPHA: return MTLBlendFactorSourceAlpha;
+    case Config::OPERAND_INV_SRC_ALPHA: return MTLBlendFactorOneMinusSourceAlpha;
+    case Config::OPERAND_DEST_ALPHA: return MTLBlendFactorDestinationAlpha;
+    case Config::OPERAND_INV_DEST_ALPHA: return MTLBlendFactorOneMinusDestinationAlpha;
+    case Config::OPERAND_DEST_COLOR: return MTLBlendFactorDestinationColor;
+    case Config::OPERAND_INV_DEST_COLOR: return MTLBlendFactorOneMinusDestinationColor;
+    case Config::OPERAND_SRC_ALPHA_SAT: return MTLBlendFactorSourceAlphaSaturated;
+    }
+  }
+
+  // Maps the engine blend operation onto the Metal blend operation.
+  static MTLBlendOperation get_blend_operation(Config::Operation operation)
+  {
+    switch (operation)
+    {
+    default: return MTLBlendOperationAdd;
+    case Config::OPERATION_ADD: return MTLBlendOperationAdd;
+    case Config::OPERATION_SUBTRACT: return MTLBlendOperationSubtract;
+    case Config::OPERATION_REV_SUBTRACT: return MTLBlendOperationReverseSubtract;
+    case Config::OPERATION_MIN: return MTLBlendOperationMin;
+    case Config::OPERATION_MAX: return MTLBlendOperationMax;
+    }
+  }
+
+  // The engine write mask uses the same bit layout as D3D12 (R=1, G=2, B=4, A=8), which matches MTLColorWriteMask.
+  static MTLColorWriteMask get_color_write_mask(uint8_t write_mask)
+  {
+    MTLColorWriteMask mask = MTLColorWriteMaskNone;
+    if (write_mask & 0x1) mask |= MTLColorWriteMaskRed;
+    if (write_mask & 0x2) mask |= MTLColorWriteMaskGreen;
+    if (write_mask & 0x4) mask |= MTLColorWriteMaskBlue;
+    if (write_mask & 0x8) mask |= MTLColorWriteMaskAlpha;
+    return mask;
+  }
+
+  // Maps the engine depth comparison onto the Metal compare function (same set as the Vulkan/D3D12 backends).
+  static MTLCompareFunction get_compare_function(Config::Comparison comparison)
+  {
+    switch (comparison)
+    {
+    default: return MTLCompareFunctionAlways;
+    case Config::COMPARISON_NEVER: return MTLCompareFunctionNever;
+    case Config::COMPARISON_LESS: return MTLCompareFunctionLess;
+    case Config::COMPARISON_EQUAL: return MTLCompareFunctionEqual;
+    case Config::COMPARISON_LESS_EQUAL: return MTLCompareFunctionLessEqual;
+    case Config::COMPARISON_GREATER: return MTLCompareFunctionGreater;
+    case Config::COMPARISON_NOT_EQUAL: return MTLCompareFunctionNotEqual;
+    case Config::COMPARISON_GREATER_EQUAL: return MTLCompareFunctionGreaterEqual;
+    case Config::COMPARISON_ALWAYS: return MTLCompareFunctionAlways;
+    }
+  }
+
   // Builds the Metal vertex descriptor from the same IAState the Vulkan backend uses,
   // so attribute i maps to [[attribute(i)]] (location = i) and slot maps to the buffer index.
   static MTLVertexDescriptor* build_vertex_descriptor(const Config::IAState& ia_state)
@@ -319,6 +381,23 @@ namespace RayGene3D
       {
         desc.depthAttachmentPixelFormat = pass_descriptor.depthAttachment.texture.pixelFormat;
       }
+
+      // Blending is per color attachment on the pipeline, mirroring OMState.target_blends as in the D3D12 backend.
+      // Metal has no blend-constant on the pipeline (it is set on the encoder), and Vulkan/D3D12 also leave it at zero.
+      for (size_t i = 0; i < std::min(om_state.target_blends.size(), size_t(8u)); ++i)
+      {
+        const auto& blend = om_state.target_blends[i];
+        MTLRenderPipelineColorAttachmentDescriptor* attachment = desc.colorAttachments[i];
+        attachment.blendingEnabled = blend.blend_enabled ? YES : NO;
+        attachment.sourceRGBBlendFactor = get_blend_factor(blend.src_color);
+        attachment.destinationRGBBlendFactor = get_blend_factor(blend.dst_color);
+        attachment.rgbBlendOperation = get_blend_operation(blend.blend_color);
+        attachment.sourceAlphaBlendFactor = get_blend_factor(blend.src_alpha);
+        attachment.destinationAlphaBlendFactor = get_blend_factor(blend.dst_alpha);
+        attachment.alphaBlendOperation = get_blend_operation(blend.blend_alpha);
+        attachment.writeMask = get_color_write_mask(blend.write_mask);
+      }
+      desc.alphaToCoverageEnabled = om_state.atc_enabled ? YES : NO;
       // Metal requires the primitive topology class on the pipeline; without it the class stays Unspecified.
       switch (ia_state.topology)
       {
@@ -349,6 +428,14 @@ namespace RayGene3D
       BLAST_ASSERT(state != nil);
       pipeline = (__bridge_retained void*)state;
 
+      // Depth test and write come from DSState, as in the Vulkan/D3D12 backends. Without a depth-stencil
+      // state Metal does no depth test, so the skybox (depth EQUAL at z=1) overwrites the geometry.
+      MTLDepthStencilDescriptor* ds_desc = [[MTLDepthStencilDescriptor alloc] init];
+      ds_desc.depthCompareFunction = ds_state.depth_enabled ? get_compare_function(ds_state.depth_comparison) : MTLCompareFunctionAlways;
+      ds_desc.depthWriteEnabled = ds_state.depth_enabled && ds_state.depth_write;
+      id<MTLDepthStencilState> depth_state = [mtl_device newDepthStencilStateWithDescriptor:ds_desc];
+      BLAST_ASSERT(depth_state != nil);
+      depth_stencil_state = (__bridge_retained void*)depth_state;
     }
 
     // Mesh and ray tracing stages: SPIRV-Cross cannot translate them, so they go HLSL -> DXIL -> metallib.
@@ -452,6 +539,7 @@ namespace RayGene3D
   {
     batches.clear();
 
+    if (depth_stencil_state) { (void)(__bridge_transfer id)depth_stencil_state; depth_stencil_state = nullptr; }
     if (pipeline) { (void)(__bridge_transfer id)pipeline; pipeline = nullptr; }
     if (kernel_function) { (void)(__bridge_transfer id)kernel_function; kernel_function = nullptr; }
     if (fragment_function) { (void)(__bridge_transfer id)fragment_function; fragment_function = nullptr; }

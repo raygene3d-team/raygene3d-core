@@ -178,6 +178,19 @@ namespace RayGene3D
       id<MTLRenderCommandEncoder> render = (__bridge id<MTLRenderCommandEncoder>)encoder;
       [render setRenderPipelineState:(__bridge id<MTLRenderPipelineState>)pipeline];
 
+      // Rasterizer and depth-stencil state from the config, applied the same way as the Vulkan/D3D12 backends.
+      const auto& rc_state = config->GetRCState();
+      [render setTriangleFillMode:(rc_state.fill_mode == Config::FILL_LINE ? MTLTriangleFillModeLines : MTLTriangleFillModeFill)];
+      switch (rc_state.cull_mode)
+      {
+      case Config::CULL_FRONT: [render setCullMode:MTLCullModeFront]; break;
+      case Config::CULL_BACK: [render setCullMode:MTLCullModeBack]; break;
+      default: [render setCullMode:MTLCullModeNone]; break;
+      }
+      // Front face is clockwise, matching VK_FRONT_FACE_CLOCKWISE and D3D12 FrontCounterClockwise = false.
+      [render setFrontFacingWinding:MTLWindingClockwise];
+      [render setDepthStencilState:(__bridge id<MTLDepthStencilState>)config->GetDepthStencilState()];
+
       for (uint32_t i = 0; i < uint32_t(sampler_states.size()); ++i)
       {
         [render setFragmentSamplerState:(__bridge id<MTLSamplerState>)sampler_states[i] atIndex:i];

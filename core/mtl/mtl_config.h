@@ -43,10 +43,12 @@ namespace RayGene3D
     void* mesh_function{ nullptr };     // id<MTLFunction> (mesh stage, from DXIL)
     void* kernel_function{ nullptr };   // id<MTLFunction> (compute)
     void* pipeline{ nullptr };          // MTLRenderPipelineState* or MTLComputePipelineState*
+    void* depth_stencil_state{ nullptr }; // id<MTLDepthStencilState> from DSState (graphic passes)
     std::array<uint32_t, 3> threads_per_group{ 1, 1, 1 }; // compute local_size from the kernel
 
   public:
     const std::array<uint32_t, 3>& GetThreadsPerGroup() const { return threads_per_group; }
+    void* GetDepthStencilState() const { return depth_stencil_state; }
     void* GetLibrary() const { return library; }
     void* GetVSFunction() const { return vertex_function; }
     void* GetPSFunction() const { return fragment_function; }
