@@ -30,60 +30,63 @@ THE SOFTWARE.
 #include "vlk_config.h"
 #include "vlk_device.h"
 
-#include <shaderc/shaderc.hpp>
+#include <dxc/dxcapi.h>
+#include <filesystem>
 
 
 namespace RayGene3D
 {
-  class VLKIncluder : public shaderc::CompileOptions::IncluderInterface
+  // DXC include handler: resolves #include relative to the shader root (path) and the including file's folder,
+  // mirroring the former shaderc VLKIncluder. Loaded contents are kept alive until the compile call returns.
+  class VLKDxcIncludeHandler : public IDxcIncludeHandler
   {
-    struct Includee
-    {
-      std::string name;
-      std::string content;
-    };
-
-    shaderc_include_result* GetInclude(
-      const char* requested_source,
-      shaderc_include_type type,
-      const char* requesting_source,
-      size_t include_depth) override
-    {
-      const std::filesystem::path base_path = std::filesystem::path(requesting_source).parent_path();
-      const std::filesystem::path full_path = (base_path / requested_source).lexically_normal();
-      
-      auto includee = new Includee;
-      includee->name = full_path.string();
-
-      std::fstream fs;
-      fs.open(includee->name, std::fstream::in);
-      std::stringstream ss;
-      ss << fs.rdbuf();
-      includee->content = std::move(ss.str());
-
-      auto result = new shaderc_include_result;
-      result->user_data = includee;
-      result->source_name = includee->name.c_str();
-      result->source_name_length = includee->name.size();
-      result->content = includee->content.c_str();
-      result->content_length = includee->content.size();
-
-      return result;
-    }
-
-    void ReleaseInclude(shaderc_include_result* result) override
-    {
-      if (result)
-      {
-        auto includee = reinterpret_cast<Includee*>(result->user_data);
-        if (includee) delete includee;
-        result->user_data = nullptr;
-      }
-    }
+    IDxcUtils* utils{ nullptr };
+    std::string root;
+    std::vector<std::string> loaded;
+    ULONG refs{ 1 };
 
   public:
-    VLKIncluder() {}
-    virtual ~VLKIncluder() {}
+    VLKDxcIncludeHandler(IDxcUtils* utils, const std::string& root) : utils(utils), root(root) { utils->AddRef(); }
+    ~VLKDxcIncludeHandler() { utils->Release(); }
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** object) override
+    {
+      if (riid == __uuidof(IDxcIncludeHandler) || riid == __uuidof(IUnknown))
+      {
+        *object = static_cast<IDxcIncludeHandler*>(this);
+        AddRef();
+        return S_OK;
+      }
+      *object = nullptr;
+      return E_NOINTERFACE;
+    }
+    ULONG STDMETHODCALLTYPE AddRef() override { return ++refs; }
+    ULONG STDMETHODCALLTYPE Release() override { const auto r = --refs; if (r == 0) delete this; return r; }
+
+    HRESULT STDMETHODCALLTYPE LoadSource(LPCWSTR file_name, IDxcBlob** included_source) override
+    {
+      const std::filesystem::path requested = std::filesystem::path(file_name);
+      const std::filesystem::path candidates[] = { std::filesystem::path(root) / requested, requested };
+
+      for (const auto& candidate : candidates)
+      {
+        const auto normal = candidate.lexically_normal();
+        std::ifstream stream(normal, std::ios::binary);
+        if (!stream) continue;
+
+        std::stringstream ss;
+        ss << stream.rdbuf();
+        loaded.push_back(ss.str());
+
+        IDxcBlobEncoding* blob{ nullptr };
+        BLAST_ASSERT(S_OK == utils->CreateBlob(loaded.back().data(), uint32_t(loaded.back().size()), DXC_CP_UTF8, &blob));
+        *included_source = blob;
+        return S_OK;
+      }
+
+      *included_source = nullptr;
+      return E_FAIL;
+    }
   };
 
   static void CompileVLK(const char* name, std::string& source, const std::string& path, const std::string& file,
@@ -99,57 +102,118 @@ namespace RayGene3D
       source = ss.str();
     }
 
-    shaderc::CompileOptions options;
-    options.AddMacroDefinition("USE_SPIRV");
-    options.SetInvertY(true);
-    options.SetOptimizationLevel(shaderc_optimization_level_performance);
-    options.SetSourceLanguage(shaderc_source_language_glsl);
-    options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
-    options.SetTargetSpirv(shaderc_spirv_version_1_4);
-    options.SetIncluder(std::make_unique<VLKIncluder>());
-
-    auto kind = shaderc_glsl_infer_from_source;
-    if (strcmp(target, "comp") == 0) { options.AddMacroDefinition("COMP"); kind = shaderc_compute_shader; } else
-    if (strcmp(target, "vert") == 0) { options.AddMacroDefinition("VERT"); kind = shaderc_vertex_shader; } else
-    if (strcmp(target, "tesc") == 0) { options.AddMacroDefinition("TESC"); kind = shaderc_tess_control_shader; } else
-    if (strcmp(target, "tese") == 0) { options.AddMacroDefinition("TESE"); kind = shaderc_tess_evaluation_shader; } else
-    if (strcmp(target, "geom") == 0) { options.AddMacroDefinition("GEOM"); kind = shaderc_geometry_shader; } else
-    if (strcmp(target, "frag") == 0) { options.AddMacroDefinition("FRAG"); kind = shaderc_fragment_shader; } else
-    if (strcmp(target, "task") == 0) { options.AddMacroDefinition("TASK"); kind = shaderc_task_shader; } else
-    if (strcmp(target, "mesh") == 0) { options.AddMacroDefinition("MESH"); kind = shaderc_mesh_shader; } else
-    if (strcmp(target, "rgen") == 0) { options.AddMacroDefinition("RGEN"); kind = shaderc_raygen_shader; } else
-    if (strcmp(target, "isec") == 0) { options.AddMacroDefinition("ISEC"); kind = shaderc_intersection_shader; } else
-    if (strcmp(target, "chit") == 0) { options.AddMacroDefinition("CHIT"); kind = shaderc_closesthit_shader; } else
-    if (strcmp(target, "ahit") == 0) { options.AddMacroDefinition("AHIT"); kind = shaderc_anyhit_shader; } else
-    if (strcmp(target, "miss") == 0) { options.AddMacroDefinition("MISS"); kind = shaderc_miss_shader; } else
-    if (strcmp(target, "call") == 0) { options.AddMacroDefinition("CALL"); kind = shaderc_callable_shader; }
-
-    auto entry = "main";
-    if(source.find("#version 460") == source.npos)
+    // Stage table: DXC profile, entry point (nullptr = library target, entry resolved by SPIR-V name), stage define.
+    // Vertex-like stages (VS/DS/GS/MS) get -fvk-invert-y to match the former shaderc SetInvertY behavior.
+    // Mesh output is the last pre-rasterization stage, so it must be inverted too (observed Y-flip without it).
+    struct StageDesc
     {
-      if(strcmp(target, "comp") == 0) { entry = "cs_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
-      if(strcmp(target, "vert") == 0) { entry = "vs_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
-      if(strcmp(target, "tesc") == 0) { entry = "hs_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
-      if(strcmp(target, "tese") == 0) { entry = "ds_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
-      if(strcmp(target, "geom") == 0) { entry = "gs_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); } else
-      if(strcmp(target, "frag") == 0) { entry = "ps_main"; options.SetSourceLanguage(shaderc_source_language_hlsl); options.SetTargetSpirv(shaderc_spirv_version_1_0); }
+      const char* target;
+      const char* profile;
+      const char* entry;
+      const char* define;
+      bool invert_y;
+    };
+
+    static const StageDesc stage_descs[] =
+    {
+      { "comp", "cs_6_5", "cs_main", "COMP", false },
+      { "vert", "vs_6_5", "vs_main", "VERT", true },
+      { "tesc", "hs_6_5", "hs_main", "TESC", false },
+      { "tese", "ds_6_5", "ds_main", "TESE", true },
+      { "geom", "gs_6_5", "gs_main", "GEOM", true },
+      { "frag", "ps_6_5", "ps_main", "FRAG", false },
+      { "task", "as_6_5", "as_main", "TASK", false },
+      { "mesh", "ms_6_5", "mesh_main", "MESH", true },
+      { "rgen", "lib_6_3", nullptr, "RGEN", false },
+      { "isec", "lib_6_3", nullptr, "ISEC", false },
+      { "chit", "lib_6_3", nullptr, "CHIT", false },
+      { "ahit", "lib_6_3", nullptr, "AHIT", false },
+      { "miss", "lib_6_3", nullptr, "MISS", false },
+      { "call", "lib_6_3", nullptr, "CALL", false },
+    };
+
+    const StageDesc* desc = nullptr;
+    for (const auto& item : stage_descs)
+    {
+      if (strcmp(item.target, target) == 0) { desc = &item; break; }
     }
-
-    for (const auto& define : defines) options.AddMacroDefinition(define.first, define.second);
-
-    shaderc::Compiler compiler;
-    const auto module = compiler.CompileGlslToSpv(source, (shaderc_shader_kind)kind, file.empty() ? "unknown" : (path + file).c_str(), entry, options);
-
-    if (module.GetCompilationStatus() != shaderc_compilation_status_success)
+    if (!desc)
     {
-      BLAST_LOG(module.GetErrorMessage().c_str());
+      BLAST_LOG("VLK: unsupported shader stage '%s' for '%s'", target, name);
       return;
     }
 
-    const auto data = module.cbegin();
-    const auto size = module.cend() - module.cbegin();
-    bytecode.resize(size * sizeof(uint32_t));
-    memcpy(bytecode.data(), data, bytecode.size());
+    const auto to_wide = [](const std::string& str) { return std::filesystem::path(str).wstring(); };
+
+    std::vector<std::wstring> arguments;
+    arguments.push_back(L"-spirv");
+    arguments.push_back(L"-fspv-target-env=vulkan1.2");
+    arguments.push_back(L"-O3");
+    arguments.push_back(L"-DUSE_SPIRV");
+    arguments.push_back(L"-D" + to_wide(desc->define));
+    // Include search: the shader root plus the directory of the file being compiled (matches the former
+    // shaderc includer, which resolved includes relative to the requesting file's folder).
+    arguments.push_back(L"-I");
+    arguments.push_back(to_wide(path));
+    arguments.push_back(L"-I");
+    arguments.push_back(to_wide((std::filesystem::path(path + file).parent_path()).string()));
+    arguments.push_back(L"-T");
+    arguments.push_back(to_wide(desc->profile));
+    if (desc->entry)
+    {
+      arguments.push_back(L"-E");
+      arguments.push_back(to_wide(desc->entry));
+    }
+    if (desc->invert_y) arguments.push_back(L"-fvk-invert-y");
+    for (const auto& define : defines) arguments.push_back(L"-D" + to_wide(define.first + "=" + define.second));
+
+    std::vector<const wchar_t*> argument_ptrs;
+    for (const auto& argument : arguments) argument_ptrs.push_back(argument.c_str());
+
+
+    IDxcUtils* utils{ nullptr };
+    BLAST_ASSERT(S_OK == DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&utils)));
+
+    IDxcCompiler3* compiler{ nullptr };
+    BLAST_ASSERT(S_OK == DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&compiler)));
+
+    IDxcBlobEncoding* blob{ nullptr };
+    BLAST_ASSERT(S_OK == utils->CreateBlob(source.data(), uint32_t(source.size()), DXC_CP_UTF8, &blob));
+
+    const auto buffer = DxcBuffer{ blob->GetBufferPointer(), blob->GetBufferSize(), DXC_CP_UTF8 };
+
+    const auto shader_root = std::filesystem::path(path).lexically_normal().string();
+    auto include_handler = new VLKDxcIncludeHandler(utils, shader_root);
+
+    IDxcResult* result{ nullptr };
+    BLAST_ASSERT(S_OK == compiler->Compile(&buffer, argument_ptrs.data(), uint32_t(argument_ptrs.size()), include_handler, IID_PPV_ARGS(&result)));
+    include_handler->Release();
+
+    HRESULT status{ E_FAIL };
+    BLAST_ASSERT(S_OK == result->GetStatus(&status));
+
+    IDxcBlobUtf8* errors{ nullptr };
+    if (SUCCEEDED(result->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errors), nullptr)) && errors && errors->GetStringLength() > 0)
+    {
+      BLAST_LOG("DXCompiler [%s] stage '%s' file '%s':\n%s", name, target, file.c_str(), errors->GetStringPointer());
+    }
+
+    if (SUCCEEDED(status))
+    {
+      IDxcBlob* object{ nullptr };
+      if (SUCCEEDED(result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&object), nullptr)) && object)
+      {
+        const auto data = reinterpret_cast<const char*>(object->GetBufferPointer());
+        bytecode.assign(data, data + object->GetBufferSize());
+      }
+      if (object) object->Release();
+    }
+
+    if (errors) errors->Release();
+    if (result) result->Release();
+    if (blob) blob->Release();
+    if (compiler) compiler->Release();
+    if (utils) utils->Release();
   }
 
   void VLKConfig::Initialize()
@@ -180,7 +244,7 @@ namespace RayGene3D
     if (compilation & COMPILATION_TESE) { CompileVLK(name.c_str(), source, path, file, "tese", defines, tese_bytecode); BLAST_ASSERT(!tese_bytecode.empty()); }
     if (compilation & COMPILATION_GEOM) { CompileVLK(name.c_str(), source, path, file, "geom", defines, geom_bytecode); BLAST_ASSERT(!geom_bytecode.empty()); }
     if (compilation & COMPILATION_FRAG) { CompileVLK(name.c_str(), source, path, file, "frag", defines, frag_bytecode); BLAST_ASSERT(!frag_bytecode.empty()); }
-    if (compilation & COMPILATION_TASK) { CompileVLK(name.c_str(), source, path, file, "task", defines, task_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
+    if (compilation & COMPILATION_TASK) { CompileVLK(name.c_str(), source, path, file, "task", defines, task_bytecode); BLAST_ASSERT(!task_bytecode.empty()); }
     if (compilation & COMPILATION_MESH) { CompileVLK(name.c_str(), source, path, file, "mesh", defines, mesh_bytecode); BLAST_ASSERT(!mesh_bytecode.empty()); }
     if (compilation & COMPILATION_RGEN) { CompileVLK(name.c_str(), source, path, file, "rgen", defines, rgen_bytecode); BLAST_ASSERT(!rgen_bytecode.empty()); }
     if (compilation & COMPILATION_ISEC) { CompileVLK(name.c_str(), source, path, file, "isec", defines, isec_bytecode); BLAST_ASSERT(!isec_bytecode.empty()); }
@@ -211,7 +275,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
         create_info.module = comp_module;
-        create_info.pName = source.find("#version 460") == source.npos ? "cs_main" : "main";
+        create_info.pName = "cs_main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -224,7 +288,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
         create_info.module = vert_module;
-        create_info.pName = source.find("#version 460") == source.npos ? "vs_main" : "main";
+        create_info.pName = "vs_main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -237,7 +301,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
         create_info.module = tesc_module;
-        create_info.pName = source.find("#version 460") == source.npos ? "hs_main" : "main";
+        create_info.pName = "hs_main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -250,7 +314,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
         create_info.module = tese_module;
-        create_info.pName = source.find("#version 460") == source.npos ? "ds_main" : "main";
+        create_info.pName = "ds_main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -263,7 +327,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
         create_info.module = geom_module;
-        create_info.pName = source.find("#version 460") == source.npos ? "gs_main" : "main";
+        create_info.pName = "gs_main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -276,7 +340,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
         create_info.module = frag_module;
-        create_info.pName = source.find("#version 460") == source.npos ? "ps_main" : "main";
+        create_info.pName = "ps_main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -299,7 +363,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
         create_info.module = rgen_module;
-        create_info.pName = "main";
+        create_info.pName = "rgen";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -321,7 +385,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_INTERSECTION_BIT_KHR;
         create_info.module = isec_module;
-        create_info.pName = "main";
+        create_info.pName = "isec";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -343,7 +407,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_MISS_BIT_KHR;
         create_info.module = miss_module;
-        create_info.pName = "main";
+        create_info.pName = "miss";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -365,7 +429,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
         create_info.module = chit_module;
-        create_info.pName = "main";
+        create_info.pName = "chit";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -387,7 +451,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_ANY_HIT_BIT_KHR;
         create_info.module = ahit_module;
-        create_info.pName = "main";
+        create_info.pName = "ahit";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -409,7 +473,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_CALLABLE_BIT_KHR;
         create_info.module = call_module;
-        create_info.pName = "main";
+        create_info.pName = "call";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -422,7 +486,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
         create_info.module = task_module;
-        create_info.pName = "main";
+        create_info.pName = "as_main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }
@@ -435,7 +499,7 @@ namespace RayGene3D
         create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         create_info.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
         create_info.module = mesh_module;
-        create_info.pName = "main";
+        create_info.pName = "mesh_main";
         create_info.pSpecializationInfo = nullptr;
         stages.push_back(create_info);
       }

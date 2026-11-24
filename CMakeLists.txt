@@ -1,4 +1,9 @@
-find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
+#if(APPLE)
+#  # shaderc is only still used by the Metal legacy MSL path (mtl_config.mm, RAYGENE_MSL_LEGACY_SHADERC).
+#  find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
+#else()
+  find_package(Vulkan REQUIRED)
+#endif()
 
 set(NAME raygene3d)
 
@@ -55,22 +60,22 @@ set(CORE_D12_SOURCE
 )
 set(CORE_MTL_DIR ${CORE_DIR}/mtl)
 set(CORE_MTL_SOURCE
-	${CORE_MTL_DIR}/mtl_batch.h
-	${CORE_MTL_DIR}/mtl_batch.mm
-	${CORE_MTL_DIR}/mtl_config.h
-	${CORE_MTL_DIR}/mtl_config.mm
-	${CORE_MTL_DIR}/mtl_device.h
-	${CORE_MTL_DIR}/mtl_device.mm
-	${CORE_MTL_DIR}/mtl_factory.h
-	${CORE_MTL_DIR}/mtl_factory.mm
-	${CORE_MTL_DIR}/mtl_dxil.h
-	${CORE_MTL_DIR}/mtl_dxil.mm
-	${CORE_MTL_DIR}/mtl_pass.h
-	${CORE_MTL_DIR}/mtl_pass.mm
-	${CORE_MTL_DIR}/mtl_resource.h
-	${CORE_MTL_DIR}/mtl_resource.mm
-	${CORE_MTL_DIR}/mtl_view.h
-	${CORE_MTL_DIR}/mtl_view.mm
+  ${CORE_MTL_DIR}/mtl_batch.h
+  ${CORE_MTL_DIR}/mtl_batch.mm
+  ${CORE_MTL_DIR}/mtl_config.h
+  ${CORE_MTL_DIR}/mtl_config.mm
+  ${CORE_MTL_DIR}/mtl_device.h
+  ${CORE_MTL_DIR}/mtl_device.mm
+  ${CORE_MTL_DIR}/mtl_factory.h
+  ${CORE_MTL_DIR}/mtl_factory.mm
+  ${CORE_MTL_DIR}/mtl_dxil.h
+  ${CORE_MTL_DIR}/mtl_dxil.mm
+  ${CORE_MTL_DIR}/mtl_pass.h
+  ${CORE_MTL_DIR}/mtl_pass.mm
+  ${CORE_MTL_DIR}/mtl_resource.h
+  ${CORE_MTL_DIR}/mtl_resource.mm
+  ${CORE_MTL_DIR}/mtl_view.h
+  ${CORE_MTL_DIR}/mtl_view.mm
 )
 set(CORE_VLK_DIR ${CORE_DIR}/vlk)
 set(CORE_VLK_SOURCE
@@ -120,8 +125,8 @@ target_include_directories(${NAME}-core PUBLIC
 
 target_link_libraries(${NAME}-core PUBLIC
   Vulkan::Vulkan
-  Vulkan::shaderc_combined
 )
+
 
 # Metal backend (Apple only): Objective-C++ (.mm) sources and SPIRV-Cross MSL translation.
 if(APPLE)

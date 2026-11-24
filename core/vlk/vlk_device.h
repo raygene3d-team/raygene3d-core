@@ -55,6 +55,7 @@ namespace RayGene3D
     VkPhysicalDeviceMemoryProperties memory{};
     
     bool ray_tracing_supported{ false };
+  bool ray_query_supported{ false };
     VkPhysicalDeviceRayTracingPipelinePropertiesKHR ray_tracing_properties{};
 
     bool mesh_shader_supported{ false };

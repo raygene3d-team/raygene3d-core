@@ -260,6 +260,14 @@ namespace RayGene3D
         extension_names.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
         extension_names.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
         extension_names.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+
+        // DXC lowers HLSL TraceRay() with a RayQuery-backed implementation (SPIR-V RayQueryKHR capability),
+        // so VK_KHR_ray_query must be enabled alongside the ray tracing pipeline.
+        ray_query_supported = extension_check_fn(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+        if (ray_query_supported)
+        {
+          extension_names.push_back(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+        }
       }
     }
 
@@ -285,9 +293,14 @@ namespace RayGene3D
     as_features.pNext = nullptr;
     as_features.accelerationStructure = true;
 
+    VkPhysicalDeviceRayQueryFeaturesKHR rq_features = {};
+    rq_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    rq_features.pNext = &as_features;
+    rq_features.rayQuery = ray_query_supported ? VK_TRUE : VK_FALSE;
+
     VkPhysicalDeviceRayTracingPipelineFeaturesKHR rtp_features = {};
     rtp_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-    rtp_features.pNext = &as_features;
+    rtp_features.pNext = ray_query_supported ? static_cast<void*>(&rq_features) : static_cast<void*>(&as_features);
     rtp_features.rayTracingPipeline = true;
 
     VkPhysicalDeviceBufferDeviceAddressFeatures bda_features = {};
